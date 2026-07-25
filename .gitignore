@@ -1,0 +1,40 @@
+# Security & Local Environment Variables (IDD v4.0 4.2절)
+.env.local
+*.pem
+*.key
+*.pfx
+
+# Host Persistent Data Directory (IDD v4.0 3.2절)
+data/assets/*
+data/sim_packages/*
+data/cloud_db/*
+data/redis/*
+data/influxdb/*
+data/logs/*
+
+# Keep data folder structure via .gitkeep
+!data/**/.gitkeep
+
+# Python Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# C++ Build Artifacts (Edge & Physics Engine)
+build/
+bin/
+lib/
+*.o
+*.obj
+*.so
+*.dylib
+
+# IDE & OS Specific
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
