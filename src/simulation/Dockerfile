@@ -1,0 +1,13 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir fastapi uvicorn pydantic
+
+COPY src/simulation /app/src/simulation
+COPY src/shared /app/src/shared
+
+ENV PYTHONPATH=/app
+
+CMD ["uvicorn", "src.simulation.main:app", "--host", "0.0.0.0", "--port", "8001"]
