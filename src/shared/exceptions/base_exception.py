@@ -64,6 +64,22 @@ class ForbiddenException(BaseSystemException):
         )
 
 
+class ConfigNotFoundException(BaseSystemException):
+    """공통 시스템 설정 키 미존재 예외 (404 Not Found)"""
+
+    def __init__(
+        self,
+        message: str = "Requested system configuration key does not exist.",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            error_code=ErrorCodeEnum.ERR_SHARED_CONFIG_NOT_FOUND,
+            message=message,
+            status_code=404,
+            details=details,
+        )
+
+
 class EncryptionFailedException(BaseSystemException):
     """AES-256 암복호화 연산 실패 예외 (500 Internal Server Error)"""
 
