@@ -1,4 +1,5 @@
 import pytest
+
 from src.shared.exceptions.base_exception import ForbiddenException
 from src.shared.security.rbac_authorization_manager import RbacAuthorizationManager
 from src.shared.security.user_context import UserContext, UserRoleEnum

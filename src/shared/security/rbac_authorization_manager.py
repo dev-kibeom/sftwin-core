@@ -1,4 +1,5 @@
 import logging
+
 from src.shared.exceptions.base_exception import ForbiddenException
 from src.shared.security.user_context import UserContext, UserRoleEnum
 

@@ -1,5 +1,6 @@
 import pytest
 from cryptography.fernet import Fernet
+
 from src.shared.exceptions.base_exception import EncryptionFailedException
 from src.shared.security.aes256_encryption_service import Aes256EncryptionService
 

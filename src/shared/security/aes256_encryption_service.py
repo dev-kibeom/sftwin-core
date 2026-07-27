@@ -1,6 +1,8 @@
 import logging
 import os
+
 from cryptography.fernet import Fernet, InvalidToken
+
 from src.shared.exceptions.base_exception import EncryptionFailedException
 
 logger = logging.getLogger("sftwin.shared.security.aes256")
