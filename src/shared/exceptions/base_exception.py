@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 from src.shared.dtos.global_response_dto import GlobalResponseDto
 from src.shared.exceptions.error_codes import ErrorCodeEnum
@@ -12,7 +12,7 @@ class BaseSystemException(Exception):
         error_code: str,
         message: str,
         status_code: int = 500,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         super().__init__(message)
         self.error_code = error_code
@@ -21,7 +21,7 @@ class BaseSystemException(Exception):
         self.details = details
 
     def get_response_dto(
-        self, trace_id: Optional[str] = None
+        self, trace_id: str | None = None
     ) -> GlobalResponseDto[Any]:
         """BaseSystemException을 GlobalResponseDto 객체로 변환"""
         return GlobalResponseDto.error_response(
@@ -38,7 +38,7 @@ class UnauthorizedException(BaseSystemException):
     def __init__(
         self,
         message: str = "Authentication credential is missing or invalid.",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         super().__init__(
             error_code=ErrorCodeEnum.ERR_SHARED_UNAUTHORIZED,
@@ -54,7 +54,7 @@ class ForbiddenException(BaseSystemException):
     def __init__(
         self,
         message: str = "You do not have permission to access this resource.",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         super().__init__(
             error_code=ErrorCodeEnum.ERR_SHARED_FORBIDDEN,
@@ -70,7 +70,7 @@ class EncryptionFailedException(BaseSystemException):
     def __init__(
         self,
         message: str = "Encryption or decryption operation failed.",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         super().__init__(
             error_code=ErrorCodeEnum.ERR_SHARED_ENCRYPTION_FAILED,
@@ -86,7 +86,7 @@ class InternalServerException(BaseSystemException):
     def __init__(
         self,
         message: str = "An unexpected shared infrastructure error occurred.",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         super().__init__(
             error_code=ErrorCodeEnum.ERR_SHARED_INTERNAL_ERROR,

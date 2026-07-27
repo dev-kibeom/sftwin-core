@@ -1,6 +1,5 @@
 import logging
 import uuid
-from typing import Any, Optional
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError

@@ -1,4 +1,3 @@
-import base64
 import logging
 import os
 from cryptography.fernet import Fernet, InvalidToken

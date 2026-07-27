@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +20,7 @@ class UserContext(BaseModel):
     username: str = Field(..., description="사용자 계정명")
     company_id: str = Field(..., description="속한 제조기업/SI업체 식별자")
     role: UserRoleEnum = Field(..., description="부여된 RBAC 권한 역할")
-    accessible_factory_ids: List[str] = Field(
+    accessible_factory_ids: list[str] = Field(
         default_factory=list, description="접근 허용된 공장 ID 목록"
     )
     is_edge_authenticated: bool = Field(

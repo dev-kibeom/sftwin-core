@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -12,18 +12,18 @@ class GlobalResponseDto(BaseModel, Generic[T]):
     success: bool = Field(..., description="요청 성공 여부 (true/false)")
     code: str = Field(..., description="전역 응답/에러 고유 코드 (SUCCESS 또는 ERR_*)")
     message: str = Field(..., description="사용자 친화적 응답/에러 메세지")
-    data: Optional[T] = Field(
+    data: T | None = Field(
         default=None, description="성공 시 반환 Payload (실패 시 null 또는 디테일)"
     )
     timestamp: str = Field(..., description="응답 생성 일시 (ISO-8601 UTC)")
-    trace_id: Optional[str] = Field(default=None, description="분산 트레이싱 ID")
+    trace_id: str | None = Field(default=None, description="분산 트레이싱 ID")
 
     @classmethod
     def success_response(
         cls,
-        data: Optional[T] = None,
+        data: T | None = None,
         message: str = "Operation completed successfully.",
-        trace_id: Optional[str] = None,
+        trace_id: str | None = None,
     ) -> "GlobalResponseDto[T]":
         """정상 처리 시 사용하는 정적 팩토리 메서드"""
         return cls(
@@ -40,8 +40,8 @@ class GlobalResponseDto(BaseModel, Generic[T]):
         cls,
         code: str,
         message: str,
-        data: Optional[Any] = None,
-        trace_id: Optional[str] = None,
+        data: Any | None = None,
+        trace_id: str | None = None,
     ) -> "GlobalResponseDto[Any]":
         """예외 처리 시 사용하는 정적 팩토리 메서드"""
         return cls(

@@ -1,10 +1,8 @@
 import logging
 import os
-import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import jwt
-from fastapi import Request
 
 from src.shared.exceptions.base_exception import UnauthorizedException
 from src.shared.security.user_context import UserContext, UserRoleEnum
@@ -15,7 +13,7 @@ logger = logging.getLogger("sftwin.shared.security.jwt_interceptor")
 class JwtAuthInterceptor:
     """JWT 토큰 검증 및 UserContext 생성/주입 무상태 인터셉터"""
 
-    def __init__(self, secret_key: Optional[str] = None, algorithm: str = "HS256"):
+    def __init__(self, secret_key: str | None = None, algorithm: str = "HS256"):
         self.secret_key = secret_key or os.getenv(
             "JWT_SECRET_KEY", "sftwin-default-secret-key-2026-secure-32bytes"
         )
@@ -33,7 +31,7 @@ class JwtAuthInterceptor:
             )
 
         try:
-            payload: Dict[str, Any] = jwt.decode(
+            payload: dict[str, Any] = jwt.decode(
                 token,
                 self.secret_key,
                 algorithms=[self.algorithm],
@@ -99,7 +97,7 @@ class JwtAuthInterceptor:
                 details={"reason": str(exc)},
             )
 
-    def extract_and_verify_from_header(self, auth_header: Optional[str]) -> UserContext:
+    def extract_and_verify_from_header(self, auth_header: str | None) -> UserContext:
         """HTTP Authorization Header에서 Bearer 토큰 추출 및 검증"""
         if not auth_header or not auth_header.startswith("Bearer "):
             logger.warning(
