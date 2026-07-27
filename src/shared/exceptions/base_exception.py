@@ -48,6 +48,38 @@ class UnauthorizedException(BaseSystemException):
         )
 
 
+class ForbiddenException(BaseSystemException):
+    """권한 부족 및 기업 간 격리 위반 예외 (403 Forbidden)"""
+
+    def __init__(
+        self,
+        message: str = "You do not have permission to access this resource.",
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            error_code=ErrorCodeEnum.ERR_SHARED_FORBIDDEN,
+            message=message,
+            status_code=403,
+            details=details,
+        )
+
+
+class EncryptionFailedException(BaseSystemException):
+    """AES-256 암복호화 연산 실패 예외 (500 Internal Server Error)"""
+
+    def __init__(
+        self,
+        message: str = "Encryption or decryption operation failed.",
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            error_code=ErrorCodeEnum.ERR_SHARED_ENCRYPTION_FAILED,
+            message=message,
+            status_code=500,
+            details=details,
+        )
+
+
 class InternalServerException(BaseSystemException):
     """공유 인프라 내부 시스템 예외 (500 Internal Server Error)"""
 
