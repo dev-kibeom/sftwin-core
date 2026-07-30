@@ -38,3 +38,5 @@ lib/
 .idea/
 .DS_Store
 Thumbs.db
+# Temporary Backup Folder
+_backup/
