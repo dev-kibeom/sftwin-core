@@ -7,20 +7,13 @@ UserContext의 역할(Role) 권한을 검증하고 기업 간 데이터 접근 �
 """
 
 import logging
-from enum import Enum
 
+from src.shared.enums.audit_severity_enum import AuditSeverityEnum
+from src.shared.enums.user_role_enum import UserRoleEnum
 from src.shared.security.jwt_auth_interceptor import BaseSystemException
-from src.shared.security.user_context import UserContext, UserRoleEnum
+from src.shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.security.rbac_authorization_manager")
-
-
-class AuditSeverityEnum(str, Enum):
-    """보안 감사 로그 위험도 등급"""
-
-    INFO = "INFO"
-    WARNING = "WARNING"
-    CRITICAL = "CRITICAL"
 
 
 class AuditLogger:

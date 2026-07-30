@@ -11,7 +11,8 @@ from typing import Any
 
 import jwt
 
-from src.shared.security.user_context import UserContext, UserRoleEnum
+from src.shared.enums.user_role_enum import UserRoleEnum
+from src.shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.security.jwt_auth_interceptor")
 

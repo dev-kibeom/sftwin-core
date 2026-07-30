@@ -7,17 +7,8 @@ Immutable(불변) 데이터 구조를 제공하여 인증 컨텍스트의 임의
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
 
-
-class UserRoleEnum(str, Enum):
-    """RBAC 사용자 및 접근 권한 역할 열거형 (GTS 3.1)"""
-
-    SYSTEM_ADMIN = "SYSTEM_ADMIN"
-    FACTORY_MANAGER = "FACTORY_MANAGER"
-    FIELD_ENGINEER = "FIELD_ENGINEER"
-    SI_PARTNER = "SI_PARTNER"
-    CREATOR = "CREATOR"
+from src.shared.enums.user_role_enum import UserRoleEnum
 
 
 @dataclass(frozen=True)

@@ -10,6 +10,8 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 
+from src.shared.enums.audit_severity_enum import AuditSeverityEnum
+from src.shared.enums.user_role_enum import UserRoleEnum
 from src.shared.security.jwt_auth_interceptor import (
     BaseSystemException,
     JwtAuthInterceptor,
@@ -19,7 +21,7 @@ from src.shared.security.rbac_authorization_manager import (
     AuditSeverityEnum,
     RbacAuthorizationManager,
 )
-from src.shared.security.user_context import UserContext, UserRoleEnum
+from src.shared.security.user_context import UserContext
 
 SECRET_KEY = "sftwin_global_security_jwt_secret_key_256bit!"
 
