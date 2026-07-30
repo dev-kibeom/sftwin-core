@@ -23,7 +23,7 @@ services:
       - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./data/logs/nginx:/var/log/nginx:rw
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost/healthz || exit 1"]
       interval: 10s
       timeout: 2s
       retries: 3
@@ -54,20 +54,23 @@ services:
     networks:
       - sftwin-cloud-net
 
-  # Cloud Layer: Simulation & Physics Service
+  # Cloud Layer: Simulation & Physics Service (IDD v4.1 Update)
   sftwin-sim-svc:
     build:
       context: .
       dockerfile: src/simulation/Dockerfile
     container_name: sftwin-sim-svc
     restart: always
+    ipc: host # Shared Memory IPC communication (IDD v4.1)
     ports:
       - "50051:50051" # gRPC Sim-to-Real Deploy
+      - "50000-50100:50000-50100/udp" # WebRTC Streaming (IDD v4.1)
+    volumes:
+      - ./data/sim_packages:/app/sim_packages:rw
+      - /dev/shm:/dev/shm:rw # POSIX Shared Memory binding (IDD v4.1)
     env_file:
       - .env.shared
       - .env.local
-    volumes:
-      - ./data/sim_packages:/app/sim_packages:rw
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8001/healthz || exit 1"]
       interval: 10s
@@ -108,7 +111,7 @@ services:
       - ./data/cloud_db/mysql:/var/lib/mysql:rw
       - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pUnexposedSecureRootPassword!2026"]
       interval: 10s
       timeout: 5s
       retries: 5
