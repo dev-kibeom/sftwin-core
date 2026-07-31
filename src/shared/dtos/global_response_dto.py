@@ -26,10 +26,23 @@ class GlobalResponseDto(Generic[T]):
     )
 
     @classmethod
+    def success_response(
+        cls, data: T, message: str = "Operation completed successfully."
+    ) -> "GlobalResponseDto[T]":
+        """성공 응답 객체 생성을 위한 정적 팩토리 메서드"""
+        return cls(
+            success=True,
+            code="SUCCESS",
+            message=message,
+            data=data,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+        )
+
+    @classmethod
     def error_response(
         cls, code: str, message: str, data: Any | None = None
     ) -> "GlobalResponseDto[Any]":
-        """에러 응답 객체 생성을 위한 팩토리 메서드"""
+        """에러 응답 객체 생성을 위한 정적 팩토리 메서드"""
         return cls(
             success=False,
             code=code,

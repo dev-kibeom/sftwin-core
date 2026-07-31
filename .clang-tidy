@@ -1,0 +1,7 @@
+Checks: >
+  -*,
+  bugprone-*,          # 버그 유발 패턴 검사
+  performance-*,       # 성능 저하 코드 검사
+  modernize-*,           # 최신 C++(C++11/14/17/20) 문법 적용 권장 (Ruff의 UP 역할)
+  readability-*        # 가독성 개선
+WarningsAsErrors: ''
