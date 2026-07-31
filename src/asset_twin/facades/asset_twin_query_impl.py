@@ -13,6 +13,7 @@ from src.asset_twin.asset_library.application.manage_asset_usecase import (
     ManageAssetUseCase,
 )
 from src.shared.dtos.asset_dto import AASAssetDto
+from src.shared.enums.user_role_enum import UserRoleEnum
 from src.shared.security.user_context import UserContext
 
 logger = logging.getLogger("asset_twin.facades.query_impl")
@@ -49,7 +50,7 @@ class AssetTwinQueryImpl(AssetTwinQueryFacade):
                 user_id="SYSTEM",
                 username="system",
                 company_id="SYSTEM_PUBLIC",
-                role="SYSTEM_ADMIN",
+                role=UserRoleEnum.SYSTEM_ADMIN,
                 accessible_factory_ids=[],
             )
         return self._manage_asset_uc.get_asset(asset_id, ctx)

@@ -18,6 +18,7 @@ from src.asset_twin.asset_library.application.manage_asset_usecase import (
 from src.asset_twin.asset_library.domain.aas_asset import AASAsset
 from src.shared.dtos.asset_dto import AASAssetDto
 from src.shared.enums.asset_type_enum import AssetTypeEnum
+from src.shared.enums.user_role_enum import UserRoleEnum
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
 from src.shared.security.user_context import UserContext
@@ -53,7 +54,7 @@ def test_tc_happy_path_register_asset():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role="FIELD_ENGINEER",
+        role=UserRoleEnum.FIELD_ENGINEER,
         accessible_factory_ids=["FACTORY-01"],
     )
 
@@ -92,7 +93,7 @@ def test_tc_edge_case_tenant_isolation_forbidden():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",  # 다른 요청 회사
-        role="FIELD_ENGINEER",
+        role=UserRoleEnum.FIELD_ENGINEER,
         accessible_factory_ids=[],
     )
 
@@ -127,7 +128,7 @@ def test_tc_error_handling_invalid_domain_schema():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role="FIELD_ENGINEER",
+        role=UserRoleEnum.FIELD_ENGINEER,
         accessible_factory_ids=[],
     )
 

@@ -74,7 +74,7 @@ class ManageAssetUseCase:
                 message=f"Invalid asset type '{asset_dto.asset_type}'.",
                 status_code=400,
                 details={"asset_type": asset_dto.asset_type},
-            )
+            ) from e
 
         # 도메인 엔티티 생성 및 Audit 정보 주입
         domain_entity = AASAsset(
