@@ -16,9 +16,10 @@ from src.simulation.fault_injection_bt.domain.fault_scenario import (
 
 
 class SimulationCommandFacade:
-    def __init__(self, run_fms_uc, inject_fault_uc):
+    def __init__(self, run_fms_uc, inject_fault_uc, deploy_uc):
         self._run_fms_uc = run_fms_uc
-        self._inject_fault_uc = inject_fault_uc  # 신규 의존성
+        self._inject_fault_uc = inject_fault_uc
+        self._deploy_uc = deploy_uc
 
     def run_fms_simulation(
         self,
@@ -41,3 +42,17 @@ class SimulationCommandFacade:
             trigger_time_sec=5.0,
         )
         return self._inject_fault_uc.execute(scenario=scenario, bt_xml=bt_xml, ctx=ctx)
+
+    def deploy_sim2real_package(
+        self,
+        package_id: str,
+        format_type: str,
+        config: list[dict[str, Any]],
+        ctx: UserContext,
+    ) -> bool:
+        """
+        [고수준 진입점] POST /deploy 컨트롤러 요청을 DeploySim2RealUseCase로 위임합니다.
+        """
+        return self._deploy_uc.execute(
+            package_id=package_id, format_type=format_type, config=config, ctx=ctx
+        )
