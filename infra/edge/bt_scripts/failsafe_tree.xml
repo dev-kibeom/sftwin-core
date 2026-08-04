@@ -1,0 +1,19 @@
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <Fallback name="RootFallback">
+            <!-- 1. 이상 징후 감지 및 E-Stop 트리거 검속 -->
+            <Sequence name="SafetyCheckSequence">
+                <Inverter>
+                    <Condition ID="IsAnomalyDetected" description="Check sensor threshold or heartbeat timeout"/>
+                </Inverter>
+                <Action ID="ExecuteNormalProcess" description="Keep standard FMS cycle"/>
+            </Sequence>
+            
+            <!-- 2. 결함 포착 시 Behavior Tree 기반 우회(Bypass) 또는 Failsafe E-Stop -->
+            <Sequence name="FailsafeSequence">
+                <Action ID="TriggerFailsafeAction" action_type="ESTOP" reason="CRITICAL_SAFETY_BREACH"/>
+                <Action ID="PublishFailsafeAuditLog"/>
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+</root>
