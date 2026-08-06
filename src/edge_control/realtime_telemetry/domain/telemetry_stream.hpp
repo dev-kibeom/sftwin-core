@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace sftwin::edge_control::domain {
+namespace sftwin::edge_control::realtime_telemetry::domain {
 
 class TelemetryStream {
    public:
@@ -20,4 +20,4 @@ class TelemetryStream {
     }
 };
 
-}  // namespace sftwin::edge_control::domain
+}  // namespace sftwin::edge_control::realtime_telemetry::domain

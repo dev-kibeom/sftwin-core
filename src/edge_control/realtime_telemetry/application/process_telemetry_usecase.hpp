@@ -6,7 +6,7 @@
 #include "src/edge_control/realtime_telemetry/ports/i_telemetry_subscriber.hpp"
 #include "src/edge_control/realtime_telemetry/ports/i_vision_detector.hpp"
 
-namespace sftwin::edge_control::application {
+namespace sftwin::edge_control::realtime_telemetry::application {
 
 class ProcessTelemetryUseCase {
    public:
@@ -22,4 +22,4 @@ class ProcessTelemetryUseCase {
     uint64_t _get_current_time_ns() const;
 };
 
-}  // namespace sftwin::edge_control::application
+}  // namespace sftwin::edge_control::realtime_telemetry::application

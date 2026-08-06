@@ -5,8 +5,7 @@
 
 #include "telemetry_packet.pb.h"
 
-namespace sftwin::edge_control::dtos {
-
+namespace sftwin::edge_control::realtime_telemetry::dtos {
 /**
  * @brief 실시간 텔레메트리 패킷 전송을 위한 래퍼 DTO
  * 내부적으로 Protobuf 메세지를 캡슐화하여 비즈니스 로직에서의 직접적인 조작을 방지합니다.
@@ -42,4 +41,4 @@ class TelemetryPacketDto {
     }
 };
 
-}  // namespace sftwin::edge_control::dtos
+}  // namespace sftwin::edge_control::realtime_telemetry::dtos

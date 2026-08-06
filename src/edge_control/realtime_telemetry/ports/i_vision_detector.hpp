@@ -3,7 +3,7 @@
 
 #include "telemetry_packet.pb.h"
 
-namespace sftwin::edge_control::ports {
+namespace sftwin::edge_control::realtime_telemetry::ports {
 
 class IVisionDetector {
    public:
@@ -13,4 +13,4 @@ class IVisionDetector {
     virtual std::vector<sftwin::telemetry::DetectedObject> get_latest_detections() = 0;
 };
 
-}  // namespace sftwin::edge_control::ports
+}  // namespace sftwin::edge_control::realtime_telemetry::ports

@@ -3,7 +3,7 @@
 
 #include "src/edge_control/realtime_telemetry/dtos/telemetry_packet_dto.hpp"
 
-namespace sftwin::edge_control::ports {
+namespace sftwin::edge_control::realtime_telemetry::ports {
 
 class ITelemetrySubscriber {
    public:
@@ -16,4 +16,4 @@ class ITelemetrySubscriber {
     virtual dtos::TelemetryPacketDto read_latest_packet(const std::string& device_id) = 0;
 };
 
-}  // namespace sftwin::edge_control::ports
+}  // namespace sftwin::edge_control::realtime_telemetry::ports

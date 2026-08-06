@@ -1,12 +1,11 @@
 #include "failsafe_controller.hpp"
 
-#include <chrono>
+#include "src/edge_control/common/utils/time_provider.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::domain {
 
 uint64_t FailsafeController::_get_current_time_ns() const {
-    auto now = std::chrono::steady_clock::now().time_since_epoch();
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
+    return common::utils::TimeProvider::get_steady_time_ns();
 }
 
 float FailsafeController::_calculate_distance(const sftwin::telemetry::DetectedObject& obj) const {
@@ -18,7 +17,8 @@ float FailsafeController::_calculate_distance(const sftwin::telemetry::DetectedO
     return 999.0f;
 }
 
-EvaluationResult FailsafeController::check_violations(const dtos::TelemetryPacketDto& telemetry) {
+EvaluationResult FailsafeController::check_violations(
+    const sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto& telemetry) {
     const auto& proto = telemetry.get_proto();
 
     // 1. 통신 지연 평가 (HEARTBEAT_LOSS)

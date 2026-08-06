@@ -31,7 +31,8 @@ class TriggerFailsafeUseCase {
                            const domain::FailsafeRule& rule);
 
     // EDG-002: 실시간 텔레메트리 기반 이상 감지 (100ms Loop)
-    void evaluate_and_trigger(const sftwin::edge_control::dtos::TelemetryPacketDto& telemetry);
+    void evaluate_and_trigger(
+        const sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto& telemetry);
 
     // EDG-003: 수동 제어 및 복구
     void trigger_manual_estop(const std::string& reason);

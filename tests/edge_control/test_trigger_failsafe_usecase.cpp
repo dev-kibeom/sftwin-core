@@ -8,6 +8,7 @@
 #include "src/edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
 #include "src/edge_control/common/exceptions/edge_system_exception.hpp"
 #include "src/edge_control/common/logging/edge_logger.hpp"
+#include "src/edge_control/common/utils/time_provider.hpp"
 #include "src/edge_control/realtime_telemetry/dtos/telemetry_packet_dto.hpp"
 #include "telemetry_packet.pb.h"
 
@@ -69,11 +70,6 @@ class TriggerFailsafeUseCaseTest : public ::testing::Test {
         usecase = std::make_unique<anomaly_failsafe::application::TriggerFailsafeUseCase>(
             mock_hw, mock_dds, mock_bt, mapper, default_rule);
     }
-
-    uint64_t get_current_time_ns() {
-        auto now = std::chrono::steady_clock::now().time_since_epoch();
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
-    }
 };
 
 // ==============================================================================
@@ -84,11 +80,11 @@ TEST_F(TriggerFailsafeUseCaseTest, HappyPath_NoViolations) {
     // Given
     sftwin::telemetry::TelemetryPacketProto proto;
     proto.set_device_id("DOOSAN_M1013_002");
-    proto.set_timestamp_ns(get_current_time_ns());
+    proto.set_timestamp_ns(sftwin::edge_control::common::utils::TimeProvider::get_steady_time_ns());
     proto.add_joint_torques(100.0f);
 
     // [FIX] 명시적인 네임스페이스 적용
-    sftwin::edge_control::dtos::TelemetryPacketDto telemetry(proto);
+    sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto telemetry(proto);
 
     // Then
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(0);
@@ -102,7 +98,7 @@ TEST_F(TriggerFailsafeUseCaseTest, EdgeCase_WarningIntrusion_TriggersBypass) {
     // Given
     sftwin::telemetry::TelemetryPacketProto proto;
     proto.set_device_id("DOOSAN_M1013_002");
-    proto.set_timestamp_ns(get_current_time_ns());
+    proto.set_timestamp_ns(sftwin::edge_control::common::utils::TimeProvider::get_steady_time_ns());
     proto.add_joint_torques(50.0f);
 
     auto* obj = proto.add_detected_objects();
@@ -110,7 +106,7 @@ TEST_F(TriggerFailsafeUseCaseTest, EdgeCase_WarningIntrusion_TriggersBypass) {
     obj->add_bbox(0.0f);
     obj->add_bbox(1.2f);
 
-    sftwin::edge_control::dtos::TelemetryPacketDto telemetry(proto);
+    sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto telemetry(proto);
 
     // Then
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(0);
@@ -124,10 +120,10 @@ TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_TorqueExceeded_TriggersEStop) {
     // Given
     sftwin::telemetry::TelemetryPacketProto proto;
     proto.set_device_id("DOOSAN_M1013_002");
-    proto.set_timestamp_ns(get_current_time_ns());
+    proto.set_timestamp_ns(sftwin::edge_control::common::utils::TimeProvider::get_steady_time_ns());
     proto.add_joint_torques(160.0f);
 
-    sftwin::edge_control::dtos::TelemetryPacketDto telemetry(proto);
+    sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto telemetry(proto);
 
     // Then
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(1);
@@ -148,10 +144,11 @@ TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_HeartbeatTimeout_TriggersEStop) {
     // Given
     sftwin::telemetry::TelemetryPacketProto proto;
     proto.set_device_id("DOOSAN_M1013_002");
-    uint64_t past_150ms = get_current_time_ns() - 150'000'000ULL;
+    uint64_t past_150ms =
+        sftwin::edge_control::common::utils::TimeProvider::get_steady_time_ns() - 150'000'000ULL;
     proto.set_timestamp_ns(past_150ms);
 
-    sftwin::edge_control::dtos::TelemetryPacketDto telemetry(proto);
+    sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto telemetry(proto);
 
     // Then
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(1);

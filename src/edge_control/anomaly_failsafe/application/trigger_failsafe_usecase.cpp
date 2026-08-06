@@ -19,7 +19,7 @@ TriggerFailsafeUseCase::TriggerFailsafeUseCase(
       _edge_device_id("EDGE_NODE_001") {}
 
 void TriggerFailsafeUseCase::evaluate_and_trigger(
-    const sftwin::edge_control::dtos::TelemetryPacketDto& telemetry) {
+    const sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto& telemetry) {
     // 실시간 감지는 ACTIVE_MONITORING 상태에서만 동작 (불필요 연산 방지)
     if (_current_state != domain::EdgeEngineState::ACTIVE_MONITORING) return;
 

@@ -22,7 +22,8 @@ class FailsafeController {
     explicit FailsafeController(const FailsafeRule& rule) : _rule(rule) {}
 
     // 규칙 엔진: Guard Clause 패턴을 통한 조기 리턴(Early Return) 평가
-    EvaluationResult check_violations(const dtos::TelemetryPacketDto& telemetry);
+    EvaluationResult check_violations(
+        const sftwin::edge_control::realtime_telemetry::dtos::TelemetryPacketDto& telemetry);
 };
 
 }  // namespace sftwin::edge_control::anomaly_failsafe::domain

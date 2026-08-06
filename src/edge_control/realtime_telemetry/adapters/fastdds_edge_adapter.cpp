@@ -11,7 +11,7 @@
 // #include <fastdds/dds/subscriber/Subscriber.hpp>
 // #include <fastdds/dds/subscriber/DataReader.hpp>
 
-namespace sftwin::edge_control::adapters {
+namespace sftwin::edge_control::realtime_telemetry::adapters {
 
 /**
  * @brief FastDDS C++ Zero-Copy 어댑터 구현체 (ITelemetrySubscriber 포트 구현)
@@ -62,4 +62,4 @@ class FastDdsEdgeAdapter : public ports::ITelemetrySubscriber {
     }
 };
 
-}  // namespace sftwin::edge_control::adapters
+}  // namespace sftwin::edge_control::realtime_telemetry::adapters
