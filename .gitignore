@@ -4,6 +4,9 @@
 *.key
 *.pfx
 
+# documents
+documents/*.pdf
+
 # Host Persistent Data Directory (IDD v4.0 3.2절)
 data/assets/*
 data/sim_packages/*
