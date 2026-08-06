@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(GTest REQUIRED)
 find_package(Protobuf REQUIRED)
 
+# [FIX] spdlog 및 fmt 의존성 패키지 검색 추가
+find_package(spdlog REQUIRED)
+find_package(fmt REQUIRED)
+
 if(NOT TARGET GTest::gmock)
     find_package(GMock REQUIRED)
 endif()
@@ -84,6 +88,9 @@ target_link_libraries(run_cpp_tests PRIVATE
     GTest::gtest_main
     gmock
     ${PROTOBUF_LIBRARIES}
+    # [FIX] spdlog 및 fmt 라이브러리 링크 추가
+    spdlog::spdlog
+    fmt::fmt
 )
 
 enable_testing()

@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "src/edge_control/anomaly_failsafe/domain/failsafe_action_enum.hpp"
+#include "src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
 #include "src/edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
 #include "src/edge_control/realtime_telemetry/dtos/telemetry_packet_dto.hpp"
 
