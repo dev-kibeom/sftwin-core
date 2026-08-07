@@ -67,9 +67,20 @@ class GenerateQuoteUseCase:
             assets=asset_ids, total_price=total_price, days=delivery_days
         )
 
-        # MySQL DB 영속화 (가정)
-        if self._mysql_repo:
-            self._mysql_repo.save(quote_entity)
+        # MySQL DB 영속화 예외 가드 추가 (일관성 확보)
+        try:
+            if self._mysql_repo:
+                self._mysql_repo.save(quote_entity)
+        except Exception as e:
+            log_ctx.exc = e
+            self._logger.error(
+                "Database persistence failed during quote generation.", log_ctx
+            )
+            raise BaseSystemException(
+                error_code="ERR_COMMON_INTERNAL_ERROR",
+                message="시스템 내부 장애가 발생했습니다. 잠시 후 다시 시도해주세요.",
+                status_code=500,
+            )
 
         self._logger.info(
             f"Successfully generated turnkey quote: {quote_entity.quote_id}", log_ctx

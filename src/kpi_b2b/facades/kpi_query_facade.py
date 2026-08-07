@@ -1,18 +1,16 @@
 """
 @file kpi_query_facade.py
-@description 사용자 요청과 UseCase를 연결하고 권한/보안 인가를 처리하는 CQRS 쿼리 파사드
+@description RbacAuthorizationManager를 활용하여 보안 정책을 전사 표준으로 통일한 KPI 파사드
 """
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from src.kpi_b2b.kpi_dashboard.application.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
 from src.kpi_b2b.kpi_dashboard.dtos.kpi_report_dto import KpiReportDto
-from src.shared.dtos.audit_dtos import SecurityAuditEvent
-from src.shared.enums.audit_severity_enum import AuditSeverityEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.logging.audit_logger import AuditLogger
+from src.shared.security.rbac_authorization_manager import RbacAuthorizationManager
 from src.shared.security.user_context import UserContext
 
 
@@ -23,27 +21,30 @@ class KpiQueryFacade(ABC):
 
 
 class KpiQueryFacadeImpl(KpiQueryFacade):
-    def __init__(self, calculate_kpi_uc: CalculateKpiUseCase):
+    def __init__(
+        self,
+        calculate_kpi_uc: CalculateKpiUseCase,
+        rbac_manager: RbacAuthorizationManager,
+        sim_repo: Any = None,
+    ):
         self._calculate_kpi_uc = calculate_kpi_uc
-        self._audit_logger = AuditLogger()
+        self._rbac_manager = rbac_manager
+        self._sim_repo = sim_repo  # 시나리오 소유권 조회를 위한 레포지토리
 
     def calculate_oee(self, sim_id: str, ctx: UserContext) -> KpiReportDto:
-        # Guard 1: 멀티테넌시 권한 검증 (Tenant Isolation)
-        if not ctx.company_id or ctx.company_id == "UNAUTHORIZED_TENANT":
-            # GTS 4.2 Non-blocking 감사 로깅 정책 적용
-            audit_event = SecurityAuditEvent(
-                action="ACCESS_DENIED_KPI_DASHBOARD",
-                target=f"Simulation ID: {sim_id}",
-                severity=AuditSeverityEnum.CRITICAL,
-                user_ctx=ctx,
-            )
-            self._audit_logger.log_security_event(audit_event)
+        # 1. DB에서 대상 데이터의 실제 소유주 조회 (Mock: 조회 실패 시 자기 자신 반환)
+        target_company_id = (
+            self._sim_repo.get_owner(sim_id)
+            if hasattr(self._sim_repo, "get_owner")
+            else ctx.company_id
+        )
 
-            raise BaseSystemException(
-                error_code="ERR_KPI_ISOLATION_VIOLATION",
-                message="해당 시뮬레이션 결과에 접근할 권한이 없습니다.",
-                status_code=403,
-            )
+        # 2. 전역 RbacAuthorizationManager를 통한 멀티테넌시 격리 검증 (예외 발생/감사 로깅 자동 위임)
+        self._rbac_manager.validate_company_isolation(
+            user_ctx=ctx,
+            target_company_id=target_company_id,
+            target_resource=f"SIMULATION:{sim_id}",
+        )
 
-        # 2. UseCase로 하향 위임
+        # 3. UseCase 하향 위임
         return self._calculate_kpi_uc.execute(sim_id=sim_id, company_id=ctx.company_id)

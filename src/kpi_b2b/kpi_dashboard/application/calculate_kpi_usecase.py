@@ -54,13 +54,26 @@ class CalculateKpiUseCase:
             )
 
         # 3. 데이터 파싱 (시뮬레이션 로그 내 누적 데이터 모사)
-        # (실제 환경에서는 logs 배열 기반 Map-Reduce 수행)
-        uptime = sum(log.get("uptime", 0.0) for log in logs)
-        total_time = sum(log.get("total_time", 1.0) for log in logs)
-        ideal_cycle = sum(log.get("ideal_cycle", 0.0) for log in logs) / len(logs)
-        actual_cycle = sum(log.get("actual_cycle", 1.0) for log in logs) / len(logs)
-        good_count = sum(log.get("good_count", 0) for log in logs)
-        total_count = sum(log.get("total_count", 1) for log in logs)
+        log_count = len(logs)
+        (
+            uptime,
+            total_time,
+            ideal_cycle_sum,
+            actual_cycle_sum,
+            good_count,
+            total_count,
+        ) = 0.0, 0.0, 0.0, 0.0, 0, 0
+
+        for log in logs:
+            uptime += log.get("uptime", 0.0)
+            total_time += log.get("total_time", 1.0)
+            ideal_cycle_sum += log.get("ideal_cycle", 0.0)
+            actual_cycle_sum += log.get("actual_cycle", 1.0)
+            good_count += log.get("good_count", 0)
+            total_count += log.get("total_count", 1)
+
+        ideal_cycle = ideal_cycle_sum / log_count if log_count > 0 else 0.0
+        actual_cycle = actual_cycle_sum / log_count if log_count > 0 else 1.0
 
         # 4. 순수 도메인 로직 (OeeCalculator) 위임
         availability = self._oee_calculator.calculate_availability(uptime, total_time)
