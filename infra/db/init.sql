@@ -28,7 +28,28 @@ CREATE TABLE IF NOT EXISTS system_configs (
     is_deleted TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Seed Global Roles (GTS v2.0 5.2절)
+-- 3. Audit Logs Table (CDS-Shared v3.0 3.2절)
+CREATE TABLE IF NOT EXISTS audit_logs (
+    audit_id VARCHAR(36) PRIMARY KEY,
+    trace_id VARCHAR(64) NOT NULL,
+    user_id VARCHAR(36),
+    company_id VARCHAR(36) NOT NULL DEFAULT 'SYSTEM',
+    component_name VARCHAR(64) NOT NULL,
+    action_type VARCHAR(64) NOT NULL,
+    severity VARCHAR(16) NOT NULL DEFAULT 'INFO',
+    target_resource VARCHAR(128),
+    details JSON,
+    ip_address VARCHAR(45),
+    created_by VARCHAR(64) NOT NULL DEFAULT 'SYSTEM',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_by VARCHAR(64) NOT NULL DEFAULT 'SYSTEM',
+    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+    INDEX idx_audit_logs_trace (trace_id),
+    INDEX idx_audit_logs_company (company_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Seed Global Roles (GTS v2.0 5.2절)
 INSERT INTO global_roles (role_code, role_name, description) VALUES
 ('SYSTEM_ADMIN', 'Platform System Administrator', 'Full system management and configuration rights'),
 ('FACTORY_MANAGER', 'Factory Manager', 'Access to 3D layouts, KPI reports, and B2B procurement'),
@@ -37,7 +58,7 @@ INSERT INTO global_roles (role_code, role_name, description) VALUES
 ('CREATOR', 'Individual Creator / Startup', 'Access to 3D layout canvas and remote expert consulting')
 ON DUPLICATE KEY UPDATE role_name=VALUES(role_name), description=VALUES(description);
 
--- 4. Seed System Configs (GTS v2.0 5.2절)
+-- 5. Seed System Configs (GTS v2.0 5.2절)
 INSERT INTO system_configs (config_key, config_value, description) VALUES
 ('EDGE_FAILSAFE_HEARTBEAT_TIMEOUT_MS', '100', 'Maximum allowable heartbeat delay before triggering E-Stop'),
 ('MAX_SIM_CONCURRENT_USERS', '50', 'Maximum concurrent users for 60fps WebGL simulation engine'),
