@@ -1,9 +1,5 @@
 """
 JwtAuthInterceptor Implementation
-
-설계 의도:
-HTTP Request Header에서 Bearer JWT 토큰을 추출하고 서명 및 만료일을 검증하여,
-Payload Claims로부터 UserContext 객체를 생성 및 주입하는 무상태 인터셉터입니다.
 """
 
 import logging
@@ -12,19 +8,11 @@ from typing import Any
 import jwt
 
 from src.shared.enums.user_role_enum import UserRoleEnum
+from src.shared.exceptions.base_exception import BaseSystemException
+from src.shared.exceptions.error_codes import GlobalErrorCodes
 from src.shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.security.jwt_auth_interceptor")
-
-
-class BaseSystemException(Exception):
-    """GTS 표준 시스템 예외"""
-
-    def __init__(self, error_code: str, message: str, status_code: int = 401):
-        super().__init__(message)
-        self.error_code = error_code
-        self.message = message
-        self.status_code = status_code
 
 
 class JwtAuthInterceptor:
@@ -35,14 +23,8 @@ class JwtAuthInterceptor:
         self._algorithm = algorithm
 
     def intercept(self, request_headers: dict[str, str]) -> UserContext:
-        """
-        HTTP 요청 헤더에서 Bearer 토큰을 추출하고 검증하여 UserContext를 생성합니다.
-
-        Newspaper Structure: 고수준 오케스트레이션 로직
-        """
         logger.info("Starting JWT authentication interception process.")
 
-        # Guard Clause 1: Authorization 헤더 존재 및 Bearer 포맷 검증
         auth_header = request_headers.get("Authorization") or request_headers.get(
             "authorization"
         )
@@ -51,7 +33,7 @@ class JwtAuthInterceptor:
                 "Authentication failed: Missing or invalid Authorization header format."
             )
             raise BaseSystemException(
-                error_code="ERR_SHARED_UNAUTHORIZED",
+                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
                 message="Authorization header with Bearer token is missing or invalid.",
                 status_code=401,
             )
@@ -60,12 +42,6 @@ class JwtAuthInterceptor:
         return self.verify_token(token)
 
     def verify_token(self, token: str) -> UserContext:
-        """
-        JWT 토큰의 서명 및 만료일을 검증하고 Payload에서 UserContext를 복원합니다.
-
-        Newspaper Structure: 세부 검증 및 파싱 로직
-        """
-        # Guard Clause 2: JWT 서명 및 만료일 검증
         payload = self._decode_and_validate_jwt(token)
 
         try:
@@ -84,19 +60,18 @@ class JwtAuthInterceptor:
         except (KeyError, ValueError) as e:
             logger.error(f"JWT payload claim parsing error: {str(e)}")
             raise BaseSystemException(
-                error_code="ERR_SHARED_UNAUTHORIZED",
+                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
                 message="JWT payload claims are invalid or incomplete.",
                 status_code=401,
             )
 
     def _decode_and_validate_jwt(self, token: str) -> dict[str, Any]:
-        """JWT 디코딩 및 예외 처리 래퍼"""
         try:
             return jwt.decode(token, self._jwt_secret_key, algorithms=[self._algorithm])
         except jwt.ExpiredSignatureError:
             logger.warning("Authentication failed: JWT token has expired.")
             raise BaseSystemException(
-                error_code="ERR_SHARED_UNAUTHORIZED",
+                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
                 message="JWT token has expired.",
                 status_code=401,
             )
@@ -105,7 +80,7 @@ class JwtAuthInterceptor:
                 f"Authentication failed: Invalid JWT token signature/structure ({str(e)})."
             )
             raise BaseSystemException(
-                error_code="ERR_SHARED_UNAUTHORIZED",
+                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
                 message="Invalid JWT token signature or payload format.",
                 status_code=401,
             )

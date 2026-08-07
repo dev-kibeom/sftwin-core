@@ -1,2 +1,5 @@
-FROM nginx:alpine
-# 임시 테스트용 기본 Dockerfile
+FROM nginx:1.25-alpine
+
+COPY infra/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80 443

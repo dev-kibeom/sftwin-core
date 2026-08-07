@@ -1,14 +1,9 @@
-"""
-@file procurement_router.py
-@description B2B 턴키 견적 및 3D 전문가 상담 세션 REST API 엔드포인트
-"""
-
-
 from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel
 
 from src.kpi_b2b.b2b_procurement.dtos.b2b_quote_dto import B2bQuoteDto
 from src.kpi_b2b.b2b_procurement.dtos.session_data_dto import SessionDataDto
+from src.kpi_b2b.dependencies import get_current_user, get_procurement_facade
 from src.kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
 from src.shared.dtos.global_response_dto import GlobalResponseDto
 from src.shared.security.user_context import UserContext
@@ -22,14 +17,6 @@ class QuoteRequest(BaseModel):
 
 class SessionRequest(BaseModel):
     baseline_id: str
-
-
-def get_current_user() -> UserContext:
-    pass
-
-
-def get_procurement_facade() -> ProcurementCommandFacade:
-    pass
 
 
 @router.post("/quotes", response_model=GlobalResponseDto[B2bQuoteDto])
