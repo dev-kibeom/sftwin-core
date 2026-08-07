@@ -11,7 +11,7 @@ from typing import Any
 from src.shared.dtos.log_dtos import LogContext
 from src.shared.dtos.sim_result_dto import SimResultDto
 
-# GTS 및 공통 포트 의존성 (가정된 경로)
+# GTS 및 공통 포트 의존성
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.logging.global_system_logger import GlobalSystemLogger
 from src.shared.security.user_context import UserContext
