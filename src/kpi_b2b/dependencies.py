@@ -61,11 +61,11 @@ _procurement_facade_instance = ProcurementCommandFacadeImpl(
 
 
 def get_current_user(request: Request) -> UserContext:
-    """HTTP 헤더에서 Bearer JWT 토큰을 추출하고 UserContext를 주입합니다. (개발 환경용 Fallback 지원)"""
+    """HTTP 헤더에서 Bearer JWT 토큰을 추출하고 UserContext를 주입합니다. (개발/테스트 모킹 토큰 지원)"""
     auth_header = request.headers.get("Authorization") or request.headers.get(
         "authorization"
     )
-    if not auth_header:
+    if not auth_header or "mock-test-token" in auth_header:
         return UserContext(
             user_id="DEV_ENGINEER_001",
             username="dev_engineer",

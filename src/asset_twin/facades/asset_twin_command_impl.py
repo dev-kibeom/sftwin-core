@@ -15,7 +15,6 @@ from src.asset_twin.twin_reconstruction.application.reconstruct_twin_usecase imp
     ReconstructTwinUseCase,
     TwinMetricsDto,
 )
-from src.shared.enums.user_role_enum import UserRoleEnum
 from src.shared.security.user_context import UserContext
 
 logger = logging.getLogger("asset_twin.facades.command_impl")
@@ -47,11 +46,5 @@ class AssetTwinCommandImpl(AssetTwinCommandFacade):
             f"[AssetTwinCommandImpl] Delegate reconstruct_twin for '{raw_data.baseline_name}'"
         )
         if ctx is None:
-            ctx = UserContext(
-                user_id="SYSTEM",
-                username="system",
-                company_id="SYSTEM_PUBLIC",
-                role=UserRoleEnum.SYSTEM_ADMIN,
-                accessible_factory_ids=[],
-            )
+            ctx = UserContext.create_system_context()
         return self._reconstruct_uc.execute(raw_data, ctx)

@@ -10,8 +10,10 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 
+from src.shared.dtos.audit_dtos import SecurityAuditEvent
 from src.shared.enums.audit_severity_enum import AuditSeverityEnum
 from src.shared.enums.user_role_enum import UserRoleEnum
+from src.shared.exceptions.error_codes import GlobalErrorCodes
 from src.shared.security.jwt_auth_interceptor import (
     BaseSystemException,
     JwtAuthInterceptor,
@@ -94,8 +96,8 @@ def test_tc_sec_03_expired_or_invalid_jwt(jwt_interceptor):
     with pytest.raises(BaseSystemException) as exc_info:
         jwt_interceptor.intercept(headers)
 
-    assert exc_info.value.error_code == "ERR_SHARED_UNAUTHORIZED", (
-        "Error code should be ERR_SHARED_UNAUTHORIZED."
+    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED, (
+        "Error code should be ERR_COMMON_UNAUTHORIZED."
     )
     assert exc_info.value.status_code == 401, "HTTP status code should be 401."
 
@@ -114,16 +116,18 @@ def test_tc_sec_04_insufficient_rbac_role(rbac_manager, mock_audit_logger):
             user_ctx, required_role=UserRoleEnum.FIELD_ENGINEER
         )
 
-    assert exc_info.value.error_code == "ERR_SHARED_FORBIDDEN", (
+    assert exc_info.value.error_code == GlobalErrorCodes.ERR_SHARED_FORBIDDEN, (
         "Error code should be ERR_SHARED_FORBIDDEN."
     )
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(
-        user_ctx=user_ctx,
-        action="ACCESS_DENIED",
-        target="API_ENDPOINT",
-        severity=AuditSeverityEnum.WARNING,
+        SecurityAuditEvent(
+            action="ACCESS_DENIED",
+            target="API_ENDPOINT",
+            severity=AuditSeverityEnum.WARNING,
+            user_ctx=user_ctx,
+        )
     )
 
 
@@ -141,14 +145,16 @@ def test_tc_sec_05_cross_company_access_violation(rbac_manager, mock_audit_logge
             user_ctx, target_company_id="COMP-B", target_resource="CAD_AAS_ASSET"
         )
 
-    assert exc_info.value.error_code == "ERR_SHARED_FORBIDDEN", (
-        "Error code should be ERR_SHARED_FORBIDDEN."
+    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_FORBIDDEN, (
+        "Error code should be ERR_COMMON_FORBIDDEN."
     )
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(
-        user_ctx=user_ctx,
-        action="ISOLATION_VIOLATION",
-        target="CAD_AAS_ASSET:COMP-B",
-        severity=AuditSeverityEnum.CRITICAL,
+        SecurityAuditEvent(
+            action="ISOLATION_VIOLATION",
+            target="CAD_AAS_ASSET:COMP-B",
+            severity=AuditSeverityEnum.CRITICAL,
+            user_ctx=user_ctx,
+        )
     )
