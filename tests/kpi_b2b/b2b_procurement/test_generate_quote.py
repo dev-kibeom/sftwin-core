@@ -36,19 +36,33 @@ def mock_redis_adapter():
 
 
 @pytest.fixture
-def target_system(mock_b2b_adapter, mock_mysql_repo, mock_redis_adapter):
+def mock_mirroring_uc():
+    """FCN-KPI-003에서 추가된 미러링 유즈케이스 모킹"""
+    return MagicMock()
+
+
+@pytest.fixture
+def target_system(
+    mock_b2b_adapter, mock_mysql_repo, mock_redis_adapter, mock_mirroring_uc
+):
     """테스트 대상 시스템(Facade & UseCase) 셋업 및 전역 로거 패치"""
     with (
         patch(
             "src.kpi_b2b.b2b_procurement.application.generate_quote_usecase.GlobalSystemLogger"
         ),
         patch("src.kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
+        patch("src.kpi_b2b.facades.procurement_command_facade.AuditLogger"),
     ):
         usecase = GenerateQuoteUseCase(
             b2b_adapter=mock_b2b_adapter, mysql_repo=mock_mysql_repo
         )
+
+        # FCN-KPI-003 변경사항을 반영하여 추가된 인자(mirroring_uc, baseline_repo) 주입
         facade = ProcurementCommandFacadeImpl(
-            generate_quote_uc=usecase, redis_adapter=mock_redis_adapter
+            generate_quote_uc=usecase,
+            mirroring_uc=mock_mirroring_uc,
+            redis_adapter=mock_redis_adapter,
+            baseline_repo=MagicMock(),
         )
 
         yield facade, mock_b2b_adapter, mock_mysql_repo, mock_redis_adapter
