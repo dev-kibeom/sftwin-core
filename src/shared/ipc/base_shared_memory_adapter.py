@@ -7,31 +7,34 @@ shm_fd 및 shm_ptr 포인터 손상 시 메모리 세그폴트 발생 전 Guard 
 ERR_SHARED_INTERNAL_ERROR 예외를 안전하게 던집니다.
 """
 
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
-
-logger = logging.getLogger("shared.ipc.base_shared_memory_adapter")
 
 
 class BaseSharedMemoryAdapter(ABC, Generic[T]):
     """POSIX Shared Memory Zero-Copy IPC 추상 기반 클래스"""
 
-    def __init__(self, shm_fd: int, shm_ptr: Any):
+    def __init__(
+        self, shm_fd: int, shm_ptr: Any, logger: GlobalSystemLogger | None = None
+    ):
         self._shm_fd = shm_fd
         self._shm_ptr = shm_ptr
+        self._logger = logger or GlobalSystemLogger(
+            component_name="BaseSharedMemoryAdapter"
+        )
 
     def write_to_shm(self, payload: T) -> bool:
         """
         Newspaper Structure: Zero-Copy Shared Memory 기록 인터페이스
         """
         self._validate_memory_mapping()
-        logger.info("Writing payload to POSIX Shared Memory segment.")
+        self._logger.info("Writing payload to POSIX Shared Memory segment.")
         return self._do_write(payload)
 
     def read_from_shm(self) -> T:
@@ -39,7 +42,7 @@ class BaseSharedMemoryAdapter(ABC, Generic[T]):
         Newspaper Structure: Zero-Copy Shared Memory 읽기 인터페이스
         """
         self._validate_memory_mapping()
-        logger.info("Reading payload from POSIX Shared Memory segment.")
+        self._logger.info("Reading payload from POSIX Shared Memory segment.")
         return self._do_read()
 
     @abstractmethod
@@ -60,7 +63,7 @@ class BaseSharedMemoryAdapter(ABC, Generic[T]):
         Newspaper Structure: 메모리 매핑 검증 헬퍼
         """
         if self._shm_fd < 0 or self._shm_ptr is None:
-            logger.error(
+            self._logger.error(
                 f"SHM Descriptor Fault: shm_fd={self._shm_fd}, shm_ptr={self._shm_ptr}"
             )
             raise BaseSystemException(

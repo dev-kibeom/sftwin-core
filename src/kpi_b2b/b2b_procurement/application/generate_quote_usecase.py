@@ -16,12 +16,17 @@ from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 
 class GenerateQuoteUseCase:
-    def __init__(self, b2b_adapter: BaseB2bMarketplacePort, mysql_repo: Any):
+    def __init__(
+        self,
+        b2b_adapter: BaseB2bMarketplacePort,
+        mysql_repo: Any,
+        logger: GlobalSystemLogger | None = None,
+    ):
         self._b2b_adapter = b2b_adapter
-        self._mysql_repo = mysql_repo  # BaseRepositoryAdapter 주입
-
-        self._logger = GlobalSystemLogger()
-        self._logger.component_name = "B2B_GenerateQuote_UseCase"
+        self._mysql_repo = mysql_repo
+        self._logger = logger or GlobalSystemLogger(
+            component_name="B2B_GenerateQuote_UseCase"
+        )
 
     def execute(self, asset_ids: list[str], company_id: str) -> B2bQuoteDto:
         log_ctx = LogContext(context={"asset_ids": asset_ids, "company_id": company_id})
@@ -42,13 +47,21 @@ class GenerateQuoteUseCase:
             )
 
         # Guard 3: 스키마 유효성 검증 (필수 필드 누락 및 타입 에러 방어)
-        try:
-            if (
-                "total_estimated_price" not in b2b_response
-                or "delivery_days_estimated" not in b2b_response
-            ):
-                raise ValueError("Missing required fields in B2B API response.")
+        if (
+            "total_estimated_price" not in b2b_response
+            or "delivery_days_estimated" not in b2b_response
+        ):
+            self._logger.warn(
+                "Invalid quote schema returned from Marketplace: missing fields.",
+                log_ctx,
+            )
+            raise BaseSystemException(
+                error_code="ERR_B2B_INVALID_QUOTE",
+                message="비정상적인 견적 응답입니다. 수동 확인이 필요합니다.",
+                status_code=422,
+            )
 
+        try:
             total_price = float(b2b_response["total_estimated_price"])
             delivery_days = int(b2b_response["delivery_days_estimated"])
         except Exception as e:
@@ -67,7 +80,7 @@ class GenerateQuoteUseCase:
             assets=asset_ids, total_price=total_price, days=delivery_days
         )
 
-        # MySQL DB 영속화 예외 가드 추가 (일관성 확보)
+        # MySQL DB 영속화 예외 가드
         try:
             if self._mysql_repo:
                 self._mysql_repo.save(quote_entity)
@@ -86,7 +99,6 @@ class GenerateQuoteUseCase:
             f"Successfully generated turnkey quote: {quote_entity.quote_id}", log_ctx
         )
 
-        # 응답 DTO 반환
         return B2bQuoteDto(
             quote_id=quote_entity.quote_id,
             total_estimated_price=quote_entity.total_estimated_price,

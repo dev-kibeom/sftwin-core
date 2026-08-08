@@ -8,8 +8,6 @@
 ===============================================================================
 """
 
-import logging
-
 from src.asset_twin.asset_library.application.manage_asset_usecase import (
     ManageAssetUseCase,
 )
@@ -20,28 +18,27 @@ from src.asset_twin.twin_reconstruction.application.get_layout_usecase import (
 )
 from src.shared.dtos.asset_dto import AASAssetDto
 from src.shared.enums.user_role_enum import UserRoleEnum
+from src.shared.exceptions.base_exception import BaseSystemException
+from src.shared.exceptions.error_codes import GlobalErrorCodes
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 from src.shared.security.user_context import UserContext
-
-logger = logging.getLogger("asset_twin.facades.query_impl")
 
 
 class AssetTwinQueryImpl(AssetTwinQueryFacade):
-    """
-    AssetTwinQueryFacade 구체 구현체
-    """
-
     def __init__(
         self,
         manage_asset_uc: ManageAssetUseCase,
         get_layout_uc: GetLayoutUseCase | None = None,
+        logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._manage_asset_uc = manage_asset_uc
         self._get_layout_uc = get_layout_uc
+        self._logger = logger or GlobalSystemLogger(component_name="AssetTwinQueryImpl")
 
     def get_asset_info(
         self, asset_id: str, ctx: UserContext | None = None
     ) -> AASAssetDto:
-        logger.info(
+        self._logger.info(
             f"[AssetTwinQueryImpl] Delegate get_asset_info for asset_id: {asset_id}"
         )
         ctx = self._get_fallback_context_if_none(ctx)
@@ -50,12 +47,14 @@ class AssetTwinQueryImpl(AssetTwinQueryFacade):
     def get_layout_data(
         self, baseline_id: str, ctx: UserContext | None = None
     ) -> LayoutRenderingDto:
-        logger.info(
+        self._logger.info(
             f"[AssetTwinQueryImpl] Delegate get_layout_data for baseline_id: {baseline_id}"
         )
         if self._get_layout_uc is None:
-            raise NotImplementedError(
-                "GetLayoutUseCase is not injected into AssetTwinQueryImpl."
+            raise BaseSystemException(
+                error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+                message="GetLayoutUseCase is not injected into AssetTwinQueryImpl.",
+                status_code=500,
             )
 
         ctx = self._get_fallback_context_if_none(ctx)

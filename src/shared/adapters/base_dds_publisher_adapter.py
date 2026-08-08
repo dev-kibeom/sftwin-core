@@ -6,24 +6,27 @@ FastDDS / OPC UA 초저지연 OT 통신 메시지 발행을 추상화하는 기�
 DDS DomainParticipant 및 Publisher 연결 세션 단절 시 ERR_EDGE_COMM_TIMEOUT 예외를 발송합니다.
 """
 
-import logging
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
-
-logger = logging.getLogger("shared.adapters.base_dds_publisher_adapter")
 
 
 class BaseDdsPublisherAdapter(ABC, Generic[T]):
     """OT 통신 FastDDS/OPC UA Publisher 추상 기반 클래스"""
 
-    def __init__(self, participant: Any, publisher: Any):
+    def __init__(
+        self, participant: Any, publisher: Any, logger: GlobalSystemLogger | None = None
+    ):
         self._participant = participant
         self._publisher = publisher
+        self._logger = logger or GlobalSystemLogger(
+            component_name="BaseDdsPublisherAdapter"
+        )
 
     def publish(self, topic: str, data: T) -> bool:
         """
@@ -31,7 +34,7 @@ class BaseDdsPublisherAdapter(ABC, Generic[T]):
         """
         # Guard Clause: DDS 연결 세션 유효성 최우선 검사
         if not self._check_connection_status():
-            logger.error(
+            self._logger.error(
                 f"DDS Session Invalid: Failed to publish message to topic '{topic}'."
             )
             raise BaseSystemException(
@@ -41,7 +44,7 @@ class BaseDdsPublisherAdapter(ABC, Generic[T]):
                 details={"topic": topic},
             )
 
-        logger.info(f"Publishing DDS message packet to topic '{topic}'")
+        self._logger.info(f"Publishing DDS message packet to topic '{topic}'")
         return self._do_publish(topic, data)
 
     @abstractmethod

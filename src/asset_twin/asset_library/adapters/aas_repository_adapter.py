@@ -8,64 +8,92 @@
 ===============================================================================
 """
 
-import logging
 from typing import Any
 
 from src.asset_twin.asset_library.application.manage_asset_usecase import IAASRepository
 from src.asset_twin.asset_library.domain.aas_asset import AASAsset
 from src.shared.adapters.base_repository_adapter import BaseRepositoryAdapter
-
-logger = logging.getLogger("asset_twin.aas_repository_adapter")
+from src.shared.dtos.log_dtos import LogContext
+from src.shared.exceptions.base_exception import BaseSystemException
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 
 class AASRepositoryAdapter(BaseRepositoryAdapter[AASAsset], IAASRepository):
     """
-    MySQL ORM/Session 기반 AAS 자산 저장소 어댑터 (In-Memory Mock Storage 지원 포인터 연동)
+    MySQL ORM/Session 기반 AAS 자산 저장소 어댑터
     """
 
-    def __init__(self, db_session: Any) -> None:
-        super().__init__(db_session)
-        # DB 세션이 dict 형태인 경우 메모리 시뮬레이션용으로 사용 (데모/PoC 지원)
+    def __init__(
+        self, db_session: Any, logger: GlobalSystemLogger | None = None
+    ) -> None:
+        # 1. 부모 클래스에 adapter_logger 전달하여 로깅 주체 일치
+        adapter_logger = logger or GlobalSystemLogger(
+            component_name="AASRepositoryAdapter"
+        )
+        super().__init__(db_session, logger=adapter_logger)
+
+        # DB 세션이 dict 형태인 경우 메모리 시뮬레이션용으로 사용
         self._in_memory_store: dict[str, AASAsset] = {} if db_session is None else None
 
-    def find_by_id(self, entity_id: str) -> AASAsset | None:
+    def find_by_id(
+        self, entity_id: str, log_ctx: LogContext | None = None
+    ) -> AASAsset | None:
         try:
-            logger.debug(f"[AASRepositoryAdapter] Finding asset by ID: {entity_id}")
+            # 2. debug() -> info() 전환 및 외부 log_ctx 전달받아 트레이싱 보존
+            self._logger.info(
+                f"[AASRepositoryAdapter] Finding asset by ID: {entity_id}",
+                log_ctx=log_ctx,
+            )
             if self._in_memory_store is not None:
                 return self._in_memory_store.get(entity_id)
 
-            # 실제 SQLAlchemy DB Session 처리 예시
-            # orm_record = self.db_session.query(AASAssetORM).filter_by(asset_id=entity_id, is_deleted=False).first()
-            # return self._map_to_domain(orm_record) if orm_record else None
             return None
+        except BaseSystemException:
+            raise
         except Exception as exc:
-            self._handle_driver_exception(exc, f"find_by_id(id={entity_id})")
+            self._handle_driver_exception(
+                exc=exc,
+                action_context=f"find_by_id(id={entity_id})",
+                log_ctx=log_ctx,
+            )
             return None
 
-    def save(self, entity: AASAsset) -> AASAsset:
+    def save(self, entity: AASAsset, log_ctx: LogContext | None = None) -> AASAsset:
         try:
-            logger.debug(f"[AASRepositoryAdapter] Saving AASAsset: {entity.asset_id}")
+            self._logger.info(
+                f"[AASRepositoryAdapter] Saving AASAsset: {entity.asset_id}",
+                log_ctx=log_ctx,
+            )
             if self._in_memory_store is not None:
                 self._in_memory_store[entity.asset_id] = entity
                 return entity
 
-            # 실제 DB Session commit 처리 예시
-            # orm_record = self._map_to_orm(entity)
-            # self.db_session.add(orm_record)
-            # self.db_session.commit()
             return entity
+        except BaseSystemException:
+            raise
         except Exception as exc:
-            self._handle_driver_exception(exc, f"save(asset_id={entity.asset_id})")
+            self._handle_driver_exception(
+                exc=exc,
+                action_context=f"save(asset_id={entity.asset_id})",
+                log_ctx=log_ctx,
+            )
             return entity
 
-    def delete(self, entity_id: str) -> bool:
+    def delete(self, entity_id: str, log_ctx: LogContext | None = None) -> bool:
         try:
-            entity = self.find_by_id(entity_id)
+            entity = self.find_by_id(entity_id, log_ctx=log_ctx)
             if entity:
                 entity.is_deleted = True
-                self.save(entity)
+                self.save(entity, log_ctx=log_ctx)
                 return True
             return False
+        except BaseSystemException:
+            # 3. 하위 메서드에서 이미 변환된 BaseSystemException은 그대로 상위 전파
+            raise
         except Exception as exc:
-            self._handle_driver_exception(exc, f"delete(id={entity_id})")
+            self._handle_driver_exception(
+                exc=exc,
+                action_context=f"delete(id={entity_id})",
+                log_ctx=log_ctx,
+            )
             return False

@@ -9,16 +9,14 @@
 ===============================================================================
 """
 
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 from src.shared.security.user_context import UserContext
-
-logger = logging.getLogger("asset_twin.get_layout_usecase")
 
 
 @dataclass
@@ -64,20 +62,25 @@ class GetLayoutUseCase:
     3D 레이아웃 렌더링 데이터 조회 무상태 유즈케이스
     """
 
-    def __init__(self, query_repository: ITwinQueryRepository) -> None:
+    def __init__(
+        self,
+        query_repository: ITwinQueryRepository,
+        logger: GlobalSystemLogger | None = None,
+    ) -> None:
         self._query_repository = query_repository
+        self._logger = logger or GlobalSystemLogger(component_name="GetLayoutUseCase")
 
     def execute(self, baseline_id: str, ctx: UserContext) -> LayoutRenderingDto:
         """
         3D 레이아웃 조회 및 RBAC/Tenant Isolation 권한 검증 오케스트레이션
         """
-        logger.info(
+        self._logger.info(
             f"[GetLayoutUseCase] Fetching layout data for baseline_id='{baseline_id}' by user='{ctx.user_id}'"
         )
 
         # Context Guard
         if not ctx:
-            logger.error("[GetLayoutUseCase] UserContext missing")
+            self._logger.error("[GetLayoutUseCase] UserContext missing")
             raise BaseSystemException(
                 error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
                 message="UserContext is required for authorization.",
@@ -89,7 +92,7 @@ class GetLayoutUseCase:
 
         # Guard Clause 1: 데이터 미존재 시 404 차단
         if not raw_data:
-            logger.warning(
+            self._logger.warning(
                 f"[GetLayoutUseCase] Baseline layout not found: '{baseline_id}'"
             )
             raise BaseSystemException(
@@ -101,7 +104,7 @@ class GetLayoutUseCase:
         # Guard Clause 2: 권한 검증 (Tenant Isolation & accessible_factory_ids)
         owner_company_id = raw_data.get("company_id", "")
         if not self.verify_access_rights(baseline_id, owner_company_id, ctx):
-            logger.warning(
+            self._logger.warning(
                 f"[GetLayoutUseCase] Access denied for baseline_id='{baseline_id}'. "
                 f"Owner company='{owner_company_id}', Request company='{ctx.company_id}'"
             )
@@ -130,7 +133,7 @@ class GetLayoutUseCase:
                 )
             )
 
-        logger.info(
+        self._logger.info(
             f"[GetLayoutUseCase] Successfully assembled LayoutRenderingDto with {len(mappings_list)} asset mappings."
         )
 

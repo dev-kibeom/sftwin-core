@@ -1,0 +1,27 @@
+repos:
+  # 1. 기본 파일 포맷팅 및 공백 검사
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=5000']
+
+  # 2. Python 코드 포맷터 (Black)
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3.10
+
+  # 3. 로컬 AST 아키텍처 규칙 검증 (커밋 차단 가드)
+  - repo: local
+    hooks:
+      - id: architectural-compliance
+        name: Architectural Standards & Compliance Check
+        entry: python3 -m pytest tests/shared/test_code_standards.py
+        language: system
+        pass_filenames: false
+        always_run: true

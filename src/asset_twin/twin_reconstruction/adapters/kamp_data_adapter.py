@@ -8,7 +8,6 @@
 ===============================================================================
 """
 
-import logging
 import os
 
 import pandas as pd
@@ -19,8 +18,7 @@ from src.asset_twin.twin_reconstruction.application.reconstruct_twin_usecase imp
 from src.asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
-
-logger = logging.getLogger("asset_twin.kamp_data_adapter")
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 
 class KampDataAdapter(IKampDataAdapter):
@@ -28,19 +26,22 @@ class KampDataAdapter(IKampDataAdapter):
     pandas chunksize 기반 KAMP 센서 로그 스트리밍 어댑터
     """
 
-    def __init__(self, memory_chunk_size: int = 10000) -> None:
+    def __init__(
+        self, memory_chunk_size: int = 10000, logger: GlobalSystemLogger | None = None
+    ) -> None:
         self._memory_chunk_size = memory_chunk_size
+        self._logger = logger or GlobalSystemLogger(component_name="KampDataAdapter")
 
     def parse_sensor_log(self, file_path: str) -> TwinBaseline:
         """
         RAM 16GB OOM 방지를 위한 chunksize 스트리밍 파싱 수행
         """
-        logger.info(
+        self._logger.info(
             f"[KampDataAdapter] Parsing KAMP log with chunksize={self._memory_chunk_size}: {file_path}"
         )
 
         if not os.path.exists(file_path):
-            logger.error(f"[KampDataAdapter] File not found: {file_path}")
+            self._logger.error(f"[KampDataAdapter] File not found: {file_path}")
             raise BaseSystemException(
                 error_code=GlobalErrorCodes.ERR_TWIN_KAMP_PARSE_FAIL,
                 message=f"KAMP sensor log file not found at '{file_path}'.",
@@ -77,7 +78,7 @@ class KampDataAdapter(IKampDataAdapter):
             )
 
         except Exception as exc:
-            logger.error(
+            self._logger.error(
                 f"[KampDataAdapter] Exception during KAMP log streaming parsing: {str(exc)}"
             )
             raise BaseSystemException(

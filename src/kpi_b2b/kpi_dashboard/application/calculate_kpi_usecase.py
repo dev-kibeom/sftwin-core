@@ -15,13 +15,16 @@ from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 
 class CalculateKpiUseCase:
-    def __init__(self, ts_adapter: BaseTimeSeriesPort):
+    def __init__(
+        self,
+        ts_adapter: BaseTimeSeriesPort,
+        logger: GlobalSystemLogger | None = None,
+    ):
         self._ts_adapter = ts_adapter
         self._oee_calculator = OeeCalculator()
-
-        # GTS 4.2 JSON 구조화 시스템 로깅 규약 적용
-        self._logger = GlobalSystemLogger()
-        self._logger.component_name = "KpiDashboard_UseCase"
+        self._logger = logger or GlobalSystemLogger(
+            component_name="KpiDashboard_UseCase"
+        )
 
     def execute(self, sim_id: str, company_id: str) -> KpiReportDto:
         log_ctx = LogContext(context={"sim_id": sim_id, "company_id": company_id})
@@ -29,7 +32,6 @@ class CalculateKpiUseCase:
             f"Initiating KPI (OEE) calculation for simulation: {sim_id}", log_ctx
         )
 
-        # 1. 시뮬레이션 로그 조회 및 타임아웃(DB 예외) 처리 Guard
         try:
             logs = self._ts_adapter.fetch_simulation_logs(sim_id)
         except Exception as e:
@@ -44,7 +46,6 @@ class CalculateKpiUseCase:
                 status_code=500,
             )
 
-        # 2. 시뮬레이션 로그 존재 유무 Guard
         if not logs:
             self._logger.warn(f"No simulation logs found for {sim_id}", log_ctx)
             raise BaseSystemException(
@@ -53,7 +54,6 @@ class CalculateKpiUseCase:
                 status_code=404,
             )
 
-        # 3. 데이터 파싱 (시뮬레이션 로그 내 누적 데이터 모사)
         log_count = len(logs)
         (
             uptime,
@@ -62,7 +62,14 @@ class CalculateKpiUseCase:
             actual_cycle_sum,
             good_count,
             total_count,
-        ) = 0.0, 0.0, 0.0, 0.0, 0, 0
+        ) = (
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
+            0,
+        )
 
         for log in logs:
             uptime += log.get("uptime", 0.0)
@@ -75,7 +82,6 @@ class CalculateKpiUseCase:
         ideal_cycle = ideal_cycle_sum / log_count if log_count > 0 else 0.0
         actual_cycle = actual_cycle_sum / log_count if log_count > 0 else 1.0
 
-        # 4. 순수 도메인 로직 (OeeCalculator) 위임
         availability = self._oee_calculator.calculate_availability(uptime, total_time)
         performance = self._oee_calculator.calculate_performance(
             ideal_cycle, actual_cycle
@@ -85,18 +91,17 @@ class CalculateKpiUseCase:
         overall_oee = self._oee_calculator.compute_overall_oee(
             availability, performance, quality
         )
-        teep = overall_oee * 0.85  # TEEP 임의 보정 로직 (가동률 반영)
+        teep = overall_oee * 0.85
 
         self._logger.info(
             f"Successfully computed OEE ({overall_oee:.4f}) for {sim_id}", log_ctx
         )
 
-        # 5. DTO 조립 및 반환
         return KpiReportDto(
             report_id=f"RPT-{uuid.uuid4()}",
             oee=round(overall_oee, 4),
             teep=round(teep, 4),
             fpy=round(quality, 4),
             generated_at=datetime.now(timezone.utc).isoformat(),
-            estimated_roi_months=18.5,  # ROI 산출 모델 적용 (stub)
+            estimated_roi_months=18.5,
         )

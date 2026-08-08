@@ -8,19 +8,18 @@
 ===============================================================================
 """
 
-import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
 from src.asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
+from src.shared.dtos.log_dtos import LogContext
 from src.shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 from src.shared.security.user_context import UserContext
-
-logger = logging.getLogger("asset_twin.reconstruct_twin_usecase")
 
 
 @dataclass
@@ -48,9 +47,6 @@ class IKampDataAdapter(ABC):
 class VerifyPrecisionUseCase:
     @staticmethod
     def verify_sync_error(baseline: TwinBaseline, tolerance: float = 5.0) -> bool:
-        logger.info(
-            f"[VerifyPrecisionUseCase] Verifying error_rate={baseline.sync_error_rate}% against tolerance={tolerance}%"
-        )
         return baseline.sync_error_rate <= tolerance
 
 
@@ -60,18 +56,28 @@ class ReconstructTwinUseCase:
         kamp_adapter: IKampDataAdapter,
         repository: Any,
         default_tolerance: float = 5.0,
+        logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._kamp_adapter = kamp_adapter
         self._repository = repository
         self._default_tolerance = default_tolerance
+        self._logger = logger or GlobalSystemLogger(
+            component_name="ReconstructTwinUseCase"
+        )
 
     def execute(self, raw_data: RawDataDto, ctx: UserContext) -> TwinMetricsDto:
-        logger.info(
-            f"[ReconstructTwinUseCase] Starting twin reconstruction for '{raw_data.baseline_name}' by '{ctx.user_id}'"
+        log_ctx = LogContext(
+            context={
+                "baseline_name": raw_data.baseline_name,
+                "user_id": ctx.user_id if ctx else None,
+            }
+        )
+        self._logger.info(
+            f"Starting twin reconstruction for '{raw_data.baseline_name}'", log_ctx
         )
 
         if not ctx or not ctx.company_id:
-            logger.error("[ReconstructTwinUseCase] UserContext or company_id missing")
+            self._logger.error("UserContext or company_id missing", log_ctx)
             raise BaseSystemException(
                 error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
                 message="UserContext with valid company_id is required.",
@@ -84,17 +90,16 @@ class ReconstructTwinUseCase:
         baseline.created_by = ctx.username
 
         error_rate = baseline.calculate_precision()
-        logger.info(
-            f"[ReconstructTwinUseCase] Calculated sync_error_rate: {error_rate}%"
-        )
+        self._logger.info(f"Calculated sync_error_rate: {error_rate}%", log_ctx)
 
         is_passed = VerifyPrecisionUseCase.verify_sync_error(
             baseline, self._default_tolerance
         )
 
         if not is_passed:
-            logger.warning(
-                f"[ReconstructTwinUseCase] Precision tolerance exceeded: {error_rate}% > {self._default_tolerance}%"
+            self._logger.warn(
+                f"Precision tolerance exceeded: {error_rate}% > {self._default_tolerance}%",
+                log_ctx,
             )
             baseline.update_status(TwinSyncStatusEnum.TOLERANCE_EXCEEDED)
             self._repository.save_baseline(baseline)
@@ -111,10 +116,11 @@ class ReconstructTwinUseCase:
         baseline.update_status(TwinSyncStatusEnum.COMPLETED)
         saved_baseline = self._repository.save_baseline(baseline)
 
-        self._cleanup_temp_files(raw_data.source_log_path)
+        self._cleanup_temp_files(raw_data.source_log_path, log_ctx)
 
-        logger.info(
-            f"[ReconstructTwinUseCase] Twin reconstruction successfully completed: {saved_baseline.baseline_id}"
+        self._logger.info(
+            f"Twin reconstruction successfully completed: {saved_baseline.baseline_id}",
+            log_ctx,
         )
 
         return TwinMetricsDto(
@@ -126,14 +132,15 @@ class ReconstructTwinUseCase:
             evaluated_at=saved_baseline.updated_at,
         )
 
-    def _cleanup_temp_files(self, file_path: str) -> None:
+    def _cleanup_temp_files(self, file_path: str, log_ctx: LogContext) -> None:
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
-                logger.info(
-                    f"[ReconstructTwinUseCase] Cleaned up temporary log file: {file_path}"
+                self._logger.info(
+                    f"Cleaned up temporary log file: {file_path}", log_ctx
                 )
         except Exception as exc:
-            logger.warning(
-                f"[ReconstructTwinUseCase] Failed to cleanup file '{file_path}': {str(exc)}"
+            log_ctx.exc = exc
+            self._logger.warn(
+                f"Failed to cleanup file '{file_path}': {str(exc)}", log_ctx
             )

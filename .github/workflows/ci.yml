@@ -12,8 +12,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # 1. 코드 린트 및 무결성/단위 테스트
-  lint-and-test:
+  # 1. 린트, 아키텍처 표준(AST) 및 인프라 설정 검증
+  lint-and-architecture:
+    name: Lint & Architecture Compliance
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Repository
@@ -23,37 +24,103 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+          cache: "pip"
 
-      - name: Install Dependencies
+      - name: Install Lint & Guard Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest cryptography
+          pip install flake8 pytest
 
       - name: Lint with Flake8
         run: |
           flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Validate Architectural Compliance (AST Static Check)
+        run: |
+          python -m pytest tests/shared/test_code_standards.py -v
+
       - name: Create Dummy Env File for Validation
         run: |
           if [ -f ".env.example" ]; then
             cp .env.example .env.local
+          else
+            touch .env.local .env.shared
           fi
+
       - name: Validate Docker Compose Configuration
         run: |
           if [ -f "docker-compose.yml" ]; then
             docker compose config
           else
-            echo "docker-compose.yml check skipped (not created yet)."
+            echo "docker-compose.yml check skipped."
           fi
 
-  # 2. GHCR 컨테이너 이미지 빌드 및 Push (Push Event 시에만 수행)
+  # 2. Python 단위 및 통합 테스트 스위트
+  python-test-suite:
+    name: Python Service Tests
+    needs: lint-and-architecture
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install Application Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn pydantic pyjwt cryptography sqlalchemy pandas redis influxdb-client httpx pytest pytest-cov pytest-asyncio
+
+      - name: Run Pytest Suite with Coverage
+        env:
+          PYTHONPATH: .
+        run: |
+          pytest --cov=src --cov-report=term-missing tests/
+
+  # 3. C++17 Native 에지 제어 및 시뮬레이션 빌드/테스트
+  cpp-test-suite:
+    name: C++17 Native Tests
+    needs: lint-and-architecture
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install C++ Toolchain & Libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libspdlog-dev protobuf-compiler libprotobuf-dev libgtest-dev
+
+      - name: Execute C++ Unit Tests
+        run: |
+          chmod +x run_cpp_tests.sh
+          ./run_cpp_tests.sh
+
+  # 4. GHCR 컨테이너 이미지 빌드 및 Push (Push/Tag 이벤트 시에만 실행)
   build-and-push-ghcr:
-    needs: lint-and-test
+    name: Build & Push GHCR Images
+    needs: [python-test-suite, cpp-test-suite]
     if: github.event_name == 'push'
     runs-on: ubuntu-22.04
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        service:
+          - name: asset-svc
+            dockerfile: src/asset_twin/Dockerfile
+          - name: sim-svc
+            dockerfile: src/simulation/Dockerfile
+          - name: kpi-svc
+            dockerfile: src/kpi_b2b/Dockerfile
+          - name: nginx
+            dockerfile: infra/nginx/Dockerfile
 
     steps:
       - name: Checkout Repository
@@ -73,18 +140,17 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service.name }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-
             type=semver,pattern={{version}}
 
-      # 메인 서비스 이미지 빌드 준비 (Step 3에서 docker-compose 구축 후 연동)
-      - name: Build and Push Demo Image
+      - name: Build and Push Service Image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./infra/nginx/Dockerfile # 예시/임시 경로
+          file: ${{ matrix.service.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

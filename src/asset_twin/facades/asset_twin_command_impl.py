@@ -8,27 +8,27 @@
 ===============================================================================
 """
 
-import logging
+from abc import ABC, abstractmethod
 
 from src.asset_twin.twin_reconstruction.application.reconstruct_twin_usecase import (
     RawDataDto,
     ReconstructTwinUseCase,
     TwinMetricsDto,
 )
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 from src.shared.security.user_context import UserContext
 
-logger = logging.getLogger("asset_twin.facades.command_impl")
 
-
-class AssetTwinCommandFacade:
+class AssetTwinCommandFacade(ABC):
     """
     명령 전용 파사드 인터페이스
     """
 
+    @abstractmethod
     def reconstruct_twin(
         self, raw_data: RawDataDto, ctx: UserContext | None = None
     ) -> TwinMetricsDto:
-        raise NotImplementedError()
+        pass
 
 
 class AssetTwinCommandImpl(AssetTwinCommandFacade):
@@ -36,13 +36,20 @@ class AssetTwinCommandImpl(AssetTwinCommandFacade):
     AssetTwinCommandFacade 구현체
     """
 
-    def __init__(self, reconstruct_uc: ReconstructTwinUseCase) -> None:
+    def __init__(
+        self,
+        reconstruct_uc: ReconstructTwinUseCase,
+        logger: GlobalSystemLogger | None = None,
+    ) -> None:
         self._reconstruct_uc = reconstruct_uc
+        self._logger = logger or GlobalSystemLogger(
+            component_name="AssetTwinCommandImpl"
+        )
 
     def reconstruct_twin(
         self, raw_data: RawDataDto, ctx: UserContext | None = None
     ) -> TwinMetricsDto:
-        logger.info(
+        self._logger.info(
             f"[AssetTwinCommandImpl] Delegate reconstruct_twin for '{raw_data.baseline_name}'"
         )
         if ctx is None:

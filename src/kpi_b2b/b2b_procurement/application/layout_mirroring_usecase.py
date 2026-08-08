@@ -13,10 +13,15 @@ from src.shared.logging.global_system_logger import GlobalSystemLogger
 
 
 class LayoutMirroringUseCase:
-    def __init__(self, mysql_repo: Any):
-        self._mysql_repo = mysql_repo  # BaseRepositoryAdapter 추상 포트 주입
-        self._logger = GlobalSystemLogger()
-        self._logger.component_name = "LayoutMirroring_UseCase"
+    def __init__(
+        self,
+        mysql_repo: Any,
+        logger: GlobalSystemLogger | None = None,
+    ):
+        self._mysql_repo = mysql_repo
+        self._logger = logger or GlobalSystemLogger(
+            component_name="LayoutMirroring_UseCase"
+        )
 
     def execute(self, baseline_id: str, company_id: str) -> SessionDataDto:
         log_ctx = LogContext(
@@ -26,12 +31,11 @@ class LayoutMirroringUseCase:
             "Initiating secure 3D mirroring expert session creation.", log_ctx
         )
 
-        # 1. 도메인 엔티티 생성 및 1회성 토큰 발급
         session_entity = ExpertSession.create_new_session(baseline_id=baseline_id)
 
-        # 2. DB 영속화 및 인프라 에러 마스킹 (Guard: DB 단절 방어)
         try:
-            self._mysql_repo.save(session_entity)
+            if self._mysql_repo:
+                self._mysql_repo.save(session_entity)
         except Exception as e:
             log_ctx.exc = e
             self._logger.error(
@@ -48,7 +52,6 @@ class LayoutMirroringUseCase:
             log_ctx,
         )
 
-        # 3. 응답 DTO 반환 (TTL 4시간 = 14400초 명시)
         return SessionDataDto(
             session_id=session_entity.session_id,
             session_token=session_entity.session_token,

@@ -8,7 +8,6 @@
 ===============================================================================
 """
 
-import logging
 from abc import ABC, abstractmethod
 
 from src.asset_twin.asset_library.domain.aas_asset import AASAsset
@@ -16,9 +15,8 @@ from src.shared.dtos.asset_dto import AASAssetDto
 from src.shared.enums.asset_type_enum import AssetTypeEnum
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.error_codes import GlobalErrorCodes
+from src.shared.logging.global_system_logger import GlobalSystemLogger
 from src.shared.security.user_context import UserContext
-
-logger = logging.getLogger("asset_twin.manage_asset_usecase")
 
 
 class IAASRepository(ABC):
@@ -40,20 +38,23 @@ class ManageAssetUseCase:
     Stateless 애플리케이션 유즈케이스
     """
 
-    def __init__(self, repository: IAASRepository) -> None:
+    def __init__(
+        self, repository: IAASRepository, logger: GlobalSystemLogger | None = None
+    ) -> None:
         self._repository = repository
+        self._logger = logger or GlobalSystemLogger(component_name="ManageAssetUseCase")
 
     def register_asset(self, asset_dto: AASAssetDto, ctx: UserContext) -> str:
         """
         신규 자산 동적 등록 오케스트레이션
         """
-        logger.info(
+        self._logger.info(
             f"[ManageAssetUseCase] Registering asset '{asset_dto.asset_name}' by user '{ctx.user_id}'"
         )
 
         # Context Guard
         if not ctx or not ctx.company_id:
-            logger.error(
+            self._logger.error(
                 "[ManageAssetUseCase] UserContext or company_id missing in request"
             )
             raise BaseSystemException(
@@ -66,7 +67,7 @@ class ManageAssetUseCase:
         try:
             asset_enum = AssetTypeEnum(asset_dto.asset_type)
         except ValueError as e:
-            logger.warning(
+            self._logger.warning(
                 f"[ManageAssetUseCase] Invalid asset type: {asset_dto.asset_type}"
             )
             raise BaseSystemException(
@@ -92,7 +93,7 @@ class ManageAssetUseCase:
 
         # 저장소 영속화
         saved_entity = self._repository.save(domain_entity)
-        logger.info(
+        self._logger.info(
             f"[ManageAssetUseCase] Asset successfully registered with ID: {saved_entity.asset_id}"
         )
 
@@ -102,7 +103,7 @@ class ManageAssetUseCase:
         """
         AAS 자산 단건 조회 및 Tenant Isolation 검증
         """
-        logger.info(
+        self._logger.info(
             f"[ManageAssetUseCase] Fetching asset '{asset_id}' for company '{ctx.company_id}'"
         )
 
@@ -110,7 +111,7 @@ class ManageAssetUseCase:
 
         # Guard Clause: 자산 미존재 시 404 차단
         if not entity or entity.is_deleted:
-            logger.warning(
+            self._logger.warning(
                 f"[ManageAssetUseCase] Asset not found or deleted: {asset_id}"
             )
             raise BaseSystemException(
@@ -121,7 +122,7 @@ class ManageAssetUseCase:
 
         # Guard Clause: 테넌트 격리 위반 시 404로 은닉 차단
         if entity.company_id != ctx.company_id:
-            logger.warning(
+            self._logger.warning(
                 f"[ManageAssetUseCase] Tenant isolation violation: Asset company '{entity.company_id}' != Request company '{ctx.company_id}'"
             )
             raise BaseSystemException(
