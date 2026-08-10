@@ -16,6 +16,9 @@ jobs:
   lint-and-architecture:
     name: Lint & Architecture Compliance
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: sftwin-core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -61,6 +64,9 @@ jobs:
     name: Python Service Tests
     needs: lint-and-architecture
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: sftwin-core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -87,6 +93,9 @@ jobs:
     name: C++17 Native Tests
     needs: lint-and-architecture
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: sftwin-core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -114,13 +123,13 @@ jobs:
       matrix:
         service:
           - name: asset-svc
-            dockerfile: src/asset_twin/Dockerfile
+            dockerfile: sftwin-core/src/asset_twin/Dockerfile
           - name: sim-svc
-            dockerfile: src/simulation/Dockerfile
+            dockerfile: sftwin-core/src/simulation/Dockerfile
           - name: kpi-svc
-            dockerfile: src/kpi_b2b/Dockerfile
+            dockerfile: sftwin-core/src/kpi_b2b/Dockerfile
           - name: nginx
-            dockerfile: infra/nginx/Dockerfile
+            dockerfile: sftwin-core/infra/nginx/Dockerfile
 
     steps:
       - name: Checkout Repository

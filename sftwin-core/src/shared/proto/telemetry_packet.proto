@@ -1,0 +1,19 @@
+syntax = "proto3";
+package sftwin.telemetry;
+
+message DetectedObject {
+  string class_name = 1;      // 감지된 객체 클래스 (예: "Worker", "AMR")
+  float confidence = 2;       // AI 신뢰도 점수 (0.0 ~ 1.0)
+  repeated float bbox = 3;    // Bounding Box 좌표 [x_min, y_min, width, height]
+}
+
+message TelemetryPacketProto {
+  string device_id = 1;               // 현장 로봇/AMR/설비 고유 식별자
+  int64 timestamp_ns = 2;             // 나노초 단위 Epoch Timestamp
+  repeated double joint_positions = 3;// 관절별 위치 좌표 배열 (rad 또는 mm)
+  repeated double joint_torques = 4;  // 관절별 실시간 토크/전류 측정값
+  string packml_state = 5;            // PackML 설비 상태 지표 (PackMLStateEnum)
+  bool is_warning = 6;                // 안전 임계치 및 AI 이상 포착 플래그
+  repeated DetectedObject detected_objects = 7; // TensorRT YOLO 비전 감지 결과
+  optional float anomaly_score = 8;             // PyTorch Autoencoder 시계열 복원 오차
+}

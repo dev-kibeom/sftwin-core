@@ -21,7 +21,7 @@ repos:
     hooks:
       - id: architectural-compliance
         name: Architectural Standards & Compliance Check
-        entry: python3 -m pytest tests/shared/test_code_standards.py
+        entry: python3 -m pytest sftwin-core/tests/shared/test_code_standards.py
         language: system
         pass_filenames: false
         always_run: true

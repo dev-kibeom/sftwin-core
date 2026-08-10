@@ -4,16 +4,17 @@
 *.key
 *.pfx
 
-# documents
-documents/*.pdf
+# documents (모든 하위 디렉토리 내 PDF 포함)
+**/documents/*.pdf
 
-# Host Persistent Data Directory (IDD v4.0 3.2절)
-data/assets/*
-data/sim_packages/*
-data/cloud_db/*
-data/redis/*
-data/influxdb/*
-data/logs/*
+# Host Persistent Data Directory
+**/data/assets/*
+**/data/sim_packages/*
+**/data/cloud_db/*
+**/data/redis/*
+**/data/influxdb/*
+**/data/logs/*
+!**/data/**/.gitkeep
 
 # Keep data folder structure via .gitkeep
 !data/**/.gitkeep
