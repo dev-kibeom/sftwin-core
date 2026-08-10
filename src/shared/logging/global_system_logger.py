@@ -1,8 +1,7 @@
 """
 Global System Logger Implementation
 
-설계 의도:
-GTS 4.3절 구조화 로깅(Structured Logging) 규격을 준수하여,
+GTS의 구조화 로깅(Structured Logging) 규격을 준수하여,
 전역 trace_id와 연동된 JSON 포맷의 시스템 로그를 생성 및 출력합니다.
 """
 
@@ -27,39 +26,26 @@ class GlobalSystemLogger:
         self.component_name = component_name
         self._logger = logging.getLogger(logger_name)
 
-    def info(
-        self, message: str, log_ctx: LogContext | None = None
-    ) -> dict[str, Any]:
-        """
-        INFO 레벨 구조화 로그 출력
-        Newspaper Structure: 고수준 로깅 인터페이스
-        """
+    def info(self, message: str, log_ctx: LogContext | None = None) -> dict[str, Any]:
+        """INFO 레벨 구조화 로그 출력"""
         return self._format_and_dispatch("INFO", message, log_ctx or LogContext())
 
-    def warn(
-        self, message: str, log_ctx: LogContext | None = None
-    ) -> dict[str, Any]:
-        """
-        WARN 레벨 구조화 로그 출력
-        Newspaper Structure: 고수준 로깅 인터페이스
-        """
+    def warn(self, message: str, log_ctx: LogContext | None = None) -> dict[str, Any]:
+        """WARN 레벨 구조화 로그 출력"""
         return self._format_and_dispatch("WARN", message, log_ctx or LogContext())
 
-    def error(
-        self, message: str, log_ctx: LogContext | None = None
-    ) -> dict[str, Any]:
-        """
-        ERROR 레벨 구조화 로그 출력
-        Newspaper Structure: 고수준 로깅 인터페이스
-        """
+    def debug(self, message: str, log_ctx: LogContext | None = None) -> dict[str, Any]:
+        """DEBUG 레벨 구조화 로그 출력"""
+        return self._format_and_dispatch("DEBUG", message, log_ctx or LogContext())
+
+    def error(self, message: str, log_ctx: LogContext | None = None) -> dict[str, Any]:
+        """ERROR 레벨 구조화 로그 출력"""
         return self._format_and_dispatch("ERROR", message, log_ctx or LogContext())
 
     def _format_and_dispatch(
         self, level: str, message: str, log_ctx: LogContext
     ) -> dict[str, Any]:
-        """
-        Newspaper Structure: 구조화 JSON 로깅 생성 및 디스패치
-        """
+        """구조화 JSON 로깅 생성 및 디스패치"""
         log_payload = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "log_level": level,
@@ -86,6 +72,8 @@ class GlobalSystemLogger:
             self._logger.info(formatted_json)
         elif level in ("WARN", "WARNING"):
             self._logger.warning(formatted_json)
+        elif level == "DEBUG":
+            self._logger.debug(formatted_json)
         elif level == "ERROR":
             self._logger.error(formatted_json)
         else:
