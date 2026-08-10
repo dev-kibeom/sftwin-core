@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 
 from src.kpi_b2b.dependencies import get_current_user, get_kpi_facade
 from src.kpi_b2b.facades.kpi_query_facade import KpiQueryFacade
-from src.kpi_b2b.kpi_dashboard.dtos.kpi_report_dto import KpiReportDto
+from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
+    KpiReportDto,
+)
 from src.shared.dtos.global_response_dto import GlobalResponseDto
 from src.shared.security.user_context import UserContext
 

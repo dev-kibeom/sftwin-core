@@ -1,13 +1,14 @@
 import os
+
 from fastapi import Request
 
-from src.kpi_b2b.b2b_procurement.adapters.b2b_marketplace_adapter import (
+from src.kpi_b2b.b2b_procurement.adapters.outbound.b2b_marketplace_adapter import (
     B2bMarketplaceAdapter,
 )
-from src.kpi_b2b.b2b_procurement.application.generate_quote_usecase import (
+from src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.layout_mirroring_usecase import (
+from src.kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
     LayoutMirroringUseCase,
 )
 from src.kpi_b2b.facades.kpi_query_facade import KpiQueryFacade, KpiQueryFacadeImpl
@@ -15,10 +16,10 @@ from src.kpi_b2b.facades.procurement_command_facade import (
     ProcurementCommandFacade,
     ProcurementCommandFacadeImpl,
 )
-from src.kpi_b2b.kpi_dashboard.adapters.influxdb_timeseries_adapter import (
+from src.kpi_b2b.kpi_dashboard.adapters.outbound.influxdb_timeseries_adapter import (
     InfluxDbTimeSeriesAdapter,
 )
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi_usecase import (
+from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
 from src.shared.adapters.redis_cache_adapter import RedisCacheAdapter

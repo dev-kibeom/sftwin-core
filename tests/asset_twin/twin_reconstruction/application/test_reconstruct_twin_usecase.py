@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.asset_twin.twin_reconstruction.application.reconstruct_twin_usecase import (
+from src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     IKampDataAdapter,
     RawDataDto,
     ReconstructTwinUseCase,

@@ -8,9 +8,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.kpi_b2b.facades.kpi_query_facade import KpiQueryFacadeImpl
-from src.kpi_b2b.kpi_dashboard.adapters.base_time_series_port import BaseTimeSeriesPort
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi_usecase import (
+from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
+)
+from src.kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
+    BaseTimeSeriesPort,
 )
 from src.shared.enums.user_role_enum import UserRoleEnum
 from src.shared.exceptions.base_exception import BaseSystemException
@@ -35,7 +37,7 @@ def mock_sim_repo():
 @pytest.fixture
 def target_system(mock_ts_adapter, mock_rbac_manager, mock_sim_repo):
     with patch(
-        "src.kpi_b2b.kpi_dashboard.application.calculate_kpi_usecase.GlobalSystemLogger"
+        "src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase.GlobalSystemLogger"
     ):
         usecase = CalculateKpiUseCase(ts_adapter=mock_ts_adapter)
         facade = KpiQueryFacadeImpl(

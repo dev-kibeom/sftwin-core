@@ -34,3 +34,5 @@ Cloud Simulation Service에서 Edge Control 엔진으로 gRPC(Port 50051) 통신
 
 - **SHA-256 Checksum:** 전송 중 제어 스크립트 파일의 변조/손상 여부 검증.
 - **HMAC-SHA256 디지털 서명:** gRPC 헤더 내 대칭키 기반 디지털 서명을 첨부하여 Edge Core 진입 시 무결성 검증을 통과한 패킷만 디코딩 및 실행.
+
+ruff check . --select UP,F401,I --fix

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.kpi_b2b.b2b_procurement.application.generate_quote_usecase import (
+from src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
 from src.kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuoteStatusEnum
@@ -27,7 +27,7 @@ def target_system():
 
     with (
         patch(
-            "src.kpi_b2b.b2b_procurement.application.generate_quote_usecase.GlobalSystemLogger"
+            "src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase.GlobalSystemLogger"
         ),
         patch("src.kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
     ):

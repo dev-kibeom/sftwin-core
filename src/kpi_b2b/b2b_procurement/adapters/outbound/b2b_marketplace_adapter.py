@@ -5,7 +5,7 @@
 
 from typing import Any
 
-from src.kpi_b2b.b2b_procurement.adapters.base_b2b_marketplace_port import (
+from src.kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace_port import (
     BaseB2bMarketplacePort,
 )
 from src.shared.dtos.log_dtos import LogContext

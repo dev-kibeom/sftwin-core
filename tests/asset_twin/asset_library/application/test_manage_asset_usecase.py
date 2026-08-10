@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.asset_twin.asset_library.application.manage_asset_usecase import (
+from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     IAASRepository,
     ManageAssetUseCase,
 )

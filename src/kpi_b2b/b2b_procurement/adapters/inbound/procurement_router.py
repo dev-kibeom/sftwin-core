@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel
 
-from src.kpi_b2b.b2b_procurement.dtos.b2b_quote_dto import B2bQuoteDto
-from src.kpi_b2b.b2b_procurement.dtos.session_data_dto import SessionDataDto
+from src.kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+    B2bQuoteDto,
+)
+from src.kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
+    SessionDataDto,
+)
 from src.kpi_b2b.dependencies import get_current_user, get_procurement_facade
 from src.kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
 from src.shared.dtos.global_response_dto import GlobalResponseDto

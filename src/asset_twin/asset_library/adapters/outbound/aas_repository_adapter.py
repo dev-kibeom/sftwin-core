@@ -10,7 +10,9 @@
 
 from typing import Any
 
-from src.asset_twin.asset_library.application.manage_asset_usecase import IAASRepository
+from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+    IAASRepository,
+)
 from src.asset_twin.asset_library.domain.aas_asset import AASAsset
 from src.shared.adapters.base_repository_adapter import BaseRepositoryAdapter
 from src.shared.dtos.log_dtos import LogContext

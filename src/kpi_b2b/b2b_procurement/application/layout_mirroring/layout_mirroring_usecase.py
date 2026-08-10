@@ -5,8 +5,10 @@
 
 from typing import Any
 
+from src.kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
+    SessionDataDto,
+)
 from src.kpi_b2b.b2b_procurement.domain.expert_session import ExpertSession
-from src.kpi_b2b.b2b_procurement.dtos.session_data_dto import SessionDataDto
 from src.shared.dtos.log_dtos import LogContext
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.logging.global_system_logger import GlobalSystemLogger

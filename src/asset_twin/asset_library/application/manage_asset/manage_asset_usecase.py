@@ -67,7 +67,7 @@ class ManageAssetUseCase:
         try:
             asset_enum = AssetTypeEnum(asset_dto.asset_type)
         except ValueError as e:
-            self._logger.warning(
+            self._logger.warn(
                 f"[ManageAssetUseCase] Invalid asset type: {asset_dto.asset_type}"
             )
             raise BaseSystemException(
@@ -122,7 +122,7 @@ class ManageAssetUseCase:
 
         # Guard Clause: 테넌트 격리 위반 시 404로 은닉 차단
         if entity.company_id != ctx.company_id:
-            self._logger.warning(
+            self._logger.warn(
                 f"[ManageAssetUseCase] Tenant isolation violation: Asset company '{entity.company_id}' != Request company '{ctx.company_id}'"
             )
             raise BaseSystemException(

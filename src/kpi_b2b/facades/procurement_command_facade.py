@@ -6,14 +6,18 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.kpi_b2b.b2b_procurement.application.generate_quote_usecase import (
+from src.kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+    B2bQuoteDto,
+)
+from src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.layout_mirroring_usecase import (
+from src.kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
     LayoutMirroringUseCase,
 )
-from src.kpi_b2b.b2b_procurement.dtos.b2b_quote_dto import B2bQuoteDto
-from src.kpi_b2b.b2b_procurement.dtos.session_data_dto import SessionDataDto
+from src.kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
+    SessionDataDto,
+)
 from src.shared.adapters.redis_cache_adapter import RedisCacheAdapter
 from src.shared.dtos.log_dtos import LogContext
 from src.shared.logging.global_system_logger import GlobalSystemLogger

@@ -92,7 +92,7 @@ class GetLayoutUseCase:
 
         # Guard Clause 1: 데이터 미존재 시 404 차단
         if not raw_data:
-            self._logger.warning(
+            self._logger.warn(
                 f"[GetLayoutUseCase] Baseline layout not found: '{baseline_id}'"
             )
             raise BaseSystemException(
@@ -104,7 +104,7 @@ class GetLayoutUseCase:
         # Guard Clause 2: 권한 검증 (Tenant Isolation & accessible_factory_ids)
         owner_company_id = raw_data.get("company_id", "")
         if not self.verify_access_rights(baseline_id, owner_company_id, ctx):
-            self._logger.warning(
+            self._logger.warn(
                 f"[GetLayoutUseCase] Access denied for baseline_id='{baseline_id}'. "
                 f"Owner company='{owner_company_id}', Request company='{ctx.company_id}'"
             )

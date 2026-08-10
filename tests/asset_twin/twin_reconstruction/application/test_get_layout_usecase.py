@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.asset_twin.twin_reconstruction.application.get_layout_usecase import (
+from src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
     ITwinQueryRepository,
 )

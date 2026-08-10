@@ -10,7 +10,7 @@
 
 from abc import ABC, abstractmethod
 
-from src.asset_twin.twin_reconstruction.application.reconstruct_twin_usecase import (
+from src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     RawDataDto,
     ReconstructTwinUseCase,
     TwinMetricsDto,
