@@ -16,12 +16,13 @@ repos:
       - id: black
         language_version: python3.10
 
-  # 3. 로컬 AST 아키텍처 규칙 검증 (커밋 차단 가드)
+  # 3. 아키텍처 규칙 검증 (자동 탐색 방식으로 전환)
   - repo: local
     hooks:
       - id: architectural-compliance
         name: Architectural Standards & Compliance Check
-        entry: python3 -m pytest sftwin-core/tests/shared/test_code_standards.py
+        # 특정 경로 대신 pytest의 이름 기반 탐색(-k) 옵션 활용
+        entry: python3 -m pytest -k test_code_standards
         language: system
         pass_filenames: false
         always_run: true

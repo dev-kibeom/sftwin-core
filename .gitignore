@@ -9,11 +9,12 @@
 
 # Host Persistent Data Directory
 **/data/assets/*
+**/data/raw/*
 **/data/sim_packages/*
-**/data/cloud_db/*
-**/data/redis/*
-**/data/influxdb/*
-**/data/logs/*
+**/data/runtime/storage/mysql/*
+**/data/runtime/storage/redis/*
+**/data/runtime/storage/influxdb/*
+**/data/runtime/logs/*
 !**/data/**/.gitkeep
 
 # Keep data folder structure via .gitkeep

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "core"
+version = "0.1.0"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.importlinter]
+root_package = "src"
+
+# 1. shared 모듈 규칙: 공통 레이어는 상위 피처 모듈을 절대 참조할 수 없음
+[[tool.importlinter.contracts]]
+name = "Shared layer must not depend on feature modules"
+type = "forbidden"
+source_modules = ["shared"]
+forbidden_modules = ["asset_twin", "edge_control", "kpi_b2b", "simulation"]
+
+# 2. Layered Architecture 규칙 (asset_twin 모듈 예시)
+[[tool.importlinter.contracts]]
+name = "Asset Twin - Domain layer independence"
+type = "forbidden"
+source_modules = ["asset_twin.asset_library.domain", "asset_twin.twin_reconstruction.domain"]
+forbidden_modules = [
+    "asset_twin.asset_library.adapters",
+    "asset_twin.asset_library.application",
+    "asset_twin.twin_reconstruction.adapters",
+    "asset_twin.twin_reconstruction.application"
+]
+
+[[tool.importlinter.contracts]]
+name = "Asset Twin - Application layer forbidden from Adapters"
+type = "forbidden"
+source_modules = ["asset_twin.asset_library.application", "asset_twin.twin_reconstruction.application"]
+forbidden_modules = [
+    "asset_twin.asset_library.adapters",
+    "asset_twin.twin_reconstruction.adapters"
+]
+
+# core 내부의 5개 핵심 모듈은 core 외부의 그 어떤 패키지(이름 불문)도 참조할 수 없음
+[[tool.importlinter.contracts]]
+name = "Core layer must not depend on any external modules"
+type = "forbidden"
+source_modules = [
+    "asset_twin",
+    "edge_control",
+    "kpi_b2b",
+    "shared",
+    "simulation"
+]
+# 허용되지 않은 외곽 패키지를 일일이 명시하는 대신,
+# 파이썬 최상위 레벨에서 core 내부 모듈이 아닌 모든 외부 모듈 import 금지
+forbidden_modules = [
+    "*"
+]
+# 단, 파이썬 표준 라이브러리(os, sys 등) 및 타드파티 라이브러리(pydantic 등)는 제외하고
+# 사용자가 만드는 로컬 외부 패키지들만 차단하도록 지정할 수 있습니다.

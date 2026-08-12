@@ -1,0 +1,154 @@
+networks:
+  cloud-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.1.0/24
+  edge-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.2.0/24
+
+services:
+  # Ingress Layer (Reverse Proxy)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./data/runtime/logs/nginx:/var/log/nginx:rw
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost/healthz || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+    networks:
+      - cloud-net
+      - edge-net
+
+  # Cloud Layer: Asset & Digital Twin Service
+  asset-svc:
+    build:
+      context: ./core
+      dockerfile: src/asset_twin/Dockerfile
+    container_name: asset-svc
+    restart: always
+    env_file:
+      - .env.shared
+      - .env.local
+    volumes:
+      - ./data/assets/cad:/app/assets/cad:rw
+      - ./data/assets/aas:/app/assets/aas:rw
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cloud-net
+
+  # Cloud Layer: Simulation & Physics Service (IDD v4.1 Update)
+  sim-svc:
+    build:
+      context: ./core
+      dockerfile: src/simulation/Dockerfile
+    container_name: sim-svc
+    restart: always
+    ipc: host # Shared Memory IPC communication (IDD v4.1)
+    ports:
+      - "50051:50051" # gRPC Sim-to-Real Deploy
+      - "50000-50100:50000-50100/udp" # WebRTC Streaming (IDD v4.1)
+    volumes:
+      - ./data/sim_packages:/app/sim_packages:rw
+      - /dev/shm:/dev/shm:rw # POSIX Shared Memory binding (IDD v4.1)
+    env_file:
+      - .env.shared
+      - .env.local
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    networks:
+      - cloud-net
+      - edge-net
+
+  # Cloud Layer: KPI & B2B Service
+  kpi-svc:
+    build:
+      context: ./core
+      dockerfile: src/kpi_b2b/Dockerfile
+    container_name: kpi-svc
+    restart: always
+    env_file:
+      - .env.shared
+      - .env.local
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8002/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cloud-net
+
+  # Cloud Layer: Relational DB (MySQL)
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    env_file:
+      - .env.local
+    volumes:
+      - ./data/runtime/storage/mysql:/var/lib/mysql:rw
+      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pUnexposedSecureRootPassword!2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - cloud-net
+
+  # Edge Layer: Redis In-Memory Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: always
+    volumes:
+      - ./data/runtime/storage/redis:/data:rw
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 1s
+      retries: 3
+      start_period: 5s
+    networks:
+      - edge-net
+
+  # Edge Layer: InfluxDB Timeseries DB
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: influxdb
+    restart: always
+    ports:
+      - "127.0.0.1:8086:8086"
+    volumes:
+      - ./data/runtime/storage/influxdb:/var/lib/influxdb2:rw
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    networks:
+      - edge-net

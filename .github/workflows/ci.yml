@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-22.04
     defaults:
       run:
-        working-directory: sftwin-core
+        working-directory: core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-22.04
     defaults:
       run:
-        working-directory: sftwin-core
+        working-directory: core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-22.04
     defaults:
       run:
-        working-directory: sftwin-core
+        working-directory: core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -123,13 +123,13 @@ jobs:
       matrix:
         service:
           - name: asset-svc
-            dockerfile: sftwin-core/src/asset_twin/Dockerfile
+            dockerfile: core/src/asset_twin/Dockerfile
           - name: sim-svc
-            dockerfile: sftwin-core/src/simulation/Dockerfile
+            dockerfile: core/src/simulation/Dockerfile
           - name: kpi-svc
-            dockerfile: sftwin-core/src/kpi_b2b/Dockerfile
+            dockerfile: core/src/kpi_b2b/Dockerfile
           - name: nginx
-            dockerfile: sftwin-core/infra/nginx/Dockerfile
+            dockerfile: core/infra/nginx/Dockerfile
 
     steps:
       - name: Checkout Repository
