@@ -9,9 +9,9 @@ Domain Event Object Mapper Implementation
 import logging
 from typing import Any
 
-from src.shared.dtos.integration_event_dto import IntegrationEventDto
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
+from shared.dtos.integration_event_dto import IntegrationEventDto
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 
 logger = logging.getLogger("shared.dtos.domain_event_object_mapper")
 

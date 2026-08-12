@@ -10,27 +10,27 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, status
-from pydantic import BaseModel, Field
-from src.kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
     B2bQuoteDto,
 )
-from src.kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
+from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
     SessionDataDto,
 )
-from src.kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
+from kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
     ProcessProductionOrderUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
     ProductionOrderRequestDto,
     ProductionOrderResultDto,
 )
-from src.kpi_b2b.dependencies import (
+from kpi_b2b.dependencies import (
     get_process_production_order_usecase,
     get_procurement_facade,
 )
-from src.kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
-from src.shared.dtos.global_response_dto import GlobalResponseDto
-from src.shared.security.user_context import UserContext, get_current_user
+from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
+from pydantic import BaseModel, Field
+from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.security.user_context import UserContext, get_current_user
 
 router = APIRouter(prefix="/api/v1/procurement", tags=["B2B Procurement"])
 

@@ -9,16 +9,15 @@
 
 from datetime import datetime, timezone
 
+# 1. 신규 라우터 Import
+from asset_twin.twin_reconstruction.adapters.inbound.asset_twin_router import (
+    router as asset_twin_router,
+)
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-# 1. 신규 라우터 Import
-from src.asset_twin.twin_reconstruction.adapters.inbound.asset_twin_router import (
-    router as asset_twin_router,
-)
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.global_exception_handler import GlobalExceptionHandler
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.global_exception_handler import GlobalExceptionHandler
 
 app = FastAPI(title="Asset & Digital Twin Service", version="1.0.0")
 

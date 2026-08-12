@@ -7,9 +7,8 @@ import os
 from typing import Any
 
 from influxdb_client.client.influxdb_client import InfluxDBClient
-
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.dtos.log_dtos import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 from .base_time_series_port import BaseTimeSeriesPort
 

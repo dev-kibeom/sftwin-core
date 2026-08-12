@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from src.shared.dtos.log_dtos import LogContext
+from shared.dtos.log_dtos import LogContext
 
 logger = logging.getLogger("sftwin.global")
 

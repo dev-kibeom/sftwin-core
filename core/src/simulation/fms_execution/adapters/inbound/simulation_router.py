@@ -12,26 +12,26 @@
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel, Field
-from src.kpi_b2b.dependencies import (
+from kpi_b2b.dependencies import (
     get_deploy_sim2real_usecase,
     get_inject_fault_usecase,
     get_run_fms_simulation_usecase,
 )
-from src.shared.dtos.global_response_dto import GlobalResponseDto
-from src.shared.dtos.sim_result_dto import SimResultDto
-from src.shared.security.user_context import UserContext, get_current_user
-from src.simulation.fault_injection_bt.application.inject_fault_usecase import (
+from pydantic import BaseModel, Field
+from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.dtos.sim_result_dto import SimResultDto
+from shared.security.user_context import UserContext, get_current_user
+from simulation.fault_injection_bt.application.inject_fault_usecase import (
     InjectFaultUseCase,
 )
-from src.simulation.fault_injection_bt.domain.fault_scenario import (
+from simulation.fault_injection_bt.domain.fault_scenario import (
     FaultScenario,
     FaultTypeEnum,
 )
-from src.simulation.fms_execution.application.run_fms_simulation_usecase import (
+from simulation.fms_execution.application.run_fms_simulation_usecase import (
     RunFmsSimulationUseCase,
 )
-from src.simulation.sim_to_real_deploy.application.deploy_sim2real_usecase import (
+from simulation.sim_to_real_deploy.application.deploy_sim2real_usecase import (
     DeploySim2RealUseCase,
 )
 

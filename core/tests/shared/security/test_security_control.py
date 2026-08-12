@@ -9,20 +9,20 @@ from unittest.mock import MagicMock
 
 import jwt
 import pytest
-from src.shared.dtos.audit_dtos import SecurityAuditEvent
-from src.shared.enums.audit_severity_enum import AuditSeverityEnum
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.logger.audit_logger import AuditLogger
-from src.shared.security.jwt_auth_interceptor import (
+from shared.dtos.audit_dtos import SecurityAuditEvent
+from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.audit_logger import AuditLogger
+from shared.security.jwt_auth_interceptor import (
     JwtAuthInterceptor,
 )
-from src.shared.security.rbac_authorization_manager import (
+from shared.security.rbac_authorization_manager import (
     AuditSeverityEnum,
     RbacAuthorizationManager,
 )
-from src.shared.security.user_context import UserContext
+from shared.security.user_context import UserContext
 
 SECRET_KEY = "sftwin_global_security_jwt_secret_key_256bit!"
 
@@ -116,8 +116,8 @@ def test_tc_sec_04_insufficient_rbac_role(rbac_manager, mock_audit_logger):
         )
 
     assert (
-        exc_info.value.error_code == GlobalErrorCodes.ERR_SHARED_FORBIDDEN
-    ), "Error code should be ERR_SHARED_FORBIDDEN."
+        exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_FORBIDDEN
+    ), "Error code should be ERR_COMMON_FORBIDDEN."
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(

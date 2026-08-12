@@ -7,8 +7,8 @@ Audit DTOs Specification
 
 from dataclasses import dataclass
 
-from src.shared.enums.audit_severity_enum import AuditSeverityEnum
-from src.shared.security.user_context import UserContext
+from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.security.user_context import UserContext
 
 
 @dataclass

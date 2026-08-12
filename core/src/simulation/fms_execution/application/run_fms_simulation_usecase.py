@@ -7,13 +7,13 @@ FMS 시뮬레이션 가동 흐름을 오케스트레이션합니다.
 from datetime import datetime, timezone
 from typing import Any
 
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.dtos.sim_result_dto import SimResultDto
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext
-from src.simulation.fms_execution.domain.collision_detector import CollisionDetector
-from src.simulation.fms_execution.domain.fms_scenario import FmsScenario
+from shared.dtos.log_dtos import LogContext
+from shared.dtos.sim_result_dto import SimResultDto
+from shared.exceptions.base_exception import BaseSystemException
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext
+from simulation.fms_execution.domain.collision_detector import CollisionDetector
+from simulation.fms_execution.domain.fms_scenario import FmsScenario
 
 
 class RunFmsSimulationUseCase:

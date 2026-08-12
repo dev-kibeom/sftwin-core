@@ -12,11 +12,11 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.global_exception_handler import GlobalExceptionHandler
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.global_exception_handler import GlobalExceptionHandler
 
 # 1. 신규 라우터 Import
-from src.simulation.fms_execution.adapters.inbound.simulation_router import (
+from simulation.fms_execution.adapters.inbound.simulation_router import (
     router as simulation_router,
 )
 

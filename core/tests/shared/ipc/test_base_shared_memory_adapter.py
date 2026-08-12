@@ -3,10 +3,9 @@ Unit Test Specification for BaseSharedMemoryAdapter (TC-ADP-03, TC-ADP-05)
 """
 
 import pytest
-
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.ipc.base_shared_memory_adapter import BaseSharedMemoryAdapter
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.ipc.base_shared_memory_adapter import BaseSharedMemoryAdapter
 
 
 class ConcreteMuJoCoIpcAdapter(BaseSharedMemoryAdapter[bytes]):
@@ -47,6 +46,6 @@ def test_tc_adp_05_shm_pointer_fault_guard_clause():
     with pytest.raises(BaseSystemException) as exc_info:
         adapter.write_to_shm(b"CORRUPTED_PAYLOAD")
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_SHARED_INTERNAL_ERROR
+    assert exc_info.value.error_code == GlobalErrorCodes.ERR_IPC_SHARED_MEMORY_ERROR
     assert exc_info.value.status_code == 500
     assert "POSIX Shared Memory descriptor or pointer invalid" in exc_info.value.message

@@ -9,11 +9,11 @@
 
 from abc import ABC, abstractmethod
 
-from src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     LayoutRenderingDto,
 )
-from src.shared.dtos.asset_dto import AASAssetDto
-from src.shared.security.user_context import UserContext
+from shared.dtos.asset_dto import AASAssetDto
+from shared.security.user_context import UserContext
 
 
 class AssetTwinQueryFacade(ABC):

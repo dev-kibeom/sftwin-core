@@ -5,10 +5,9 @@ Unit Test Specification for BaseDdsPublisherAdapter (TC-ADP-02, Edge Case)
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.shared.adapters.base_dds_publisher_adapter import BaseDdsPublisherAdapter
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
+from shared.adapters.base_dds_publisher_adapter import BaseDdsPublisherAdapter
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 class ConcreteFastDdsPublisherAdapter(BaseDdsPublisherAdapter[dict]):

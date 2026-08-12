@@ -7,11 +7,10 @@ FDS 4절 테스트 명세에 따른 TC-정상, TC-예외, TC-에러 케이스를
 from unittest.mock import Mock, patch
 
 import pytest
-
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.security.user_context import UserContext
-from src.simulation.fms_execution.application.run_fms_simulation_usecase import (
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.security.user_context import UserContext
+from simulation.fms_execution.application.run_fms_simulation_usecase import (
     RunFmsSimulationUseCase,
 )
 
@@ -140,7 +139,7 @@ class TestRunFmsSimulationUseCase:
         assert exc_info.value.error_code == "ERR_SIM_IPC_TIMEOUT"
 
     @patch(
-        "src.simulation.fms_execution.application.run_fms_simulation_usecase.RunFmsSimulationUseCase._check_vram_resource_limit"
+        "simulation.fms_execution.application.run_fms_simulation_usecase.RunFmsSimulationUseCase._check_vram_resource_limit"
     )
     def test_error_resource_exhausted(
         self,

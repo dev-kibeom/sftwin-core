@@ -1,6 +1,6 @@
 import unittest
 
-from src.simulation.fault_injection_bt.domain.failsafe_recovery_policy import (
+from simulation.fault_injection_bt.domain.failsafe_recovery_policy import (
     FailsafeRecoveryPolicy,
     SafetyActionEnum,
 )

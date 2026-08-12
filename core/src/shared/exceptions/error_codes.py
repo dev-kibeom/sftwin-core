@@ -11,11 +11,8 @@ class GlobalErrorCodes(str, Enum):
     # 1. Common / Shared Infrastructure
     ERR_COMMON_INVALID_INPUT = "ERR_COMMON_INVALID_INPUT"
     ERR_COMMON_UNAUTHORIZED = "ERR_COMMON_UNAUTHORIZED"
-    ERR_SHARED_UNAUTHORIZED = "ERR_SHARED_UNAUTHORIZED"
     ERR_COMMON_FORBIDDEN = "ERR_COMMON_FORBIDDEN"
-    ERR_SHARED_FORBIDDEN = "ERR_SHARED_FORBIDDEN"
     ERR_COMMON_INTERNAL_ERROR = "ERR_COMMON_INTERNAL_ERROR"
-    ERR_SHARED_INTERNAL_ERROR = "ERR_SHARED_INTERNAL_ERROR"
 
     # 2. Asset Twin Domain
     ERR_TWIN_NOT_FOUND = "ERR_TWIN_NOT_FOUND"
@@ -40,6 +37,9 @@ class GlobalErrorCodes(str, Enum):
     ERR_KPI_DB_TIMEOUT = "ERR_KPI_DB_TIMEOUT"
     ERR_KPI_SIM_NOT_FOUND = "ERR_KPI_SIM_NOT_FOUND"
 
+    # 6. Shared Memory
+    ERR_IPC_SHARED_MEMORY_ERROR = "ERR_IPC_SHARED_MEMORY_ERROR"
+
 
 # 에러 코드별 HTTP Status Code 및 기본 메시지 메타데이터 맵
 ERROR_CODE_METADATA: dict[GlobalErrorCodes, dict[str, Any]] = {
@@ -60,7 +60,7 @@ ERROR_CODE_METADATA: dict[GlobalErrorCodes, dict[str, Any]] = {
         "status": 500,
         "msg": "An unexpected internal server error occurred.",
     },
-    GlobalErrorCodes.ERR_SHARED_INTERNAL_ERROR: {
+    GlobalErrorCodes.ERR_IPC_SHARED_MEMORY_ERROR: {
         "status": 500,
         "msg": "POSIX Shared Memory 또는 IPC 서브시스템 연산 실패",
     },

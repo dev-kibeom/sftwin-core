@@ -8,16 +8,16 @@
 
 from unittest.mock import MagicMock
 
-from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     ManageAssetUseCase,
 )
-from src.asset_twin.facades.asset_twin_query_impl import AssetTwinQueryImpl
-from src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+from asset_twin.facades.asset_twin_query_impl import AssetTwinQueryImpl
+from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
     LayoutRenderingDto,
 )
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.security.user_context import UserContext
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.security.user_context import UserContext
 
 
 def test_facade_get_layout_data_delegation():

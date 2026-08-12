@@ -10,20 +10,19 @@ import os
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
+from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     IKampDataAdapter,
     RawDataDto,
     ReconstructTwinUseCase,
 )
-from src.asset_twin.twin_reconstruction.domain.twin_baseline import (
+from asset_twin.twin_reconstruction.domain.twin_baseline import (
     TwinBaseline,
     TwinSyncStatusEnum,
 )
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.security.user_context import UserContext
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.security.user_context import UserContext
 
 
 def test_tc_happy_path_reconstruct_twin(tmp_path):

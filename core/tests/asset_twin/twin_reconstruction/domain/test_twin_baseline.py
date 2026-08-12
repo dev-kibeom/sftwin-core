@@ -6,7 +6,7 @@
 ===============================================================================
 """
 
-from src.asset_twin.twin_reconstruction.domain.twin_baseline import (
+from asset_twin.twin_reconstruction.domain.twin_baseline import (
     TwinBaseline,
     TwinSyncStatusEnum,
 )

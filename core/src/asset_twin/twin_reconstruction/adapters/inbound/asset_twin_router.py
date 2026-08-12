@@ -11,27 +11,27 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
-from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     ManageAssetUseCase,
 )
-from src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
     LayoutRenderingDto,
 )
-from src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
+from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     RawDataDto,
     ReconstructTwinUseCase,
     TwinMetricsDto,
 )
-from src.kpi_b2b.dependencies import (
+from fastapi import APIRouter, Depends, status
+from kpi_b2b.dependencies import (
     get_get_layout_usecase,
     get_manage_asset_usecase,
     get_reconstruct_twin_usecase,
 )
-from src.shared.dtos.asset_dto import AASAssetDto
-from src.shared.dtos.global_response_dto import GlobalResponseDto
-from src.shared.security.user_context import UserContext, get_current_user
+from shared.dtos.asset_dto import AASAssetDto
+from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.security.user_context import UserContext, get_current_user
 
 router = APIRouter(prefix="/api/v1/asset-twin", tags=["AssetTwin"])
 

@@ -10,13 +10,13 @@
 
 from abc import ABC, abstractmethod
 
-from src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
+from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     RawDataDto,
     ReconstructTwinUseCase,
     TwinMetricsDto,
 )
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext
 
 
 class AssetTwinCommandFacade(ABC):

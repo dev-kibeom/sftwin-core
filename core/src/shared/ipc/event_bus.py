@@ -11,9 +11,9 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from src.shared.dtos.integration_event_dto import IntegrationEventDto
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.dtos.integration_event_dto import IntegrationEventDto
+from shared.dtos.log_dtos import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 logger = logging.getLogger("shared.ipc.event_bus")
 

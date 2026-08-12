@@ -5,21 +5,21 @@
 
 from typing import Any
 
-from src.asset_twin.twin_reconstruction.domain.services.real_to_sim_validator import (
+from asset_twin.twin_reconstruction.domain.services.real_to_sim_validator import (
     RealToSimValidator,
 )
-from src.kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
     ProductionOrderRequestDto,
     ProductionOrderResultDto,
 )
-from src.kpi_b2b.b2b_procurement.domain.material_inventory import MaterialInventory
-from src.kpi_b2b.b2b_procurement.domain.production_order import (
+from kpi_b2b.b2b_procurement.domain.material_inventory import MaterialInventory
+from kpi_b2b.b2b_procurement.domain.production_order import (
     FactoryPhaseEnum,
     ProductionOrder,
 )
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext
+from shared.dtos.log_dtos import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext
 
 
 class ProcessProductionOrderUseCase:

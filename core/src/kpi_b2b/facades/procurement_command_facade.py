@@ -6,23 +6,24 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+from shared.adapters.redis_cache_adapter import RedisCacheAdapter
+from shared.dtos.log_dtos import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+from shared.security.user_context import UserContext
+
+from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
     B2bQuoteDto,
 )
-from src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
+from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
+from kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
     LayoutMirroringUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
+from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
     SessionDataDto,
 )
-from src.shared.adapters.redis_cache_adapter import RedisCacheAdapter
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from src.shared.security.user_context import UserContext
 
 
 class ProcurementCommandFacade(ABC):

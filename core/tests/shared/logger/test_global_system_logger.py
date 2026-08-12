@@ -2,8 +2,8 @@
 Unit Test Specification for GlobalSystemLogger
 """
 
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.dtos.log_dtos import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 def test_tc_log_system_logger_json_formatting():

@@ -11,14 +11,13 @@
 import os
 
 import pandas as pd
-
-from src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
+from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     IKampDataAdapter,
 )
-from src.asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class KampDataAdapter(IKampDataAdapter):

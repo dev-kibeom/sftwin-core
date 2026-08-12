@@ -6,15 +6,15 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.security.user_context import UserContext
 
-from src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
+from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from src.kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuoteStatusEnum
-from src.kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacadeImpl
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.security.user_context import UserContext
+from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuoteStatusEnum
+from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacadeImpl
 
 
 @pytest.fixture
@@ -27,9 +27,9 @@ def target_system():
 
     with (
         patch(
-            "src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase.GlobalSystemLogger"
+            "kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase.GlobalSystemLogger"
         ),
-        patch("src.kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
+        patch("kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
     ):
         usecase = GenerateQuoteUseCase(b2b_adapter=mock_b2b, mysql_repo=mock_db)
         facade = ProcurementCommandFacadeImpl(

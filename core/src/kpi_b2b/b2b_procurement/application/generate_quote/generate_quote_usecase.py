@@ -5,16 +5,16 @@
 
 from typing import Any
 
-from src.kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
     B2bQuoteDto,
 )
-from src.kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
-from src.kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace_port import (
+from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
+from kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace_port import (
     BaseB2bMarketplacePort,
 )
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.dtos.log_dtos import LogContext
+from shared.exceptions.base_exception import BaseSystemException
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class GenerateQuoteUseCase:

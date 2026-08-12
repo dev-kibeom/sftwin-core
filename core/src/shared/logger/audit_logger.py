@@ -3,13 +3,12 @@ import logging
 import uuid
 from typing import Any
 
+from shared.dtos.audit_dtos import FailsafeAuditEvent, SecurityAuditEvent
+from shared.dtos.log_dtos import LogContext
+from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext
 from sqlalchemy import text
-
-from src.shared.dtos.audit_dtos import FailsafeAuditEvent, SecurityAuditEvent
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.enums.audit_severity_enum import AuditSeverityEnum
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.logging.audit_logger")
 

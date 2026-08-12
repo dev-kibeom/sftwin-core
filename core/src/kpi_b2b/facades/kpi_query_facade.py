@@ -6,14 +6,15 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+from shared.security.user_context import UserContext
+
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
     KpiReportDto,
 )
-from src.shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from src.shared.security.user_context import UserContext
 
 
 class KpiQueryFacade(ABC):

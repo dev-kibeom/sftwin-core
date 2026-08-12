@@ -5,11 +5,10 @@ Unit Test Specification for FEAT-SHARED-03
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.shared.dtos.audit_dtos import FailsafeAuditEvent, SecurityAuditEvent
-from src.shared.logger.audit_logger import AuditLogger, AuditSeverityEnum
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext, UserRoleEnum
+from shared.dtos.audit_dtos import FailsafeAuditEvent, SecurityAuditEvent
+from shared.logger.audit_logger import AuditLogger, AuditSeverityEnum
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext, UserRoleEnum
 
 
 @pytest.fixture

@@ -1,13 +1,14 @@
 import unittest
 
-from src.kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.security.user_context import UserContext
+
+from kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
     ProcessProductionOrderUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
     ProductionOrderRequestDto,
 )
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.security.user_context import UserContext
 
 
 class TestProcessProductionOrder(unittest.TestCase):

@@ -5,10 +5,9 @@ Unit Test Specification for BaseRepositoryAdapter (TC-ADP-01, TC-ADP-04)
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.shared.adapters.base_repository_adapter import BaseRepositoryAdapter
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
+from shared.adapters.base_repository_adapter import BaseRepositoryAdapter
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 class ConcreteAasRepositoryAdapter(BaseRepositoryAdapter[dict]):

@@ -7,14 +7,13 @@ FDS 4절에 명시된 TC-정상, 예외, 에러 케이스를 독립적으로 검
 from unittest.mock import Mock
 
 import pytest
-
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.security.user_context import UserContext
-from src.simulation.fault_injection_bt.application.inject_fault_usecase import (
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.security.user_context import UserContext
+from simulation.fault_injection_bt.application.inject_fault_usecase import (
     InjectFaultUseCase,
 )
-from src.simulation.fault_injection_bt.domain.fault_scenario import (
+from simulation.fault_injection_bt.domain.fault_scenario import (
     FaultScenario,
     FaultTypeEnum,
 )

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from src.shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
+from shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
 
 
 @dataclass

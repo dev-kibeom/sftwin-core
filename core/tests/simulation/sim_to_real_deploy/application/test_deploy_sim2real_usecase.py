@@ -7,14 +7,13 @@ FDS 4절에 명시된 TC-정상, TC-예외(미검증), TC-에러(I/O 오류) 케
 from unittest.mock import Mock
 
 import pytest
-
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.security.user_context import UserContext
-from src.simulation.sim_to_real_deploy.application.deploy_sim2real_usecase import (
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.security.user_context import UserContext
+from simulation.sim_to_real_deploy.application.deploy_sim2real_usecase import (
     DeploySim2RealUseCase,
 )
-from src.simulation.sim_to_real_deploy.domain.enums import DeployPackageFormatEnum
+from simulation.sim_to_real_deploy.domain.enums import DeployPackageFormatEnum
 
 
 @pytest.fixture

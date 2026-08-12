@@ -10,18 +10,17 @@ import uuid
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     IAASRepository,
     ManageAssetUseCase,
 )
-from src.asset_twin.asset_library.domain.aas_asset import AASAsset
-from src.shared.dtos.asset_dto import AASAssetDto
-from src.shared.enums.asset_type_enum import AssetTypeEnum
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.security.user_context import UserContext
+from asset_twin.asset_library.domain.aas_asset import AASAsset
+from shared.dtos.asset_dto import AASAssetDto
+from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.security.user_context import UserContext
 
 
 def test_tc_happy_path_register_asset():

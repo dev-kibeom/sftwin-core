@@ -8,7 +8,7 @@ Immutable(불변) 데이터 구조를 제공하여 인증 컨텍스트의 임의
 
 from dataclasses import dataclass, field
 
-from src.shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.user_role_enum import UserRoleEnum
 
 
 @dataclass(frozen=True)

@@ -6,17 +6,17 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.security.user_context import UserContext
 
-from src.kpi_b2b.facades.kpi_query_facade import KpiQueryFacadeImpl
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
+from kpi_b2b.facades.kpi_query_facade import KpiQueryFacadeImpl
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
-from src.kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
+from kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
     BaseTimeSeriesPort,
 )
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.security.user_context import UserContext
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def mock_sim_repo():
 @pytest.fixture
 def target_system(mock_ts_adapter, mock_rbac_manager, mock_sim_repo):
     with patch(
-        "src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase.GlobalSystemLogger"
+        "kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase.GlobalSystemLogger"
     ):
         usecase = CalculateKpiUseCase(ts_adapter=mock_ts_adapter)
         facade = KpiQueryFacadeImpl(

@@ -4,7 +4,7 @@ Ros2Vda5050DeployAdapter
 도메인에서 생성된 설정값을 바탕으로 실제 ROS2 런치 파일, 파라미터(YAML) 및 표준 패키지를 파일 시스템에 쓰는 구체 어댑터입니다.
 """
 
-from src.simulation.sim_to_real_deploy.domain.deploy_package import DeployPackage
+from simulation.sim_to_real_deploy.domain.deploy_package import DeployPackage
 
 
 class Ros2Vda5050DeployAdapter:

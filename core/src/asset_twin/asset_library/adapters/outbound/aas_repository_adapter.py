@@ -10,14 +10,14 @@
 
 from typing import Any
 
-from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     IAASRepository,
 )
-from src.asset_twin.asset_library.domain.aas_asset import AASAsset
-from src.shared.adapters.base_repository_adapter import BaseRepositoryAdapter
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from asset_twin.asset_library.domain.aas_asset import AASAsset
+from shared.adapters.base_repository_adapter import BaseRepositoryAdapter
+from shared.dtos.log_dtos import LogContext
+from shared.exceptions.base_exception import BaseSystemException
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class AASRepositoryAdapter(BaseRepositoryAdapter[AASAsset], IAASRepository):

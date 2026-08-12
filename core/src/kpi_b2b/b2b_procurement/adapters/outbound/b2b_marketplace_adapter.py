@@ -5,11 +5,11 @@
 
 from typing import Any
 
-from src.kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace_port import (
+from kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace_port import (
     BaseB2bMarketplacePort,
 )
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.dtos.log_dtos import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class B2bMarketplaceAdapter(BaseB2bMarketplacePort):

@@ -12,10 +12,11 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from src.kpi_b2b.b2b_procurement.adapters.inbound import procurement_router
-from src.kpi_b2b.kpi_dashboard.adapters.inbound import kpi_router
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.global_exception_handler import GlobalExceptionHandler
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.global_exception_handler import GlobalExceptionHandler
+
+from kpi_b2b.b2b_procurement.adapters.inbound import procurement_router
+from kpi_b2b.kpi_dashboard.adapters.inbound import kpi_router
 
 app = FastAPI(title="KPI & B2B Service", version="1.0.0")
 

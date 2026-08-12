@@ -5,9 +5,8 @@ Unit Test Specification for EventBus (TC-BUS-01 ~ TC-BUS-03)
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.shared.dtos.integration_event_dto import IntegrationEventDto
-from src.shared.ipc.event_bus import EventBus
+from shared.dtos.integration_event_dto import IntegrationEventDto
+from shared.ipc.event_bus import EventBus
 
 
 @pytest.fixture

@@ -10,9 +10,9 @@ ERR_SHARED_INTERNAL_ERROR 예외를 안전하게 던집니다.
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
 
@@ -67,7 +67,7 @@ class BaseSharedMemoryAdapter(ABC, Generic[T]):
                 f"SHM Descriptor Fault: shm_fd={self._shm_fd}, shm_ptr={self._shm_ptr}"
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SHARED_INTERNAL_ERROR,
+                error_code=GlobalErrorCodes.ERR_IPC_SHARED_MEMORY_ERROR,
                 message="POSIX Shared Memory descriptor or pointer invalid. Access blocked to prevent segmentation fault.",
                 status_code=500,
                 details={

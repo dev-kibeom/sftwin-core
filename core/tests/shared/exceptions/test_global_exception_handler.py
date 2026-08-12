@@ -5,10 +5,9 @@ TC-ERR-01 ~ TC-ERR-03 단위 테스트 구현 (pytest)
 """
 
 import pytest
-
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.exceptions.global_exception_handler import GlobalExceptionHandler
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.exceptions.global_exception_handler import GlobalExceptionHandler
 
 
 @pytest.fixture

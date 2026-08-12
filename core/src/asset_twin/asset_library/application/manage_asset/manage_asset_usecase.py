@@ -10,13 +10,13 @@
 
 from abc import ABC, abstractmethod
 
-from src.asset_twin.asset_library.domain.aas_asset import AASAsset
-from src.shared.dtos.asset_dto import AASAssetDto
-from src.shared.enums.asset_type_enum import AssetTypeEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext
+from asset_twin.asset_library.domain.aas_asset import AASAsset
+from shared.dtos.asset_dto import AASAssetDto
+from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext
 
 
 class IAASRepository(ABC):

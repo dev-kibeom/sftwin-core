@@ -1,6 +1,6 @@
 import unittest
 
-from src.kpi_b2b.kpi_dashboard.domain.services.roi_calculator import RoiCalculator
+from kpi_b2b.kpi_dashboard.domain.services.roi_calculator import RoiCalculator
 
 
 class TestRoiCalculator(unittest.TestCase):

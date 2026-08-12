@@ -8,9 +8,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 
-from src.shared.enums.packml_state_enum import PackMLStateEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
+from shared.enums.packml_state_enum import PackMLStateEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 class FactoryPhaseEnum(str, Enum):

@@ -6,7 +6,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from src.asset_twin.twin_reconstruction.domain.services.hotspot_color_calculator import (
+from asset_twin.twin_reconstruction.domain.services.hotspot_color_calculator import (
     HotspotColorCalculator,
 )
 

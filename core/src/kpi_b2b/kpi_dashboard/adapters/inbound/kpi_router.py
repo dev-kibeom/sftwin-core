@@ -11,25 +11,25 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel, Field
-from src.kpi_b2b.dependencies import (
+from kpi_b2b.dependencies import (
     get_calculate_kpi_usecase,
     get_generate_dual_kpi_report_usecase,
     get_kpi_facade,
 )
-from src.kpi_b2b.facades.kpi_query_facade import KpiQueryFacade
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
+from kpi_b2b.facades.kpi_query_facade import KpiQueryFacade
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
     KpiReportDto,
 )
-from src.kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (
+from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (
     DualKpiReportDto,
     GenerateDualKpiReportUseCase,
 )
-from src.shared.dtos.global_response_dto import GlobalResponseDto
-from src.shared.security.user_context import UserContext, get_current_user
+from pydantic import BaseModel, Field
+from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.security.user_context import UserContext, get_current_user
 
 router = APIRouter(prefix="/api/v1/kpi", tags=["KPI Dashboard"])
 

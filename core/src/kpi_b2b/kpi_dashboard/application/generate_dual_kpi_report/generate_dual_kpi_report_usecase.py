@@ -5,10 +5,10 @@
 
 from dataclasses import dataclass
 
-from src.kpi_b2b.kpi_dashboard.domain.services.dual_kpi_comparator import (
+from kpi_b2b.kpi_dashboard.domain.services.dual_kpi_comparator import (
     DualKpiComparator,
 )
-from src.kpi_b2b.kpi_dashboard.domain.services.roi_calculator import RoiCalculator
+from kpi_b2b.kpi_dashboard.domain.services.roi_calculator import RoiCalculator
 
 
 @dataclass

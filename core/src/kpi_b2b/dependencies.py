@@ -1,31 +1,32 @@
 import os
 
 from fastapi import Request
-from src.kpi_b2b.b2b_procurement.adapters.outbound.b2b_marketplace_adapter import (
+from shared.adapters.redis_cache_adapter import RedisCacheAdapter
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.security.jwt_auth_interceptor import JwtAuthInterceptor
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+from shared.security.user_context import UserContext
+
+from kpi_b2b.b2b_procurement.adapters.outbound.b2b_marketplace_adapter import (
     B2bMarketplaceAdapter,
 )
-from src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
+from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from src.kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
+from kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
     LayoutMirroringUseCase,
 )
-from src.kpi_b2b.facades.kpi_query_facade import KpiQueryFacade, KpiQueryFacadeImpl
-from src.kpi_b2b.facades.procurement_command_facade import (
+from kpi_b2b.facades.kpi_query_facade import KpiQueryFacade, KpiQueryFacadeImpl
+from kpi_b2b.facades.procurement_command_facade import (
     ProcurementCommandFacade,
     ProcurementCommandFacadeImpl,
 )
-from src.kpi_b2b.kpi_dashboard.adapters.outbound.influxdb_timeseries_adapter import (
+from kpi_b2b.kpi_dashboard.adapters.outbound.influxdb_timeseries_adapter import (
     InfluxDbTimeSeriesAdapter,
 )
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
-from src.shared.adapters.redis_cache_adapter import RedisCacheAdapter
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.security.jwt_auth_interceptor import JwtAuthInterceptor
-from src.shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from src.shared.security.user_context import UserContext
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "SF-Twin-Development-Secret-Key-2026")
 jwt_interceptor = JwtAuthInterceptor(jwt_secret_key=JWT_SECRET_KEY)

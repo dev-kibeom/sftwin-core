@@ -7,11 +7,10 @@
 """
 
 import pytest
-
-from src.asset_twin.asset_library.domain.aas_asset import AASAsset
-from src.shared.enums.asset_type_enum import AssetTypeEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
+from asset_twin.asset_library.domain.aas_asset import AASAsset
+from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 def test_aas_asset_valid_schema():

@@ -6,10 +6,10 @@ import logging
 from typing import Any
 
 import jwt
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.security.user_context import UserContext
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.security.jwt_auth_interceptor")
 

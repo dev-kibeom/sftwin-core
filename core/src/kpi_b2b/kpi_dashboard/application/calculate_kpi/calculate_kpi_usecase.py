@@ -6,16 +6,16 @@
 import uuid
 from datetime import datetime, timezone
 
-from src.kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
+from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
     KpiReportDto,
 )
-from src.kpi_b2b.kpi_dashboard.domain.oee_calculator import OeeCalculator
-from src.kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
+from kpi_b2b.kpi_dashboard.domain.oee_calculator import OeeCalculator
+from kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
     BaseTimeSeriesPort,
 )
-from src.shared.dtos.log_dtos import LogContext
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.logger.global_system_logger import GlobalSystemLogger
+from shared.dtos.log_dtos import LogContext
+from shared.exceptions.base_exception import BaseSystemException
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class CalculateKpiUseCase:

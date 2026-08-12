@@ -8,8 +8,8 @@ BaseSystemException Architecture
 
 from typing import Any
 
-from src.shared.dtos.global_response_dto import GlobalResponseDto
-from src.shared.exceptions.error_codes import ERROR_CODE_METADATA, GlobalErrorCodes
+from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.exceptions.error_codes import ERROR_CODE_METADATA, GlobalErrorCodes
 
 
 class BaseSystemException(Exception):

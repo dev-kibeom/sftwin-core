@@ -8,11 +8,10 @@ import uuid
 from dataclasses import dataclass
 
 import pytest
-
-from src.shared.dtos.domain_event_object_mapper import DomainEventObjectMapper
-from src.shared.dtos.global_response_dto import GlobalResponseDto
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
+from shared.dtos.domain_event_object_mapper import DomainEventObjectMapper
+from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 @dataclass

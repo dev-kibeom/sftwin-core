@@ -8,20 +8,20 @@
 ===============================================================================
 """
 
-from src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     ManageAssetUseCase,
 )
-from src.asset_twin.facades.asset_twin_query_facade import AssetTwinQueryFacade
-from src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+from asset_twin.facades.asset_twin_query_facade import AssetTwinQueryFacade
+from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
     LayoutRenderingDto,
 )
-from src.shared.dtos.asset_dto import AASAssetDto
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.logger.global_system_logger import GlobalSystemLogger
-from src.shared.security.user_context import UserContext
+from shared.dtos.asset_dto import AASAssetDto
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.user_context import UserContext
 
 
 class AssetTwinQueryImpl(AssetTwinQueryFacade):

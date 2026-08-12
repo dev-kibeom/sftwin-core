@@ -9,15 +9,14 @@
 from unittest.mock import MagicMock
 
 import pytest
-
-from src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
     ITwinQueryRepository,
 )
-from src.shared.enums.user_role_enum import UserRoleEnum
-from src.shared.exceptions.base_exception import BaseSystemException
-from src.shared.exceptions.error_codes import GlobalErrorCodes
-from src.shared.security.user_context import UserContext
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.security.user_context import UserContext
 
 
 def test_tc_happy_path_get_layout_data():

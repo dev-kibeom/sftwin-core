@@ -7,9 +7,9 @@ SimulationCommandFacade
 
 from typing import Any
 
-from src.shared.dtos.sim_result_dto import SimResultDto
-from src.shared.security.user_context import UserContext
-from src.simulation.fault_injection_bt.domain.fault_scenario import (
+from shared.dtos.sim_result_dto import SimResultDto
+from shared.security.user_context import UserContext
+from simulation.fault_injection_bt.domain.fault_scenario import (
     FaultScenario,
     FaultTypeEnum,
 )
