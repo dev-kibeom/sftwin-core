@@ -1,7 +1,6 @@
 import os
 
 from fastapi import Request
-
 from src.kpi_b2b.b2b_procurement.adapters.outbound.b2b_marketplace_adapter import (
     B2bMarketplaceAdapter,
 )

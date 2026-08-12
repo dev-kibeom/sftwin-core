@@ -1,12 +1,35 @@
+"""
+===============================================================================
+[File Name] main.py
+[Location ] /src/simulation/main.py
+[Description]
+ - Simulation & Physics 서비스 전용 FastAPI 메인 엔트리포인트입니다.
+===============================================================================
+"""
+
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
 from src.shared.exceptions.base_exception import BaseSystemException
 from src.shared.exceptions.global_exception_handler import GlobalExceptionHandler
 
+# 1. 신규 라우터 Import
+from src.simulation.fms_execution.adapters.inbound.simulation_router import (
+    router as simulation_router,
+)
+
 app = FastAPI(title="Simulation & Physics Service", version="1.0.0")
+
+# CORS Middleware (3D 시뮬레이션 UI 및 외부 통신용)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 exception_handler = GlobalExceptionHandler()
 
@@ -23,12 +46,17 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=status_code, content=dto.__dict__)
 
 
-@app.get("/healthz")
+# 2. 신규 라우터 바인딩
+app.include_router(simulation_router)
+
+
+# 3. GTS 5.4 규약 헬스체크 엔드포인트
+@app.get("/healthz", tags=["System"])
 async def health_check():
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
-@app.get("/api/v1/simulations/healthz")
+@app.get("/api/v1/simulations/healthz", tags=["System"])
 async def api_health_check():
     return {
         "status": "ok",
