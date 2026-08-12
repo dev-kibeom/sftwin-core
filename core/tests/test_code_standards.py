@@ -19,7 +19,7 @@ import unittest
 class TestCleanArchitectureAndCodeStandards(unittest.TestCase):
     def setUp(self):
         self.src_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../src")
+            os.path.join(os.path.dirname(__file__), "../src")
         )
 
     # =========================================================================
@@ -258,6 +258,32 @@ class TestCleanArchitectureAndCodeStandards(unittest.TestCase):
             len(violations),
             0,
             "\nClean Architecture Violation in Ports Layer:\n" + "\n".join(violations),
+        )
+
+    def test_dtos_do_not_import_adapters_or_usecases(self):
+        """[Rule 8] DTO(데이터 전달 객체)는 Adapters나 Application UseCase에 순환 의존성을 가질 수 없습니다."""
+        forbidden_imports = ["adapters", "application"]
+        violations = []
+
+        for root, _, files in os.walk(self.src_dir):
+            if "/dtos" in root or root.endswith("/dtos"):
+                for file in files:
+                    if file.endswith(".py") and not file.startswith("__"):
+                        filepath = os.path.join(root, file)
+                        rel_path = os.path.relpath(filepath, self.src_dir)
+                        imports = self._extract_imports(filepath)
+
+                        for imp, lineno in imports:
+                            for forbidden in forbidden_imports:
+                                if forbidden in imp.split("."):
+                                    violations.append(
+                                        f"[{rel_path}:{lineno}] DTO layer imports forbidden module '{imp}'"
+                                    )
+
+        self.assertEqual(
+            len(violations),
+            0,
+            "\nClean Architecture Violation in DTO Layer:\n" + "\n".join(violations),
         )
 
     # =========================================================================

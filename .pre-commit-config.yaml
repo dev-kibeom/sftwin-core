@@ -16,13 +16,22 @@ repos:
       - id: black
         language_version: python3.10
 
-  # 3. 아키텍처 규칙 검증 (자동 탐색 방식으로 전환)
+  # 3. Import-Linter (클린 아키텍처 의존성 정적 검사)
+  - repo: local
+    hooks:
+      - id: import-linter
+        name: Import-Linter Architecture Check
+        entry: bash -c "cd core && PYTHONPATH=src lint-imports"
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  # 4. AST 기반 코드 컨벤션 & 표준 검사 (test_code_standards.py)
   - repo: local
     hooks:
       - id: architectural-compliance
-        name: Architectural Standards & Compliance Check
-        # PYTHONPATH=core/src 환경변수를 명시하여 pytest 6.2.5 환경에서도 module import 에러 방지
-        entry: bash -c "PYTHONPATH=core/src python3 -m pytest -k test_code_standards"
+        name: Architectural Standards & Code Conventions Check
+        entry: bash -c "PYTHONPATH=core/src python3 -m pytest core/tests/test_code_standards.py"
         language: system
         pass_filenames: false
         always_run: true
