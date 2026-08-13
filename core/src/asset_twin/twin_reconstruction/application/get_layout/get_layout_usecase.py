@@ -5,14 +5,14 @@
 [Description]
  - 3D 캔버스 공간 렌더링에 필요한 TwinBaseline 및 자산 매핑 데이터(좌표/회전 등)를
    조회하고 RBAC/Tenant Isolation 권한을 검증하는 무상태(Stateless) 유즈케이스입니다.
- - 외부 프레임워크 의존성을 최소화한 순수 읽기 전용(CQRS Read-Only) 서비스를 제공합니다.
 ===============================================================================
 """
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any
 
+from asset_twin.twin_reconstruction.ports.outbound.i_twin_query_repository import (
+    ITwinQueryRepository,
+)
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
@@ -45,16 +45,6 @@ class LayoutRenderingDto:
     sync_error_rate: float
     sync_status: str
     asset_mappings: list[AssetMappingRenderingDto] = field(default_factory=list)
-
-
-class ITwinQueryRepository(ABC):
-    """
-    읽기 전용 레이아웃 조회용 아웃바운드 포트 인터페이스 (DIP 준수)
-    """
-
-    @abstractmethod
-    def find_baseline_with_mappings(self, baseline_id: str) -> dict[str, Any] | None:
-        pass
 
 
 class GetLayoutUseCase:
@@ -157,7 +147,6 @@ class GetLayoutUseCase:
             return True
 
         # 2. 동일한 테넌트(company_id) 소유인 경우
-        if owner_company_id and ctx.company_id and owner_company_id == ctx.company_id:
-            return True
-
-        return False
+        return bool(
+            owner_company_id and ctx.company_id and owner_company_id == ctx.company_id
+        )

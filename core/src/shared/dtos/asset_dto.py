@@ -14,7 +14,7 @@ from typing import Any
 
 
 @dataclass
-class AASAssetDto:
+class AssetDto:
     """
     자산 메타데이터 전송 객체 (GTS v3.0)
     """

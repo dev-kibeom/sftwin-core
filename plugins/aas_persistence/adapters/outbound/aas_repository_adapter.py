@@ -13,14 +13,14 @@ from typing import Any
 from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     IAASRepository,
 )
-from asset_twin.asset_library.domain.aas_asset import AASAsset
+from asset_twin.asset_library.domain.asset import Asset
 from shared.adapters.base_repository_adapter import BaseRepositoryAdapter
 from shared.dtos.log_dtos import LogContext
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 
-class AASRepositoryAdapter(BaseRepositoryAdapter[AASAsset], IAASRepository):
+class AASRepositoryAdapter(BaseRepositoryAdapter[Asset], IAASRepository):
     """
     MySQL ORM/Session 기반 AAS 자산 저장소 어댑터
     """
@@ -35,11 +35,11 @@ class AASRepositoryAdapter(BaseRepositoryAdapter[AASAsset], IAASRepository):
         super().__init__(db_session, logger=adapter_logger)
 
         # DB 세션이 dict 형태인 경우 메모리 시뮬레이션용으로 사용
-        self._in_memory_store: dict[str, AASAsset] = {} if db_session is None else None
+        self._in_memory_store: dict[str, Asset] = {} if db_session is None else None
 
     def find_by_id(
         self, entity_id: str, log_ctx: LogContext | None = None
-    ) -> AASAsset | None:
+    ) -> Asset | None:
         try:
             # 2. debug() -> info() 전환 및 외부 log_ctx 전달받아 트레이싱 보존
             self._logger.info(
@@ -60,10 +60,10 @@ class AASRepositoryAdapter(BaseRepositoryAdapter[AASAsset], IAASRepository):
             )
             return None
 
-    def save(self, entity: AASAsset, log_ctx: LogContext | None = None) -> AASAsset:
+    def save(self, entity: Asset, log_ctx: LogContext | None = None) -> Asset:
         try:
             self._logger.info(
-                f"[AASRepositoryAdapter] Saving AASAsset: {entity.asset_id}",
+                f"[AASRepositoryAdapter] Saving Asset: {entity.asset_id}",
                 log_ctx=log_ctx,
             )
             if self._in_memory_store is not None:

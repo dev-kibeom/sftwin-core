@@ -8,8 +8,9 @@
 ===============================================================================
 """
 
-from abc import ABC, abstractmethod
-
+from asset_twin.ports.inbound.i_asset_twin_command_facade import (
+    AssetTwinCommandFacade,
+)
 from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     RawDataDto,
     ReconstructTwinUseCase,
@@ -17,18 +18,6 @@ from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twi
 )
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.user_context import UserContext
-
-
-class AssetTwinCommandFacade(ABC):
-    """
-    명령 전용 파사드 인터페이스
-    """
-
-    @abstractmethod
-    def reconstruct_twin(
-        self, raw_data: RawDataDto, ctx: UserContext | None = None
-    ) -> TwinMetricsDto:
-        pass
 
 
 class AssetTwinCommandImpl(AssetTwinCommandFacade):

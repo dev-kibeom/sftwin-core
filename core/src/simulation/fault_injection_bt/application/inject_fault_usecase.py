@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from shared.dtos.log_dtos import LogContext
 from shared.dtos.sim_result_dto import SimResultDto
 from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.user_context import UserContext
 from simulation.fault_injection_bt.domain.behavior_tree_model import (
@@ -22,10 +23,17 @@ from simulation.fault_injection_bt.domain.fault_scenario import (
 
 
 class InjectFaultUseCase:
-    def __init__(self, rl_planner_adapter, physics_adapter, logger: GlobalSystemLogger):
+    def __init__(
+        self,
+        rl_planner_adapter,
+        physics_adapter,
+        logger: GlobalSystemLogger | None = None,
+    ):
         self._rl_planner_adapter = rl_planner_adapter
         self._physics_adapter = physics_adapter
-        self._logger = logger
+        self._logger = logger or GlobalSystemLogger(
+            component_name="InjectFault_UseCase"
+        )
 
     def execute(
         self, scenario: FaultScenario, bt_xml: str, ctx: UserContext
@@ -38,7 +46,7 @@ class InjectFaultUseCase:
         if not bt_model.parse_and_validate():
             self._logger.warn("BT XML Validation failed", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_SIM_BT_EVAL_FAILED",
+                error_code=GlobalErrorCodes.ERR_SIM_BT_EVAL_FAILED,
                 message="Invalid Behavior Tree XML structure or missing Recovery node.",
                 status_code=422,
             )
@@ -76,16 +84,16 @@ class InjectFaultUseCase:
             log_ctx.exc = exc
             self._logger.error("JAX RL IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_SIM_IPC_TIMEOUT",
+                error_code=GlobalErrorCodes.ERR_SIM_IPC_TIMEOUT,
                 message="POSIX Shared Memory synchronization with JAX RL Agent timed out.",
                 status_code=500,
-            )
+            ) from exc
 
         # RL 에이전트가 우회 경로를 찾지 못한 경우
         if not waypoints or len(waypoints) == 0:
             self._logger.warn("RL Planner could not find bypass trajectory", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_SIM_BT_EVAL_FAILED",
+                error_code=GlobalErrorCodes.ERR_SIM_BT_EVAL_FAILED,
                 message="Unsolvable bypass trajectory due to spatial constraints.",
                 status_code=422,
             )

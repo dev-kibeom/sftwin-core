@@ -37,6 +37,7 @@ lib/
 *.obj
 *.so
 *.dylib
+*.egg-info/
 
 # IDE & OS Specific
 .vscode/

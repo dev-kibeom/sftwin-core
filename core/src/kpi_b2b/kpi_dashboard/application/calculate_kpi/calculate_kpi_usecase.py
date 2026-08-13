@@ -15,6 +15,7 @@ from kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
 )
 from shared.dtos.log_dtos import LogContext
 from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 
@@ -45,15 +46,15 @@ class CalculateKpiUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code="ERR_KPI_DB_TIMEOUT",
+                error_code=GlobalErrorCodes.ERR_KPI_DB_TIMEOUT,
                 message="데이터베이스 쿼리 시간 초과 또는 내부 오류 발생.",
                 status_code=500,
-            )
+            ) from e
 
         if not logs:
             self._logger.warn(f"No simulation logs found for {sim_id}", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_KPI_SIM_NOT_FOUND",
+                error_code=GlobalErrorCodes.ERR_KPI_SIM_NOT_FOUND,
                 message="종료되거나 유효하지 않은 시뮬레이션입니다.",
                 status_code=404,
             )

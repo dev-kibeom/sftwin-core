@@ -2,12 +2,12 @@
 ===============================================================================
 [File Name] test_aas_asset.py
 [Location ] /tests/asset_twin/asset_library/domain/test_aas_asset.py
-[Description] 도메인 엔티티 AASAsset 및 validate_schema() 단위 테스트
+[Description] 도메인 엔티티 Asset 및 validate_schema() 단위 테스트
 ===============================================================================
 """
 
 import pytest
-from asset_twin.asset_library.domain.aas_asset import AASAsset
+from asset_twin.asset_library.domain.asset import Asset
 from shared.enums.asset_type_enum import AssetTypeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
@@ -15,7 +15,7 @@ from shared.exceptions.error_codes import GlobalErrorCodes
 
 def test_aas_asset_valid_schema():
     # Given
-    asset = AASAsset(
+    asset = Asset(
         asset_name="Doosan_M1013_Robot",
         asset_type=AssetTypeEnum.ROBOT,
         company_id="TEST-COMPANY-01",
@@ -26,12 +26,12 @@ def test_aas_asset_valid_schema():
     )
 
     # When & Then
-    assert asset.validate_schema() is True, "Valid AASAsset schema must return True"
+    assert asset.validate_schema() is True, "Valid Asset schema must return True"
 
 
 def test_aas_asset_invalid_schema_missing_kinematics_keys():
     # Given
-    asset = AASAsset(
+    asset = Asset(
         asset_name="Doosan_M1013_Robot",
         asset_type=AssetTypeEnum.ROBOT,
         company_id="TEST-COMPANY-01",

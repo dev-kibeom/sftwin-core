@@ -1,7 +1,7 @@
 """
 ===============================================================================
-[File Name] asset_twin_query_facade.py
-[Location ] /src/asset_twin/facades/asset_twin_query_facade.py
+[File Name] i_asset_twin_query_facade.py
+[Location ] /src/asset_twin/ports/inbound/i_asset_twin_query_facade.py
 [Description]
  - AssetTwin 컴포넌트의 데이터 조회 전용(CQRS Read-Only) 추상 파사드 포트 인터페이스입니다.
 ===============================================================================
@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     LayoutRenderingDto,
 )
-from shared.dtos.asset_dto import AASAssetDto
+from shared.dtos.asset_dto import AssetDto
 from shared.security.user_context import UserContext
 
 
@@ -22,11 +22,9 @@ class AssetTwinQueryFacade(ABC):
     """
 
     @abstractmethod
-    def get_asset_info(
-        self, asset_id: str, ctx: UserContext | None = None
-    ) -> AASAssetDto:
+    def get_asset_info(self, asset_id: str, ctx: UserContext | None = None) -> AssetDto:
         """
-        AAS 자산 단건 메타데이터 조회
+        자산 단건 메타데이터 조회
         """
         pass
 

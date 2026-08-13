@@ -11,12 +11,12 @@
 from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
     ManageAssetUseCase,
 )
-from asset_twin.facades.asset_twin_query_facade import AssetTwinQueryFacade
+from asset_twin.ports.inbound.i_asset_twin_query_facade import AssetTwinQueryFacade
 from asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
     LayoutRenderingDto,
 )
-from shared.dtos.asset_dto import AASAssetDto
+from shared.dtos.asset_dto import AssetDto
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
@@ -35,9 +35,7 @@ class AssetTwinQueryImpl(AssetTwinQueryFacade):
         self._get_layout_uc = get_layout_uc
         self._logger = logger or GlobalSystemLogger(component_name="AssetTwinQueryImpl")
 
-    def get_asset_info(
-        self, asset_id: str, ctx: UserContext | None = None
-    ) -> AASAssetDto:
+    def get_asset_info(self, asset_id: str, ctx: UserContext | None = None) -> AssetDto:
         self._logger.info(
             f"[AssetTwinQueryImpl] Delegate get_asset_info for asset_id: {asset_id}"
         )

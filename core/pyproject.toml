@@ -13,51 +13,41 @@ namespaces = false
 [tool.importlinter]
 root_package = "src"
 
-# 1. shared 모듈 수칙
+# 1. Shared 계층 고립 (src 하위의 모든 다른 기능 모듈 참조 금지)
 [[tool.importlinter.contracts]]
 name = "Shared layer must not depend on feature modules"
 type = "forbidden"
 source_modules = ["src.shared"]
-forbidden_modules = ["src.asset_twin", "src.edge_control", "src.kpi_b2b", "src.simulation"]
+forbidden_modules = ["src.*"]
 
-# 2. Domain 계층 독립성 수칙
+# 2. Clean Architecture 계층 구조 강제 (깊이 무관 일괄 적용)
+# domain은 application이나 facades를 참조할 수 없습니다.
 [[tool.importlinter.contracts]]
-name = "Domain layers must be completely independent"
+name = "Domain layer isolation (Clean Architecture)"
 type = "forbidden"
 source_modules = [
-    "src.asset_twin.asset_library.domain",
-    "src.asset_twin.twin_reconstruction.domain",
-    "src.kpi_b2b.b2b_procurement.domain",
-    "src.kpi_b2b.kpi_dashboard.domain",
-    "src.simulation.fault_injection_bt.domain",
-    "src.simulation.fms_execution.domain"
+    "src.*.domain",
+    "src.*.*.domain",
+    "src.*.*.*.domain"
 ]
 forbidden_modules = [
-    "src.asset_twin.asset_library.adapters",
-    "src.asset_twin.asset_library.application",
-    "src.kpi_b2b.b2b_procurement.adapters",
-    "src.kpi_b2b.b2b_procurement.application",
-    "src.simulation.fault_injection_bt.adapters",
-    "src.simulation.fault_injection_bt.application"
+    "src.*.application", "src.*.facades", "src.*.adapters",
+    "src.*.*.application", "src.*.*.facades", "src.*.*.adapters",
+    "src.*.*.*.application", "src.*.*.*.facades", "src.*.*.*.adapters"
 ]
 
-# 3. Application 계층 수칙
+# 3. Application 계층 구조 강제 (깊이 무관 일괄 적용)
+# application은 외곽의 facades나 adapters를 참조할 수 없습니다.
 [[tool.importlinter.contracts]]
-name = "Application layer must not depend on Adapters"
+name = "Application layer isolation (Clean Architecture)"
 type = "forbidden"
 source_modules = [
-    "src.asset_twin.asset_library.application",
-    "src.asset_twin.twin_reconstruction.application",
-    "src.kpi_b2b.b2b_procurement.application",
-    "src.kpi_b2b.kpi_dashboard.application",
-    "src.simulation.fault_injection_bt.application",
-    "src.simulation.fms_execution.application"
+    "src.*.application",
+    "src.*.*.application",
+    "src.*.*.*.application"
 ]
 forbidden_modules = [
-    "src.asset_twin.asset_library.adapters",
-    "src.asset_twin.twin_reconstruction.adapters",
-    "src.kpi_b2b.b2b_procurement.adapters",
-    "src.kpi_b2b.kpi_dashboard.adapters",
-    "src.simulation.fault_injection_bt.adapters",
-    "src.simulation.fms_execution.adapters"
+    "src.*.facades", "src.*.adapters",
+    "src.*.*.facades", "src.*.*.adapters",
+    "src.*.*.*.facades", "src.*.*.*.adapters"
 ]

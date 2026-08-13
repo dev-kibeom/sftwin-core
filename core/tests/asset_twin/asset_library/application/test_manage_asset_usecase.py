@@ -11,11 +11,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
-    IAASRepository,
     ManageAssetUseCase,
 )
-from asset_twin.asset_library.domain.aas_asset import AASAsset
-from shared.dtos.asset_dto import AASAssetDto
+from asset_twin.asset_library.domain.asset import Asset
+from asset_twin.asset_library.ports.outbound.i_asset_command_repository import (
+    IAssetCommandRepository,
+)
+from shared.dtos.asset_dto import AssetDto
 from shared.enums.asset_type_enum import AssetTypeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
@@ -25,19 +27,19 @@ from shared.security.user_context import UserContext
 
 def test_tc_happy_path_register_asset():
     """
-    [TC-정상] 신규 AAS 자산 정상 등록 및 저장소 호출 검증
+    [TC-정상] 신규 자산 정상 등록 및 저장소 호출 검증
     """
     # Given
-    mock_repo = MagicMock(spec=IAASRepository)
+    mock_repo = MagicMock(spec=IAssetCommandRepository)
 
-    def mock_save(entity: AASAsset):
+    def mock_save(entity: Asset):
         return entity
 
     mock_repo.save.side_effect = mock_save
 
-    usecase = ManageAssetUseCase(repository=mock_repo)
+    usecase = ManageAssetUseCase(command_repository=mock_repo)
 
-    dto = AASAssetDto(
+    dto = AssetDto(
         asset_id="",
         asset_name="Doosan_M1013_Robot",
         asset_type="ROBOT",
@@ -65,8 +67,8 @@ def test_tc_happy_path_register_asset():
     assert uuid.UUID(generated_asset_id) is not None
     # 2. Mock 저장소 save가 1회 호출되었는지 확인
     assert mock_repo.save.call_count == 1
-    # 3. 전달된 AASAsset 객체의 company_id가 TEST-COMPANY-01로 매핑되었는지 단언
-    saved_arg: AASAsset = mock_repo.save.call_args[0][0]
+    # 3. 전달된 Asset 객체의 company_id가 TEST-COMPANY-01로 매핑되었는지 단언
+    saved_arg: Asset = mock_repo.save.call_args[0][0]
     assert saved_arg.company_id == "TEST-COMPANY-01"
     assert saved_arg.asset_name == "Doosan_M1013_Robot"
 
@@ -76,8 +78,8 @@ def test_tc_edge_case_tenant_isolation_forbidden():
     [TC-예외] 타사 격리 자산 조회 시도 시 차단 및 Fallback 검증
     """
     # Given
-    mock_repo = MagicMock(spec=IAASRepository)
-    private_asset = AASAsset(
+    mock_repo = MagicMock(spec=IAssetCommandRepository)
+    private_asset = Asset(
         asset_id="PRIVATE-ASSET-01",
         asset_name="Private_CNC",
         asset_type=AssetTypeEnum.CNC,
@@ -86,7 +88,7 @@ def test_tc_edge_case_tenant_isolation_forbidden():
     )
     mock_repo.find_by_id.return_value = private_asset
 
-    usecase = ManageAssetUseCase(repository=mock_repo)
+    usecase = ManageAssetUseCase(command_repository=mock_repo)
 
     ctx = UserContext(
         user_id="USER-123",
@@ -110,11 +112,11 @@ def test_tc_error_handling_invalid_domain_schema():
     [TC-에러] 도메인 스키마 규격 위반 시 조기 차단(Guard Clause) 검증
     """
     # Given
-    mock_repo = MagicMock(spec=IAASRepository)
-    usecase = ManageAssetUseCase(repository=mock_repo)
+    mock_repo = MagicMock(spec=IAssetCommandRepository)
+    usecase = ManageAssetUseCase(command_repository=mock_repo)
 
     # kinematics_metadata 필수 규격 누락 DTO
-    invalid_dto = AASAssetDto(
+    invalid_dto = AssetDto(
         asset_id="",
         asset_name="Invalid_Robot",
         asset_type="ROBOT",

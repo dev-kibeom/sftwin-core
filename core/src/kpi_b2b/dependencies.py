@@ -1,12 +1,6 @@
 import os
 
 from fastapi import Request
-from shared.adapters.redis_cache_adapter import RedisCacheAdapter
-from shared.enums.user_role_enum import UserRoleEnum
-from shared.security.jwt_auth_interceptor import JwtAuthInterceptor
-from shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from shared.security.user_context import UserContext
-
 from kpi_b2b.b2b_procurement.adapters.outbound.b2b_marketplace_adapter import (
     B2bMarketplaceAdapter,
 )
@@ -27,6 +21,11 @@ from kpi_b2b.kpi_dashboard.adapters.outbound.influxdb_timeseries_adapter import 
 from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
+from shared.adapters.redis_cache_adapter import RedisCacheAdapter
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.security.jwt_auth_interceptor import JwtAuthInterceptor
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+from shared.security.user_context import UserContext
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "SF-Twin-Development-Secret-Key-2026")
 jwt_interceptor = JwtAuthInterceptor(jwt_secret_key=JWT_SECRET_KEY)

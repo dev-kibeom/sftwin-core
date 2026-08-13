@@ -15,6 +15,7 @@ from kpi_b2b.kpi_dashboard.ports.outbound.base_time_series_port import (
 )
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.security.user_context import UserContext
 
 
@@ -102,7 +103,7 @@ class TestCalculateKpi:
 
         mock_repo.get_owner.return_value = "TARGET_TENANT"
         mock_rbac.validate_company_isolation.side_effect = BaseSystemException(
-            error_code="ERR_SHARED_FORBIDDEN",
+            error_code=GlobalErrorCodes.ERR_SHARED_FORBIDDEN,
             message="Access denied",
             status_code=403,
         )
@@ -126,7 +127,7 @@ class TestCalculateKpi:
 
         with pytest.raises(BaseSystemException) as exc_info:
             facade.calculate_oee(sim_id="SIM-EMPTY", ctx=valid_ctx)
-        assert exc_info.value.error_code == "ERR_KPI_SIM_NOT_FOUND"
+        assert exc_info.value.error_code == GlobalErrorCodes.ERR_KPI_SIM_NOT_FOUND
 
     def test_calculate_oee_db_timeout(self, target_system):
         facade, mock_ts_adapter, mock_rbac, mock_repo = target_system
@@ -142,4 +143,4 @@ class TestCalculateKpi:
 
         with pytest.raises(BaseSystemException) as exc_info:
             facade.calculate_oee(sim_id="SIM-TIMEOUT", ctx=valid_ctx)
-        assert exc_info.value.error_code == "ERR_KPI_DB_TIMEOUT"
+        assert exc_info.value.error_code == GlobalErrorCodes.ERR_KPI_DB_TIMEOUT

@@ -2,9 +2,10 @@ syntax = "proto3";
 package sftwin.failsafe;
 
 message FailsafeCommandProto {
-  string command_id = 1;          // 제어 명령 고유 UUID
-  string target_device_id = 2;    // 제어 대상 설비/로봇 식별자
-  string action_type = 3;         // 비상 제어 동작 (ESTOP, BYPASS 등)
-  string trigger_reason = 4;      // 차단 원인 (HEARTBEAT_LOSS, TORQUE_EXCEEDED 등)
-  int64 issued_timestamp_ns = 5;  // 명령 발행 나노초 타임스탬프
+  string command_id = 1;            // 제어 명령 고유 UUID
+  string target_device_id = 2;      // 제어 대상 설비/로봇 ID
+  string action_type = 3;           // 비상 제어 동작 (ESTOP, BYPASS 등)
+  string trigger_reason = 4;        // 차단 원인 (HEARTBEAT_LOSS, TORQUE_EXCEEDED 등)
+  int64 issued_timestamp_ns = 5;    // 명령 발행 나노초 타임스탬프
+  int64 processed_timestamp_ns = 6; // Edge 수신 및 차단 완료 나노초 타임스탬프
 }

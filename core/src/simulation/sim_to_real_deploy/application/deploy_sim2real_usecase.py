@@ -9,6 +9,7 @@ from typing import Any
 
 from shared.dtos.log_dtos import LogContext
 from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.user_context import UserContext
 from simulation.sim_to_real_deploy.domain.deploy_package import DeployPackage
@@ -16,9 +17,11 @@ from simulation.sim_to_real_deploy.domain.enums import DeployPackageFormatEnum
 
 
 class DeploySim2RealUseCase:
-    def __init__(self, deploy_adapter, logger: GlobalSystemLogger):
+    def __init__(self, deploy_adapter, logger: GlobalSystemLogger | None = None):
         self._deploy_adapter = deploy_adapter
-        self._logger = logger
+        self._logger = logger or GlobalSystemLogger(
+            component_name="RunFmsSimulationUseCase"
+        )
 
     def execute(
         self,
@@ -39,7 +42,7 @@ class DeploySim2RealUseCase:
                 f"Unverified or invalid scenario for package {package_id}", log_ctx
             )
             raise BaseSystemException(
-                error_code="ERR_COMMON_INVALID_INPUT",
+                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
                 message="FMS scenario is unverified or missing required configurations.",
                 status_code=400,
             )
@@ -47,12 +50,12 @@ class DeploySim2RealUseCase:
         # 2. 도메인 엔티티 생성 및 무결성 해시 산출
         try:
             target_format = DeployPackageFormatEnum(format_type)
-        except ValueError:
+        except ValueError as ve:
             raise BaseSystemException(
-                error_code="ERR_COMMON_INVALID_INPUT",
+                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
                 message=f"Unsupported deploy format: {format_type}",
                 status_code=400,
-            )
+            ) from ve
 
         pkg = DeployPackage(
             package_id=package_id, format=target_format, vda5050_config=config
@@ -74,16 +77,15 @@ class DeploySim2RealUseCase:
             log_ctx.exc = exc
             self._logger.error("I/O Error during package export", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_COMMON_INTERNAL_ERROR",
+                error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
                 message="Failed to write package to file system due to I/O or permission error.",
                 status_code=500,
-            )
+            ) from exc
 
     def _verify_simulation_result(self, package_id: str) -> bool:
         """
         시뮬레이션 가동을 통해 검증(물리 충돌 0건 등)을 통과했는지 확인합니다.
         (본 예제에서는 테스트를 위해 'invalid'가 포함된 경우 False 반환)
         """
-        if "invalid" in package_id.lower():
-            return False
-        return True
+        # TODO: 실제 검증 로직은 시뮬레이션 결과 DB 조회 및 검증 로직으로 대체 필요
+        return "invalid" not in package_id.lower()

@@ -11,8 +11,8 @@
 import os
 
 import pandas as pd
-from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
-    IKampDataAdapter,
+from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser_port import (
+    ISensorLogParserPort,
 )
 from asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from shared.exceptions.base_exception import BaseSystemException
@@ -20,7 +20,7 @@ from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 
-class KampDataAdapter(IKampDataAdapter):
+class KampDataAdapter(ISensorLogParserPort):
     """
     pandas chunksize 기반 KAMP 센서 로그 스트리밍 어댑터
     """

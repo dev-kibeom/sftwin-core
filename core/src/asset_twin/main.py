@@ -10,8 +10,11 @@
 from datetime import datetime, timezone
 
 # 1. 신규 라우터 Import
-from asset_twin.twin_reconstruction.adapters.inbound.asset_twin_router import (
-    router as asset_twin_router,
+from plugins.fast_api.routers.digital_twin_router import (
+    router as digital_twin_router,
+)
+from plugins.fast_api.routers.asset_router import (
+    router as asset_router,
 )
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,8 +48,9 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=status_code, content=dto.__dict__)
 
 
-# 2. 신규 라우터 바인딩
-app.include_router(asset_twin_router)
+# 2. 라우터 바인딩
+app.include_router(digital_twin_router)
+app.include_router(asset_router)
 
 
 # 3. GTS 5.4 규약 헬스체크 엔드포인트

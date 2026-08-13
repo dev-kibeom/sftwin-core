@@ -11,6 +11,7 @@ from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto impor
 from kpi_b2b.b2b_procurement.domain.expert_session import ExpertSession
 from shared.dtos.log_dtos import LogContext
 from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 
@@ -44,10 +45,10 @@ class LayoutMirroringUseCase:
                 "Database persistence failed during expert session creation.", log_ctx
             )
             raise BaseSystemException(
-                error_code="ERR_COMMON_INTERNAL_ERROR",
+                error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
                 message="시스템 내부 장애가 발생했습니다. 잠시 후 다시 시도해주세요.",
                 status_code=500,
-            )
+            ) from e
 
         self._logger.info(
             f"Successfully generated expert session: {session_entity.session_id}",

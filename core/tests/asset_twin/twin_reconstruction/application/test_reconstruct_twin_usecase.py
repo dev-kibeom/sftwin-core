@@ -10,14 +10,18 @@ import os
 from unittest.mock import MagicMock
 
 import pytest
+
+# 1. 정화된 Core UseCase 및 Port Import
 from asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
-    IKampDataAdapter,
     RawDataDto,
     ReconstructTwinUseCase,
 )
 from asset_twin.twin_reconstruction.domain.twin_baseline import (
     TwinBaseline,
     TwinSyncStatusEnum,
+)
+from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser_port import (
+    ISensorLogParserPort,
 )
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
@@ -30,11 +34,11 @@ def test_tc_happy_path_reconstruct_twin(tmp_path):
     [TC-정상] 가상 공장 복각 및 정합성 검증 성공 시나리오
     """
     # Given
-    fake_log_file = tmp_path / "kamp_sample.csv"
+    fake_log_file = tmp_path / "sensor_sample.csv"
     fake_log_file.write_text("timestamp,deviation\n1,0.5\n2,0.8\n")
 
-    mock_adapter = MagicMock(spec=IKampDataAdapter)
-    mock_adapter.parse_sensor_log.return_value = TwinBaseline(
+    mock_sensor_port = MagicMock(spec=ISensorLogParserPort)
+    mock_sensor_port.parse_sensor_log.return_value = TwinBaseline(
         baseline_name="",
         source_log_path=str(fake_log_file),
         company_id="",
@@ -44,12 +48,12 @@ def test_tc_happy_path_reconstruct_twin(tmp_path):
         },  # 1.25% error
     )
 
-    mock_repo = MagicMock()
-    mock_repo.save_baseline.side_effect = lambda entity: entity
+    mock_command_repo = MagicMock()
+    mock_command_repo.save_baseline.side_effect = lambda entity: entity
 
     usecase = ReconstructTwinUseCase(
-        kamp_adapter=mock_adapter,
-        repository=mock_repo,
+        sensor_log_parser_port=mock_sensor_port,
+        command_repository=mock_command_repo,
         default_tolerance=5.0,  # 5% threshold
     )
 
@@ -72,7 +76,7 @@ def test_tc_happy_path_reconstruct_twin(tmp_path):
     assert metrics.sync_error_rate == 1.25
     assert metrics.sync_status == TwinSyncStatusEnum.COMPLETED.value
     assert metrics.is_verified is True
-    assert mock_repo.save_baseline.call_count == 1
+    assert mock_command_repo.save_baseline.call_count == 1
     # Clean-up 검증: 임시 원본 파일이 삭제되었는지 확인
     assert not os.path.exists(str(fake_log_file))
 
@@ -82,11 +86,11 @@ def test_tc_edge_case_tolerance_exceeded(tmp_path):
     [TC-예외] 가상-현실 정합성 오차율 허용치 초과 시나리오
     """
     # Given
-    fake_log_file = tmp_path / "kamp_bad_sample.csv"
+    fake_log_file = tmp_path / "sensor_bad_sample.csv"
     fake_log_file.write_text("timestamp,deviation\n1,15.3\n")
 
-    mock_adapter = MagicMock(spec=IKampDataAdapter)
-    mock_adapter.parse_sensor_log.return_value = TwinBaseline(
+    mock_sensor_port = MagicMock(spec=ISensorLogParserPort)
+    mock_sensor_port.parse_sensor_log.return_value = TwinBaseline(
         baseline_name="",
         source_log_path=str(fake_log_file),
         company_id="",
@@ -96,12 +100,12 @@ def test_tc_edge_case_tolerance_exceeded(tmp_path):
         },  # 15.3% error
     )
 
-    mock_repo = MagicMock()
-    mock_repo.save_baseline.side_effect = lambda entity: entity
+    mock_command_repo = MagicMock()
+    mock_command_repo.save_baseline.side_effect = lambda entity: entity
 
     usecase = ReconstructTwinUseCase(
-        kamp_adapter=mock_adapter,
-        repository=mock_repo,
+        sensor_log_parser_port=mock_sensor_port,
+        command_repository=mock_command_repo,
         default_tolerance=5.0,  # 5% threshold
     )
 
@@ -124,27 +128,30 @@ def test_tc_edge_case_tolerance_exceeded(tmp_path):
     assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_SYNC_OVER_LIMIT
     assert exc_info.value.status_code == 422
     # 저장소에 TOLERANCE_EXCEEDED 상태로 기록되었는지 단언
-    saved_entity = mock_repo.save_baseline.call_args[0][0]
+    saved_entity = mock_command_repo.save_baseline.call_args[0][0]
     assert saved_entity.sync_status == TwinSyncStatusEnum.TOLERANCE_EXCEEDED
 
 
 def test_tc_error_handling_kamp_parse_fail():
     """
-    [TC-에러] KAMP 데이터셋 파싱 실패 및 I/O 예외 시나리오
+    [TC-에러] 센서 데이터셋 파싱 실패 및 I/O 예외 시나리오
     """
     # Given
-    mock_adapter = MagicMock(spec=IKampDataAdapter)
-    mock_adapter.parse_sensor_log.side_effect = BaseSystemException(
+    mock_sensor_port = MagicMock(spec=ISensorLogParserPort)
+    mock_sensor_port.parse_sensor_log.side_effect = BaseSystemException(
         error_code=GlobalErrorCodes.ERR_TWIN_KAMP_PARSE_FAIL,
-        message="KAMP sensor log file not found.",
+        message="Sensor log file not found.",
         status_code=500,
     )
 
-    mock_repo = MagicMock()
-    usecase = ReconstructTwinUseCase(kamp_adapter=mock_adapter, repository=mock_repo)
+    mock_command_repo = MagicMock()
+    usecase = ReconstructTwinUseCase(
+        sensor_log_parser_port=mock_sensor_port,
+        command_repository=mock_command_repo,
+    )
 
     raw_data = RawDataDto(
-        baseline_name="Missing_Twin", source_log_path="/non_existent/kamp.csv"
+        baseline_name="Missing_Twin", source_log_path="/non_existent/sensor_log.csv"
     )
 
     ctx = UserContext(
@@ -161,4 +168,4 @@ def test_tc_error_handling_kamp_parse_fail():
 
     assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_KAMP_PARSE_FAIL
     assert exc_info.value.status_code == 500
-    mock_repo.save_baseline.assert_not_called()
+    mock_command_repo.save_baseline.assert_not_called()

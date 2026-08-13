@@ -1,10 +1,10 @@
 """
 ===============================================================================
-[File Name] aas_asset.py
-[Location ] /src/asset_twin/asset_library/domain/aas_asset.py
+[File Name] asset.py
+[Location ] /src/asset_twin/asset_library/domain/asset.py
 [Description]
- - 순수 Python 도메인 엔티티 객체 및 스키마 유효성 검증 로직을 포함합니다.
- - DB 매핑 어노테이션이나 외부 프레임워크 의존성을 배제하여 도메인 계층을 순수하게 유지합니다.
+ - 순수 Python 도메인 엔티티 객체 및 자산 규격 유효성 검증 로직을 포함합니다.
+ - 특정 외부 자산 규격(AAS 등)이나 프레임워크에 종속되지 않은 Core Asset 엔티티입니다.
 ===============================================================================
 """
 
@@ -19,9 +19,9 @@ from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 @dataclass
-class AASAsset:
+class Asset:
     """
-    AAS(Asset Administration Shell) 국제 표준 자산 도메인 엔티티
+    스마트 팩토리 디지털 트윈 핵심 자산(Asset) 도메인 엔티티
     """
 
     asset_name: str
@@ -42,8 +42,7 @@ class AASAsset:
 
     def validate_schema(self) -> bool:
         """
-        Guard Clause 패턴을 적용한 도메인 스키마 유효성 검증
-        kinematics_metadata 및 필수 데이터 규격을 검사하며 위반 시 ERR_TWIN_INVALID_SCHEMA 발생
+        Guard Clause 패턴을 적용한 도메인 자산 스키마 유효성 검증
         """
         if not self.asset_name or not isinstance(self.asset_name, str):
             raise BaseSystemException(
@@ -77,7 +76,7 @@ class AASAsset:
                 details={"kinematics_metadata": self.kinematics_metadata},
             )
 
-        # AAS 규격에 따른 kinematics_metadata 필수 키 및 하위 구조 검증 (예: degrees_of_freedom, dh_parameters)
+        # 구체적인 AAS 키 검증 대신, 필수 기구학 구조(자유도, 매개변수) 보유 여부 검증
         required_keys = ["degrees_of_freedom", "dh_parameters"]
         for key in required_keys:
             if key not in self.kinematics_metadata:

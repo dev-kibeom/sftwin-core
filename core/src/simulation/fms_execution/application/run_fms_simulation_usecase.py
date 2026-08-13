@@ -10,6 +10,7 @@ from typing import Any
 from shared.dtos.log_dtos import LogContext
 from shared.dtos.sim_result_dto import SimResultDto
 from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.user_context import UserContext
 from simulation.fms_execution.domain.collision_detector import CollisionDetector
@@ -43,7 +44,7 @@ class RunFmsSimulationUseCase:
         if not scenario.validate_scenario():
             self._logger.warn("Invalid scenario metadata", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_SIM_INVALID_SCENARIO",
+                error_code=GlobalErrorCodes.ERR_SIM_INVALID_SCENARIO,
                 message="AAS or Kinematics metadata schema violation or missing baseline_id.",
                 status_code=400,
             )
@@ -51,7 +52,7 @@ class RunFmsSimulationUseCase:
         if not self._check_vram_resource_limit():
             self._logger.error("VRAM Resource exhausted over 4.2GB limit", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_SIM_RESOURCE_EXHAUSTED",
+                error_code=GlobalErrorCodes.ERR_SIM_RESOURCE_EXHAUSTED,
                 message="GPU VRAM cache exceeds the 4.2GB limit. Request rejected to prevent OOM.",
                 status_code=503,
             )
@@ -59,12 +60,13 @@ class RunFmsSimulationUseCase:
         try:
             trajectory_results = self._physics_adapter.calculate_kinematics(scenario)
         except TimeoutError as exc:
-            self._logger.error("IPC Sync timeout (>1ms)", log_ctx, exc=exc)
+            log_ctx.exc = exc
+            self._logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
-                error_code="ERR_SIM_IPC_TIMEOUT",
+                error_code=GlobalErrorCodes.ERR_SIM_IPC_TIMEOUT,
                 message="POSIX Shared Memory IPC synchronization timeout exceeded 1ms.",
                 status_code=500,
-            )
+            ) from exc
 
         detector = CollisionDetector()
         if detector.detect(trajectory_results):
@@ -73,7 +75,7 @@ class RunFmsSimulationUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code="ERR_SIM_COLLISION_DETECTED",
+                error_code=GlobalErrorCodes.ERR_SIM_COLLISION_DETECTED,
                 message="Physical collision or Fleet deadlock detected during computation.",
                 status_code=409,
             )

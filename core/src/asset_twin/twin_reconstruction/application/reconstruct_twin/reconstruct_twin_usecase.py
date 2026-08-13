@@ -9,11 +9,13 @@
 """
 
 import os
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
 from asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
+from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser_port import (
+    ISensorLogParserPort,
+)
 from shared.dtos.log_dtos import LogContext
 from shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
 from shared.exceptions.base_exception import BaseSystemException
@@ -38,12 +40,6 @@ class TwinMetricsDto:
     evaluated_at: str
 
 
-class IKampDataAdapter(ABC):
-    @abstractmethod
-    def parse_sensor_log(self, file_path: str) -> TwinBaseline:
-        pass
-
-
 class VerifyPrecisionUseCase:
     @staticmethod
     def verify_sync_error(baseline: TwinBaseline, tolerance: float = 5.0) -> bool:
@@ -53,13 +49,13 @@ class VerifyPrecisionUseCase:
 class ReconstructTwinUseCase:
     def __init__(
         self,
-        kamp_adapter: IKampDataAdapter,
-        repository: Any,
+        sensor_log_parser_port: ISensorLogParserPort,
+        command_repository: Any,
         default_tolerance: float = 5.0,
         logger: GlobalSystemLogger | None = None,
     ) -> None:
-        self._kamp_adapter = kamp_adapter
-        self._repository = repository
+        self._sensor_log_parser_port = sensor_log_parser_port
+        self._command_repository = command_repository
         self._default_tolerance = default_tolerance
         self._logger = logger or GlobalSystemLogger(
             component_name="ReconstructTwinUseCase"
@@ -84,7 +80,9 @@ class ReconstructTwinUseCase:
                 status_code=400,
             )
 
-        baseline = self._kamp_adapter.parse_sensor_log(raw_data.source_log_path)
+        baseline = self._sensor_log_parser_port.parse_sensor_log(
+            raw_data.source_log_path
+        )
         baseline.baseline_name = raw_data.baseline_name
         baseline.company_id = ctx.company_id
         baseline.created_by = ctx.username
@@ -102,7 +100,7 @@ class ReconstructTwinUseCase:
                 log_ctx,
             )
             baseline.update_status(TwinSyncStatusEnum.TOLERANCE_EXCEEDED)
-            self._repository.save_baseline(baseline)
+            self._command_repository.save_baseline(baseline)
             raise BaseSystemException(
                 error_code=GlobalErrorCodes.ERR_TWIN_SYNC_OVER_LIMIT,
                 message=f"Real-to-Sim precision error rate ({error_rate}%) exceeds tolerance limit ({self._default_tolerance}%).",
@@ -114,7 +112,7 @@ class ReconstructTwinUseCase:
             )
 
         baseline.update_status(TwinSyncStatusEnum.COMPLETED)
-        saved_baseline = self._repository.save_baseline(baseline)
+        saved_baseline = self._command_repository.save_baseline(baseline)
 
         self._cleanup_temp_files(raw_data.source_log_path, log_ctx)
 

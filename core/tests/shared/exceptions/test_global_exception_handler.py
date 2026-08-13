@@ -60,7 +60,7 @@ def test_tc_err_03_sensitive_pattern_safe_fallback(exception_handler):
         "stack_trace": 'Traceback (most recent call last):\n  File "/src/main.py", line 42, in <module>'
     }
     exc = BaseSystemException(
-        error_code="ERR_TWIN_SYNC_OVER_LIMIT",
+        error_code=GlobalErrorCodes.ERR_TWIN_SYNC_OVER_LIMIT,
         message="Sync precision failed.",
         status_code=422,
         details=sensitive_details,
