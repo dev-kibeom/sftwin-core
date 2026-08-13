@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "interlock_state_enums.hpp"
+#include "src/edge_control/anomaly_failsafe/ports/outbound/interlock_state_enums.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::ports {
 

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string>
 
-namespace sftwin::edge_control::realtime_telemetry::dtos {
+namespace namespace sftwin::edge_control::common::dtos {
 
 /**
  * @brief AI 비전 객체 감지 전용 독립 DTO
@@ -14,4 +14,4 @@ struct VisionDetectionDto {
     uint64_t captured_timestamp_ns{0};
 };
 
-}  // namespace sftwin::edge_control::realtime_telemetry::ports
+}  // namespace sftwin::edge_control::common::dtos

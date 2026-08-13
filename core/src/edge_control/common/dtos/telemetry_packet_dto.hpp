@@ -3,10 +3,10 @@
 #include <string>
 #include <vector>
 
-namespace sftwin::edge_control::realtime_telemetry::dtos {
+namespace sftwin::edge_control::common::dtos {
 
 /**
- * @brief 로봇 및 설비 실시간 제어 상태 DTO (비전 데이터 분리)
+ * @brief 로봇 및 설비 실시간 제어 상태 DTO
  */
 class TelemetryPacketDto {
    private:
@@ -37,4 +37,4 @@ class TelemetryPacketDto {
     void set_warning(bool is_warning) { _is_warning = is_warning; }
 };
 
-}  // namespace sftwin::edge_control::realtime_telemetry::ports
+}  // namespace sftwin::edge_control::common::dtos

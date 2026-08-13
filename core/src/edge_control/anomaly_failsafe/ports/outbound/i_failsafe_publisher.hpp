@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "failsafe_command_dto.hpp"
+#include "src/edge_control/anomaly_failsafe/ports/outbound/failsafe_command_dto.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::ports {
 class IFailsafePublisher {
