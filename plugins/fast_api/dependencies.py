@@ -26,7 +26,7 @@ def get_reconstruct_twin_usecase() -> ReconstructTwinUseCase:
     """
     # 글로벌 컨테이너 완성 시 container.get_reconstruct_twin_usecase()로 대체
     return ReconstructTwinUseCase(
-        sensor_log_parser_port=None,  # type: ignore
+        sensor_log_parser=None,  # type: ignore
         command_repository=None,  # type: ignore
     )
 

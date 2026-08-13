@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
+#include "edge_local_enums.hpp"
 #include "src/edge_control/common/exceptions/edge_system_exception.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::domain {

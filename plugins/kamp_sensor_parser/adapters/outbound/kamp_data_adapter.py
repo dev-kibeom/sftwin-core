@@ -11,7 +11,7 @@
 import os
 
 import pandas as pd
-from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser_port import (
+from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser import (
     ISensorLogParserPort,
 )
 from asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline

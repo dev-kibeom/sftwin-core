@@ -38,7 +38,7 @@ class GlobalDependencyContainer:
         self.tsdb_adapter = None
 
         # TODO(Plugin-Vision): plugins/ai_analytics 개발 완료 시 주입 활성화
-        self.vision_adapter = None
+        self.vision_detector = None
 
     @classmethod
     def get_instance(cls) -> "GlobalDependencyContainer":
@@ -58,7 +58,7 @@ class GlobalDependencyContainer:
         inject_fault_uc = InjectFaultUseCase(
             rl_planner_adapter=None,  # TODO: RL Planner Adapter 주입 필요
             physics_adapter=self.physics_plugin,
-            # vision_port=self.vision_adapter
+            # vision_port=self.vision_detector
         )
         deploy_uc = DeploySim2RealUseCase(
             deploy_adapter=None

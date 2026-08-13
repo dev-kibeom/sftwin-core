@@ -1,5 +1,5 @@
 """
-@file base_time_series_port.py
+@file base_time_series.py
 @description 시계열 DB 조회를 위한 추상 포트 (DIP 준수)
 """
 

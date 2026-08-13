@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
-from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser_port import (
-    ISensorLogParserPort,
+from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser import (
+    ISensorLogParser,
 )
 from shared.dtos.log_dtos import LogContext
 from shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
@@ -49,12 +49,12 @@ class VerifyPrecisionUseCase:
 class ReconstructTwinUseCase:
     def __init__(
         self,
-        sensor_log_parser_port: ISensorLogParserPort,
+        sensor_log_parser: ISensorLogParser,
         command_repository: Any,
         default_tolerance: float = 5.0,
         logger: GlobalSystemLogger | None = None,
     ) -> None:
-        self._sensor_log_parser_port = sensor_log_parser_port
+        self._sensor_log_parser = sensor_log_parser
         self._command_repository = command_repository
         self._default_tolerance = default_tolerance
         self._logger = logger or GlobalSystemLogger(
@@ -80,9 +80,7 @@ class ReconstructTwinUseCase:
                 status_code=400,
             )
 
-        baseline = self._sensor_log_parser_port.parse_sensor_log(
-            raw_data.source_log_path
-        )
+        baseline = self._sensor_log_parser.parse_sensor_log(raw_data.source_log_path)
         baseline.baseline_name = raw_data.baseline_name
         baseline.company_id = ctx.company_id
         baseline.created_by = ctx.username

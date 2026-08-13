@@ -1,15 +1,23 @@
 #include "edge_query_facade.hpp"
 
-namespace sftwin::edge_control::facades {
+#include "src/edge_control/realtime_telemetry/application/process_telemetry/process_telemetry_usecase.hpp"
+
+namespace sftwin::edge_control::facades::inbound {
+
+using realtime_telemetry::application::ProcessTelemetryUseCase;
+using realtime_telemetry::dtos::TelemetryPacketDto;
 
 EdgeQueryFacade::EdgeQueryFacade(
-    std::shared_ptr<realtime_telemetry::application::ProcessTelemetryUseCase> telemetry_uc)
+    std::shared_ptr<ProcessTelemetryUseCase> telemetry_uc)
     : _telemetry_uc(std::move(telemetry_uc)) {}
 
-sftwin::telemetry::TelemetryPacketProto EdgeQueryFacade::get_telemetry_status(
-    const std::string& device_id) {
-    // 내부 유즈케이스로 하향 위임 (Delegation)
-    return _telemetry_uc->get_latest_telemetry(device_id).get_proto();
+TelemetryPacketDto EdgeQueryFacade::get_telemetry_status(const std::string& device_id) {
+    if (!_telemetry_uc) {
+        return {}; // Null 지점 방어
+    }
+
+    // core DTO를 그대로 하향 위임하여 반환
+    return _telemetry_uc->get_latest_telemetry(device_id);
 }
 
-}  // namespace sftwin::edge_control::facades
+}  // namespace sftwin::edge_control::facades::inbound

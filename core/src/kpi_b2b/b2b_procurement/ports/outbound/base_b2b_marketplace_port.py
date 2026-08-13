@@ -1,5 +1,5 @@
 """
-@file base_b2b_marketplace_port.py
+@file base_b2b_marketplace.py
 @description 의존성 역전 원칙(DIP)을 위한 외부 마켓플레이스 연동 추상 포트
 """
 

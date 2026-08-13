@@ -31,7 +31,7 @@ repos:
     hooks:
       - id: architectural-compliance
         name: Architectural Standards & Code Conventions Check
-        entry: bash -c "PYTHONPATH=core/src python3 -m pytest core/tests/test_code_standards.py"
+        entry: bash -c "PYTHONPATH=core/src python3 -m pytest tests/test_code_standards.py"
         language: system
         pass_filenames: false
         always_run: true

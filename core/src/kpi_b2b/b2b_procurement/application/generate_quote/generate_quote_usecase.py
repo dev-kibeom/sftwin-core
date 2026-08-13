@@ -5,17 +5,18 @@
 
 from typing import Any
 
-from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
-    B2bQuoteDto,
-)
-from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
-from kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace_port import (
-    BaseB2bMarketplacePort,
-)
 from shared.dtos.log_dtos import LogContext
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.global_system_logger import GlobalSystemLogger
+
+from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+    B2bQuoteDto,
+)
+from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
+from kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace import (
+    BaseB2bMarketplacePort,
+)
 
 
 class GenerateQuoteUseCase:

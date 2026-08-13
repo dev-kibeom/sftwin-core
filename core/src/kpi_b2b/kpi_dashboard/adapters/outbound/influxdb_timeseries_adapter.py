@@ -10,7 +10,7 @@ from influxdb_client.client.influxdb_client import InfluxDBClient
 from shared.dtos.log_dtos import LogContext
 from shared.logger.global_system_logger import GlobalSystemLogger
 
-from .base_time_series_port import BaseTimeSeriesPort
+from .base_time_series import BaseTimeSeriesPort
 
 
 class InfluxDbTimeSeriesAdapter(BaseTimeSeriesPort):
