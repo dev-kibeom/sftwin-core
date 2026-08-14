@@ -11,29 +11,31 @@
 using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
+
 using namespace sftwin::edge_control;
+using namespace sftwin::edge_control::anomaly_failsafe;
 
 // ==============================================================================
 // 1. Mock Classes (정화된  인터페이스 상속)
 // ==============================================================================
-class MockHardwareInterlock : public anomaly_failsafe::ports::IHardwareInterlock {
+class MockHardwareInterlock : public IHardwareInterlock {
    public:
     MOCK_METHOD(void, trigger_physical_relay, (), (override));
 
     MOCK_METHOD(bool, release_interlock, (const std::string& operator_approval_token), (override));
 
     // 2. get_state 모킹 추가 (const 키워드 누락 주의!)
-    MOCK_METHOD(sftwin::edge_control::anomaly_failsafe::enums::InterlockState, get_state, (), (const, override));
+    MOCK_METHOD(::InterlockState, get_state, (), (const, override));
 };
 
-class MockFailsafePublisher : public anomaly_failsafe::ports::IFailsafePublisher {
+class MockFailsafePublisher : public IFailsafePublisher {
    public:
     MOCK_METHOD(bool, publish,
-                (const std::string&, const anomaly_failsafe::dtos::FailsafeCommandDto&),
+                (const std::string&, const FailsafeCommandDto&),
                 (override));
 };
 
-class MockRecoverySequence : public anomaly_failsafe::ports::IRecoverySequence {
+class MockRecoverySequence : public IRecoverySequence {
    public:
     MOCK_METHOD(bool, execute_recovery_sequence, (const std::string&), (override));
 };
@@ -47,11 +49,11 @@ class FailsafeRecoveryTest : public ::testing::Test {
     std::shared_ptr<MockFailsafePublisher> mock_dds;
     std::shared_ptr<MockRecoverySequence> mock_recovery;
 
-    anomaly_failsafe::domain::FailsafeRule default_rule;
-    std::unique_ptr<anomaly_failsafe::application::TriggerFailsafeUseCase> usecase;
+    domain::FailsafeRule default_rule;
+    std::unique_ptr<application::TriggerFailsafeUseCase> usecase;
 
     void SetUp() override {
-        common::logging::EdgeLogger::init();
+        EdgeLogger::init();
 
         mock_hw = std::make_shared<NiceMock<MockHardwareInterlock>>();
         mock_dds = std::make_shared<NiceMock<MockFailsafePublisher>>();
@@ -106,7 +108,7 @@ TEST_F(FailsafeRecoveryTest, EdgeCase_InvalidStateTransition_Blocked) {
     try {
         EXPECT_FALSE(usecase->execute_recovery_sequence("<root>invalid_request</root>"));
         FAIL() << "Expected EdgeSystemException to be thrown";
-    } catch (const common::exceptions::EdgeSystemException& e) {
+    } catch (const EdgeSystemException& e) {
         EXPECT_EQ(e.get_error_code(), "ERR_COMMON_INVALID_INPUT");
     } catch (...) {
         FAIL() << "Expected EdgeSystemException, but a different exception was thrown";

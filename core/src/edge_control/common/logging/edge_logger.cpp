@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-namespace sftwin::edge_control::common::logging {
+namespace sftwin::edge_control {
 
 std::shared_ptr<spdlog::logger> EdgeLogger::_async_logger = nullptr;
 
@@ -38,4 +38,4 @@ std::shared_ptr<spdlog::logger> EdgeLogger::get_logger() {
     return _async_logger;
 }
 
-}  // namespace sftwin::edge_control::common::logging
+}  // namespace sftwin::edge_control

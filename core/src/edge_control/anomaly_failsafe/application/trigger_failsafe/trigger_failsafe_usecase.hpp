@@ -16,16 +16,16 @@
 namespace sftwin::edge_control::anomaly_failsafe::application {
 
 class TriggerFailsafeUseCase {
-   public: // 📰 Newspaper Metaphor: 공개 인터페이스를 가장 상단에 배치
-    TriggerFailsafeUseCase(std::shared_ptr<ports::IHardwareInterlock> hw_interlock,
-                           std::shared_ptr<ports::IFailsafePublisher> failsafe_pub,
-                           std::shared_ptr<ports::IRecoverySequence> recovery,
+   public:
+    TriggerFailsafeUseCase(std::shared_ptr<IHardwareInterlock> hw_interlock,
+                           std::shared_ptr<IFailsafePublisher> failsafe_pub,
+                           std::shared_ptr<IRecoverySequence> recovery,
                            const domain::FailsafeRule& rule);
 
     // 실시간 텔레메트리 기반 이상 감지 (100ms Loop)
     void evaluate_and_trigger(
-        const realtime_telemetry::dtos::TelemetryPacketDto& telemetry,
-        const std::vector<realtime_telemetry::dtos::VisionDetectionDto>& vision_detections
+        const TelemetryPacketDto& telemetry,
+        const std::vector<VisionDetectionDto>& vision_detections
     );
 
     // 수동 제어 및 복구
@@ -38,10 +38,10 @@ class TriggerFailsafeUseCase {
         return _current_state;
     }
 
-   private: // 세부 구현 및 상태 정보는 하단으로 배치
-    std::shared_ptr<ports::IHardwareInterlock> _hw_interlock;
-    std::shared_ptr<ports::IFailsafePublisher> _failsafe_pub;
-    std::shared_ptr<ports::IRecoverySequence> _recovery;
+   private:
+    std::shared_ptr<IHardwareInterlock> _hw_interlock;
+    std::shared_ptr<IFailsafePublisher> _failsafe_pub;
+    std::shared_ptr<IRecoverySequence> _recovery;
 
     domain::FailsafeController _controller;
     domain::EdgeEngineState _current_state;

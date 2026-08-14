@@ -3,10 +3,10 @@
 
 #include "src/edge_control/anomaly_failsafe/ports/outbound/failsafe_command_dto.hpp"
 
-namespace sftwin::edge_control::anomaly_failsafe::ports {
+namespace sftwin::edge_control::anomaly_failsafe {
 class IFailsafePublisher {
    public:
     virtual ~IFailsafePublisher() = default;
-    virtual bool publish(const std::string& topic, const dtos::FailsafeCommandDto& data) = 0;
+    virtual bool publish(const std::string& topic, const FailsafeCommandDto& data) = 0;
 };
-}  // namespace sftwin::edge_control::anomaly_failsafe::ports
+}  // namespace sftwin::edge_control::anomaly_failsafe

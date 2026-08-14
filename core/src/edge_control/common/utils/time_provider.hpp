@@ -2,7 +2,7 @@
 #include <chrono>
 #include <cstdint>
 
-namespace sftwin::edge_control::common::utils {
+namespace sftwin::edge_control {
 
 /**
  * @brief 시스템 전역 시간 측정 유틸리티 (단일 책임)
@@ -17,4 +17,4 @@ class TimeProvider {
     }
 };
 
-}  // namespace sftwin::edge_control::common::utils
+}  // namespace sftwin::edge_control

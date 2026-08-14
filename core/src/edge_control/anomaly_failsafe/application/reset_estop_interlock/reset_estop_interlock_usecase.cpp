@@ -3,10 +3,7 @@
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 
-using domain::EdgeEngineState;
-using dtos::FailsafeCommandDto;
-
-EdgeEngineState ResetEstopInterlockUseCase::execute(EdgeEngineState current_state,
+domain::EdgeEngineState ResetEstopInterlockUseCase::execute(domain::EdgeEngineState current_state,
                                                      bool is_field_inspected,
                                                      bool is_manager_approved) {
     EDGE_LOG_INFO("E-Stop 2-Step Reset requested for device: {}", _edge_device_id);
@@ -23,7 +20,7 @@ EdgeEngineState ResetEstopInterlockUseCase::execute(EdgeEngineState current_stat
 
     EDGE_LOG_INFO("E-Stop Interlock successfully released. Engine state -> ACTIVE_MONITORING");
 
-    return EdgeEngineState::ACTIVE_MONITORING;
+    return domain::EdgeEngineState::ACTIVE_MONITORING;
 }
 
 }  // namespace sftwin::edge_control::anomaly_failsafe::application

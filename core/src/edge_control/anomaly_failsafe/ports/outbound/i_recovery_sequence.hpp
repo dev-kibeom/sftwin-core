@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace sftwin::edge_control::anomaly_failsafe::ports {
+namespace sftwin::edge_control::anomaly_failsafe {
 
 /**
  * @brief 이상 감지 후 복구/우회 시퀀스 제어를 담당하는 아웃바운드 포트
@@ -15,4 +15,4 @@ class IRecoverySequence {
     virtual bool execute_recovery_sequence(const std::string& sequence_script) = 0;
 };
 
-}  // namespace sftwin::edge_control::anomaly_failsafe::ports
+}  // namespace sftwin::edge_control::anomaly_failsafe

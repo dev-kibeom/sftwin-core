@@ -13,14 +13,14 @@ class EstopResetPolicy {
    public:
     bool validate_reset_request(EdgeEngineState current_state, bool is_field_inspected,
                                 bool is_manager_approved) const {
-        if (current_state != EdgeEngineState::INTERLOCK_ENGAGED) {
-            throw common::exceptions::EdgeSystemException(
+        if (current_state != domain::EdgeEngineState::INTERLOCK_ENGAGED) {
+            throw EdgeSystemException(
                 "ERR_COMMON_INVALID_INPUT",
                 "Cannot reset E-Stop when engine state is not INTERLOCK_ENGAGED.");
         }
 
         if (!is_field_inspected || !is_manager_approved) {
-            throw common::exceptions::EdgeSystemException(
+            throw EdgeSystemException(
                 "ERR_COMMON_FORBIDDEN",
                 "E-Stop reset rejected. Both field inspection and manager approval are required.");
         }

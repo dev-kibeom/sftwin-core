@@ -7,14 +7,10 @@
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 
-// DTO 타입 간결화를 위한 네임스페이스 Alias (C++17)
-using realtime_telemetry::dtos::TelemetryPacketDto;
-using realtime_telemetry::dtos::VisionDetectionDto;
-
 TriggerFailsafeUseCase::TriggerFailsafeUseCase(
-    std::shared_ptr<ports::IHardwareInterlock> hw_interlock,
-    std::shared_ptr<ports::IFailsafePublisher> failsafe_pub,
-    std::shared_ptr<ports::IRecoverySequence> recovery,
+    std::shared_ptr<IHardwareInterlock> hw_interlock,
+    std::shared_ptr<IFailsafePublisher> failsafe_pub,
+    std::shared_ptr<IRecoverySequence> recovery,
     const domain::FailsafeRule& rule)
     : _hw_interlock(std::move(hw_interlock)),
       _failsafe_pub(std::move(failsafe_pub)), // 🐛 오타 수정: __failsafe_pub -> _failsafe_pub
@@ -53,12 +49,12 @@ void TriggerFailsafeUseCase::evaluate_and_trigger(
         _hw_interlock->trigger_physical_relay();
 
         _failsafe_pub->publish("failsafe/estop",
-                               dtos::FailsafeCommandDto(telemetry.device_id(), "ESTOP", result.reason));
+                               FailsafeCommandDto(telemetry.device_id(), "ESTOP", result.reason));
 
         _current_state = domain::EdgeEngineState::INTERLOCK_ENGAGED;
         EDGE_LOG_ERROR("Failsafe Auto E-STOP Triggered! Reason: {}", result.reason);
 
-        throw common::exceptions::EdgeSystemException("ERR_EDGE_FAILSAFE_TRIGGERED",
+        throw EdgeSystemException("ERR_EDGE_FAILSAFE_TRIGGERED",
                                                       "Critical safety breach: " + result.reason);
     }
 
@@ -70,13 +66,13 @@ void TriggerFailsafeUseCase::evaluate_and_trigger(
 void TriggerFailsafeUseCase::trigger_manual_estop(const std::string& reason) {
     if (_current_state != domain::EdgeEngineState::ACTIVE_MONITORING) {
         EDGE_LOG_WARN("Invalid state transition: E-Stop requested but state is not ACTIVE_MONITORING.");
-        throw common::exceptions::EdgeSystemException(
+        throw EdgeSystemException(
             "ERR_COMMON_INVALID_INPUT", "Engine is already interlocked or in recovery.");
     }
 
     _hw_interlock->trigger_physical_relay();
     _failsafe_pub->publish("failsafe/estop",
-                           dtos::FailsafeCommandDto(_edge_device_id, "ESTOP", reason));
+                           FailsafeCommandDto(_edge_device_id, "ESTOP", reason));
 
     _current_state = domain::EdgeEngineState::INTERLOCK_ENGAGED;
     EDGE_LOG_INFO("Manual E-Stop successfully triggered. State -> INTERLOCK_ENGAGED (Reason: {})", reason);
@@ -85,7 +81,7 @@ void TriggerFailsafeUseCase::trigger_manual_estop(const std::string& reason) {
 bool TriggerFailsafeUseCase::execute_recovery_sequence(const std::string& script) {
     if (_current_state != domain::EdgeEngineState::INTERLOCK_ENGAGED) {
         EDGE_LOG_WARN("Invalid state transition: Resume requested but engine is not interlocked.");
-        throw common::exceptions::EdgeSystemException("ERR_COMMON_INVALID_INPUT",
+        throw EdgeSystemException("ERR_COMMON_INVALID_INPUT",
                                                       "Engine is not in an interlocked state.");
     }
 
@@ -101,7 +97,7 @@ bool TriggerFailsafeUseCase::execute_recovery_sequence(const std::string& script
 
     _current_state = domain::EdgeEngineState::ACTIVE_MONITORING;
     _failsafe_pub->publish("failsafe/resume",
-                           dtos::FailsafeCommandDto(_edge_device_id, "RESUME", "RECOVERY_SUCCESS"));
+                           FailsafeCommandDto(_edge_device_id, "RESUME", "RECOVERY_SUCCESS"));
 
     EDGE_LOG_INFO("Recovery successful. State -> ACTIVE_MONITORING");
     return true;

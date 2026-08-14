@@ -13,10 +13,10 @@ from core.src.simulation.facades.simulation_command_facade import (
 from core.src.simulation.fault_injection_bt.application.inject_fault_usecase import (
     InjectFaultUseCase,
 )
-from core.src.simulation.fms_execution.application.run_fms_simulation_usecase import (
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase import (
     RunFmsSimulationUseCase,
 )
-from core.src.simulation.sim_to_real_deploy.application.deploy_sim2real_usecase import (
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_usecase import (
     DeploySim2RealUseCase,
 )
 

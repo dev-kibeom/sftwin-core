@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-namespace sftwin::shared::utils {
+namespace sftwin::shared {
 
 template <typename InterfaceType>
 class SoPluginLoader {
@@ -43,4 +43,4 @@ class SoPluginLoader {
     }
 };
 
-} // namespace sftwin::shared::utils
+} // namespace sftwin::shared

@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace sftwin::edge_control::common::exceptions {
+namespace sftwin::edge_control {
 
 /**
  * @brief 에지 관제 시스템 전용 커스텀 예외 클래스
@@ -19,4 +19,4 @@ class EdgeSystemException : public std::runtime_error {
     [[nodiscard]] std::string get_error_code() const { return _error_code; }
 };
 
-}  // namespace sftwin::edge_control::common::exceptions
+}  // namespace sftwin::edge_control

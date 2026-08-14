@@ -10,9 +10,9 @@ class TriggerFailsafeUseCase;
 class ResetEstopInterlockUseCase;
 }
 
-namespace sftwin::edge_control::facades::inbound {
+namespace sftwin::edge_control {
 
-class EdgeCommandFacade : public ports::inbound::IEdgeCommandFacade {
+class EdgeCommandFacade : public IEdgeCommandFacade {
 public:
     explicit EdgeCommandFacade(
         std::shared_ptr<anomaly_failsafe::application::TriggerFailsafeUseCase> failsafe_uc,
@@ -31,4 +31,4 @@ private:
     std::shared_ptr<anomaly_failsafe::application::ResetEstopInterlockUseCase> _reset_uc;
 };
 
-}  // namespace sftwin::edge_control::facades::inbound
+}  // namespace sftwin::edge_control

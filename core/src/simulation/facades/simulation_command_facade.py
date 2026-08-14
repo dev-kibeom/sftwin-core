@@ -1,22 +1,33 @@
-"""
-[File Summary]
-SimulationCommandFacade
-외부 API 요청 및 타 컴포넌트 통신을 위한 상태 변경 명령 진입점
-(FCN-SIM-001 유즈케이스에 이어 FCN-SIM-002 결함 주입 유즈케이스 연동 추가)
-"""
-
 from typing import Any
 
 from shared.dtos.sim_result_dto import SimResultDto
 from shared.security.user_context import UserContext
-from simulation.fault_injection_bt.domain.fault_scenario import (
+
+from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
+    InjectFaultUseCase,
+)
+from simulation.fault_injection.domain.fault_scenario import (
     FaultScenario,
     FaultTypeEnum,
 )
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase import (
+    RunFmsSimulationUseCase,
+)
+from simulation.ports.inbound.i_simulation_command_facade import (
+    ISimulationCommandFacade,
+)
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_usecase import (
+    DeploySim2RealUseCase,
+)
 
 
-class SimulationCommandFacade:
-    def __init__(self, run_fms_uc, inject_fault_uc, deploy_uc):
+class SimulationCommandFacade(ISimulationCommandFacade):
+    def __init__(
+        self,
+        run_fms_uc: RunFmsSimulationUseCase,
+        inject_fault_uc: InjectFaultUseCase,
+        deploy_uc: DeploySim2RealUseCase,
+    ):
         self._run_fms_uc = run_fms_uc
         self._inject_fault_uc = inject_fault_uc
         self._deploy_uc = deploy_uc
@@ -31,28 +42,28 @@ class SimulationCommandFacade:
         return self._run_fms_uc.execute(scenario_id, baseline_id, assets, ctx)
 
     def inject_fault(
-        self, fault_type: str, target: str, bt_xml: str, ctx: UserContext
+        self,
+        fault_type: str,
+        target: str,
+        sequence_script: str,
+        ctx: UserContext,
     ) -> SimResultDto:
-        """
-        [고수준 진입점] POST /fault-injections 컨트롤러 요청을 UseCase로 위임합니다.
-        """
         scenario = FaultScenario(
             scenario_id=target,
             fault_type=FaultTypeEnum(fault_type),
             trigger_time_sec=5.0,
         )
-        return self._inject_fault_uc.execute(scenario=scenario, bt_xml=bt_xml, ctx=ctx)
+        return self._inject_fault_uc.execute(
+            scenario=scenario, sequence_script=sequence_script, ctx=ctx
+        )
 
     def deploy_sim2real_package(
         self,
         package_id: str,
         format_type: str,
-        config: list[dict[str, Any]],
+        config: dict[str, Any],
         ctx: UserContext,
     ) -> bool:
-        """
-        [고수준 진입점] POST /deploy 컨트롤러 요청을 DeploySim2RealUseCase로 위임합니다.
-        """
         return self._deploy_uc.execute(
             package_id=package_id, format_type=format_type, config=config, ctx=ctx
         )

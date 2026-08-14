@@ -4,11 +4,11 @@
 #include "src/edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
 #include "src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
 
-namespace sftwin::edge_control::facades::inbound {
+namespace sftwin::edge_control {
 
 using anomaly_failsafe::application::ResetEstopInterlockUseCase;
 using anomaly_failsafe::application::TriggerFailsafeUseCase;
-using anomaly_failsafe::domain::EdgeEngineState;
+using anomaly_failsafe::domain:: EdgeEngineState;
 
 EdgeCommandFacade::EdgeCommandFacade(
     std::shared_ptr<TriggerFailsafeUseCase> failsafe_uc,
@@ -39,4 +39,4 @@ bool EdgeCommandFacade::reset_estop_2step(bool is_field_inspected, bool is_manag
     return (new_state == EdgeEngineState::ACTIVE_MONITORING);
 }
 
-}  // namespace sftwin::edge_control::facades::inbound
+}  // namespace sftwin::edge_control

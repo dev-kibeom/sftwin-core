@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string>
 
-namespace sftwin::edge_control::anomaly_failsafe::dtos {
+namespace sftwin::edge_control::anomaly_failsafe {
 
 /**
  * @brief 순수 C++ 기반 Failsafe 명령 전송 DTO (Protobuf 의존성 100% 제거)

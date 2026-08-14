@@ -1,14 +1,16 @@
-#include "failsafe_protobuf_mapper.hpp"
+#include "plugins/protobuf_codec/include/failsafe_protobuf_mapper.hpp"
 
 #include <chrono>
 #include <stdexcept>
 
-namespace sftwin::edge_control::anomaly_failsafe::adapters {
+namespace sftwin::plugins::protobuf_codec {
+using namespace sftwin::failsafe;
+using namespace sftwin::edge_control::anomaly_failsafe;
 
-sftwin::failsafe::FailsafeCommandProto FailsafeProtobufMapper::to_protobuf(
+FailsafeCommandProto FailsafeProtobufMapper::to_protobuf(
     domain::FailsafeActionEnum action, const std::string& target_id,
     const std::string& reason) const {
-    sftwin::failsafe::FailsafeCommandProto proto;
+    FailsafeCommandProto proto;
     proto.set_target_device_id(target_id);
     proto.set_trigger_reason(reason);
 
@@ -37,4 +39,4 @@ sftwin::failsafe::FailsafeCommandProto FailsafeProtobufMapper::to_protobuf(
     return proto;
 }
 
-}  // namespace sftwin::edge_control::anomaly_failsafe::adapters
+}  // namespace sftwin::plugins::protobuf_codec

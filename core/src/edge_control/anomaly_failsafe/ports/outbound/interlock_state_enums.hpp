@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sftwin::edge_control::anomaly_failsafe::enums {
+namespace sftwin::edge_control::anomaly_failsafe {
 
 enum class InterlockState {
     RELEASED = 0,
@@ -8,4 +8,4 @@ enum class InterlockState {
     PENDING_RESET_APPROVAL = 2
 };
 
-}
+} // namespace sftwin::edge_control::anomaly_failsafe

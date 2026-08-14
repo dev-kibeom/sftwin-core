@@ -63,7 +63,7 @@ add_library(sftwin_protobuf_codec STATIC
 target_include_directories(sftwin_protobuf_codec PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROTO_CPP_OUT_DIR}
-    ${CMAKE_SOURCE_DIR}/../../core  # core DTO 인클루드용
+    ${CMAKE_SOURCE_DIR}/core  # core DTO 인클루드용
 )
 
 target_link_libraries(sftwin_protobuf_codec PUBLIC

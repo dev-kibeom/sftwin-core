@@ -17,7 +17,7 @@
 #include "plugins/protobuf_codec/include/telemetry_protobuf_mapper.hpp"
 
 namespace py = pybind11;
-using namespace sftwin::edge_control::ports::inbound;
+using namespace sftwin::edge_control;
 
 namespace sftwin::plugins::pybind {
 

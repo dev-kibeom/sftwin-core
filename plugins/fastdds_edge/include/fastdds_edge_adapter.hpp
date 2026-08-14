@@ -24,8 +24,8 @@ using namespace sftwin::edge_control;
 /**
  * @brief FastDDS 미들웨어 연동 및 DTO ↔ Protobuf/CDR 변환을 전담하는 Outer Adapter
  */
-class FastDdsEdgeAdapter : public realtime_telemetry::ports::ITelemetrySubscriber,
-                          public anomaly_failsafe::ports::IFailsafePublisher {
+class FastDdsEdgeAdapter : public realtime_telemetry::ITelemetrySubscriber,
+                          public anomaly_failsafe::IFailsafePublisher {
    private:
     std::atomic<bool> _is_initialized{false};
     std::mutex _buffer_mutex;
@@ -39,10 +39,10 @@ class FastDdsEdgeAdapter : public realtime_telemetry::ports::ITelemetrySubscribe
 
     // --- ITelemetrySubscriberPort 구현 ---
     [[nodiscard]] bool is_initialized() const override;
-    realtime_telemetry::ports::TelemetryPacketDto read_latest_packet(const std::string& device_id) override;
+    realtime_telemetry::TelemetryPacketDto read_latest_packet(const std::string& device_id) override;
 
     // --- IFailsafePublisherPort 구현 ---
-    bool publish(const std::string& topic, const anomaly_failsafe::ports::FailsafeCommandDto& command_dto) override;
+    bool publish(const std::string& topic, const anomaly_failsafe::FailsafeCommandDto& command_dto) override;
 
     // FastDDS DataReader Listener 콜백 (네트워크 패킷 수신 시 호출)
     void on_telemetry_received(const sftwin::telemetry::TelemetryPacketProto& raw_packet);

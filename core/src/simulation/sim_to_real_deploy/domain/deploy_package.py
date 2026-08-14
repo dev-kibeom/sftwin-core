@@ -9,7 +9,9 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from simulation.sim_to_real_deploy.domain.enums import DeployPackageFormatEnum
+from simulation.sim_to_real_deploy.domain.deploy_format_enums import (
+    DeployPackageFormatEnum,
+)
 
 
 @dataclass

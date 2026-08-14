@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace sftwin::edge_control::common::dtos {
+namespace sftwin::edge_control {
 
 /**
  * @brief 로봇 및 설비 실시간 제어 상태 DTO
@@ -37,4 +37,4 @@ class TelemetryPacketDto {
     void set_warning(bool is_warning) { _is_warning = is_warning; }
 };
 
-}  // namespace sftwin::edge_control::common::dtos
+}  // namespace sftwin::edge_control

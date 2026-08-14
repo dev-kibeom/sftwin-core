@@ -9,15 +9,15 @@
 namespace sftwin::edge_control::realtime_telemetry::application {
 
 ProcessTelemetryUseCase::ProcessTelemetryUseCase(
-    std::shared_ptr<ports::ITelemetrySubscriber> telemetry_subscriber,
-    std::shared_ptr<ports::IVisionDetector> vision_detector)
+    std::shared_ptr<ITelemetrySubscriber> telemetry_subscriber,
+    std::shared_ptr<IVisionDetector> vision_detector)
     : _telemetry_subscriber(std::move(telemetry_subscriber)),
       _vision_detector(std::move(vision_detector)) {}
 
-dtos::TelemetryPacketDto ProcessTelemetryUseCase::get_latest_telemetry(
+TelemetryPacketDto ProcessTelemetryUseCase::get_latest_telemetry(
     const std::string& device_id) {
     if (!_telemetry_subscriber || !_telemetry_subscriber->is_initialized()) {
-        throw common::exceptions::EdgeSystemException("ERR_EDGE_DDS_INIT_FAIL",
+        throw EdgeSystemException("ERR_EDGE_DDS_INIT_FAIL",
                                                       "Telemetry Subscriber is not initialized.");
     }
 
@@ -33,8 +33,8 @@ dtos::TelemetryPacketDto ProcessTelemetryUseCase::get_latest_telemetry(
         packet.timestamp_ns()
     };
 
-    if (stream.is_stale(common::utils::TimeProvider::get_steady_time_ns())) {
-        throw common::exceptions::EdgeSystemException(
+    if (stream.is_stale(TimeProvider::get_steady_time_ns())) {
+        throw EdgeSystemException(
             "ERR_EDGE_COMM_TIMEOUT", "Telemetry heartbeat delayed over 100ms for " + device_id);
     }
 

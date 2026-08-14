@@ -39,7 +39,7 @@ def test_tc_happy_path_register_asset():
 
     usecase = ManageAssetUseCase(command_repository=mock_repo)
 
-    dto = AssetDto(
+    valid_asset_dto = AssetDto(
         asset_id="",
         asset_name="Doosan_M1013_Robot",
         asset_type="ROBOT",
@@ -51,7 +51,7 @@ def test_tc_happy_path_register_asset():
         created_at="2026-07-31T00:00:00Z",
     )
 
-    ctx = UserContext(
+    valid_user_ctx = UserContext(
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
@@ -60,7 +60,7 @@ def test_tc_happy_path_register_asset():
     )
 
     # When
-    generated_asset_id = usecase.register_asset(dto, ctx)
+    generated_asset_id = usecase.register_asset(valid_asset_dto, valid_user_ctx)
 
     # Then
     # 1. 반환된 문자열이 유효한 UUID 형식인지 검증

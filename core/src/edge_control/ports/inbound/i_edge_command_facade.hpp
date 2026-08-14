@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace sftwin::edge_control::ports::inbound {
+namespace sftwin::edge_control {
 
 class IEdgeCommandFacade {
    public:
@@ -17,4 +17,4 @@ class IEdgeCommandFacade {
     virtual bool reset_estop_2step(bool is_field_inspected, bool is_manager_approved) = 0;
 };
 
-}  // namespace sftwin::edge_control::ports::inbound
+}  // namespace sftwin::edge_control

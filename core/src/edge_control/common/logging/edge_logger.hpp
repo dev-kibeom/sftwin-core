@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace sftwin::edge_control::common::logging {
+namespace sftwin::edge_control {
 
 /**
  * @brief 100ms 결정론적 제어를 보장하기 위한 비동기(Async) 로거 싱글톤 래퍼
@@ -19,13 +19,13 @@ class EdgeLogger {
     static std::shared_ptr<spdlog::logger> get_logger();
 };
 
-}  // namespace sftwin::edge_control::common::logging
+}  // namespace sftwin::edge_control
 
 // 사용 편의성을 위한 전역 매크로 정의 (컴파일 타임에 소스코드 위치까지 확장 가능)
 #define EDGE_LOG_INFO(...) \
-    SPDLOG_LOGGER_INFO(sftwin::edge_control::common::logging::EdgeLogger::get_logger(), __VA_ARGS__)
+    SPDLOG_LOGGER_INFO(sftwin::edge_control::EdgeLogger::get_logger(), __VA_ARGS__)
 #define EDGE_LOG_WARN(...) \
-    SPDLOG_LOGGER_WARN(sftwin::edge_control::common::logging::EdgeLogger::get_logger(), __VA_ARGS__)
+    SPDLOG_LOGGER_WARN(sftwin::edge_control::EdgeLogger::get_logger(), __VA_ARGS__)
 #define EDGE_LOG_ERROR(...)                                                              \
-    SPDLOG_LOGGER_ERROR(sftwin::edge_control::common::logging::EdgeLogger::get_logger(), \
+    SPDLOG_LOGGER_ERROR(sftwin::edge_control::EdgeLogger::get_logger(), \
                         __VA_ARGS__)

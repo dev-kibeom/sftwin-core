@@ -17,7 +17,7 @@ bool FastDdsEdgeAdapter::is_initialized() const {
 // ============================================================================
 // 1. [Inbound Network -> core DTO] 텔레메트리 패킷 읽기 및 맵핑
 // ============================================================================
-realtime_telemetry::ports::TelemetryPacketDto FastDdsEdgeAdapter::read_latest_packet(
+realtime_telemetry::TelemetryPacketDto FastDdsEdgeAdapter::read_latest_packet(
     const std::string& device_id) {
 
     std::lock_guard<std::mutex> lock(_buffer_mutex);
@@ -25,7 +25,7 @@ realtime_telemetry::ports::TelemetryPacketDto FastDdsEdgeAdapter::read_latest_pa
     auto it = _latest_proto_packets.find(device_id);
     if (it == _latest_proto_packets.end()) {
         // 미수신 시 0 타임스탬프를 부여하여 core 유즈케이스의 is_stale()에서 걸러지도록 유도
-        realtime_telemetry::ports::TelemetryPacketDto empty_dto;
+        realtime_telemetry::TelemetryPacketDto empty_dto;
         empty_dto.set_device_id(device_id);
         empty_dto.set_timestamp_ns(0);
         return empty_dto;
@@ -38,7 +38,7 @@ realtime_telemetry::ports::TelemetryPacketDto FastDdsEdgeAdapter::read_latest_pa
     std::vector<float> torques(proto.joint_torques().begin(), proto.joint_torques().end());
 
     // core 순수 TelemetryPacketDto 객체 생성하여 전달
-    realtime_telemetry::ports::TelemetryPacketDto core_dto(
+    realtime_telemetry::TelemetryPacketDto core_dto(
         proto.device_id(),
         proto.timestamp_ns(),
         positions,
@@ -53,7 +53,7 @@ realtime_telemetry::ports::TelemetryPacketDto FastDdsEdgeAdapter::read_latest_pa
 // ============================================================================
 bool FastDdsEdgeAdapter::publish(
     const std::string& topic,
-    const anomaly_failsafe::ports::FailsafeCommandDto& command_dto) {
+    const anomaly_failsafe::FailsafeCommandDto& command_dto) {
 
     if (!is_initialized()) {
         EDGE_LOG_ERROR("[FastDdsEdgeAdapter] Cannot publish. FastDDS not initialized.");

@@ -2,10 +2,9 @@
 
 #include "src/edge_control/realtime_telemetry/application/process_telemetry/process_telemetry_usecase.hpp"
 
-namespace sftwin::edge_control::facades::inbound {
+namespace sftwin::edge_control {
 
-using realtime_telemetry::application::ProcessTelemetryUseCase;
-using realtime_telemetry::dtos::TelemetryPacketDto;
+using namespace realtime_telemetry::application;
 
 EdgeQueryFacade::EdgeQueryFacade(
     std::shared_ptr<ProcessTelemetryUseCase> telemetry_uc)
@@ -20,4 +19,4 @@ TelemetryPacketDto EdgeQueryFacade::get_telemetry_status(const std::string& devi
     return _telemetry_uc->get_latest_telemetry(device_id);
 }
 
-}  // namespace sftwin::edge_control::facades::inbound
+}  // namespace sftwin::edge_control

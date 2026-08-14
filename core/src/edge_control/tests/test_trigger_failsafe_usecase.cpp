@@ -15,29 +15,31 @@
 using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
+
 using namespace sftwin::edge_control;
+using namespace sftwin::edge_control::anomaly_failsafe;
 
 // ==============================================================================
 // 1. Mock Classes
 // ==============================================================================
-class MockHardwareInterlock : public anomaly_failsafe::ports::IHardwareInterlock {
+class MockHardwareInterlock : public IHardwareInterlock {
    public:
     MOCK_METHOD(void, trigger_physical_relay, (), (override));
 
     MOCK_METHOD(bool, release_interlock, (const std::string& operator_approval_token), (override));
 
     // 2. get_state 모킹 추가 (const 키워드 누락 주의!)
-    MOCK_METHOD(sftwin::edge_control::anomaly_failsafe::enums::InterlockState, get_state, (), (const, override));
+    MOCK_METHOD(sftwin::edge_control::anomaly_failsafe::InterlockState, get_state, (), (const, override));
 };
 
-class MockFailsafePublisher : public anomaly_failsafe::ports::IFailsafePublisher {
+class MockFailsafePublisher : public IFailsafePublisher {
    public:
     MOCK_METHOD(bool, publish,
-                (const std::string&, const anomaly_failsafe::dtos::FailsafeCommandDto&),
+                (const std::string&, const anomaly_failsafe::FailsafeCommandDto&),
                 (override));
 };
 
-class MockRecoverySequence : public anomaly_failsafe::ports::IRecoverySequence {
+class MockRecoverySequence : public IRecoverySequence {
    public:
     MOCK_METHOD(bool, execute_recovery_sequence, (const std::string&), (override));
 };
@@ -55,7 +57,7 @@ class TriggerFailsafeUseCaseTest : public ::testing::Test {
     anomaly_failsafe::domain::FailsafeRule default_rule;
 
     void SetUp() override {
-        common::logging::EdgeLogger::init();
+        EdgeLogger::init();
 
         mock_hw = std::make_shared<NiceMock<MockHardwareInterlock>>();
         mock_dds = std::make_shared<NiceMock<MockFailsafePublisher>>();
@@ -77,9 +79,9 @@ class TriggerFailsafeUseCaseTest : public ::testing::Test {
 // ==============================================================================
 
 TEST_F(TriggerFailsafeUseCaseTest, HappyPath_NoViolations) {
-    uint64_t now = common::utils::TimeProvider::get_steady_time_ns();
-    realtime_telemetry::dtos::TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {100.0f});
-    std::vector<realtime_telemetry::dtos::VisionDetectionDto> detections;
+    uint64_t now = TimeProvider::get_steady_time_ns();
+    TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {100.0f});
+    std::vector<VisionDetectionDto> detections;
 
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(0);
     EXPECT_CALL(*mock_dds, publish(_, _)).Times(0);
@@ -88,12 +90,12 @@ TEST_F(TriggerFailsafeUseCaseTest, HappyPath_NoViolations) {
 }
 
 TEST_F(TriggerFailsafeUseCaseTest, EdgeCase_WarningIntrusion_TriggersBypass) {
-    uint64_t now = common::utils::TimeProvider::get_steady_time_ns();
-    realtime_telemetry::dtos::TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {50.0f});
+    uint64_t now = TimeProvider::get_steady_time_ns();
+    TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {50.0f});
 
     // bbox[2] (width 역산) 1.2m -> 경고 구역 (1.5m 미만)
-    realtime_telemetry::dtos::VisionDetectionDto warning_obj{"WORKER", 0.9f, {0.0f, 0.0f, 1.2f, 0.0f}, now};
-    std::vector<realtime_telemetry::dtos::VisionDetectionDto> detections{warning_obj};
+    VisionDetectionDto warning_obj{"WORKER", 0.9f, {0.0f, 0.0f, 1.2f, 0.0f}, now};
+    std::vector<VisionDetectionDto> detections{warning_obj};
 
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(0);
     EXPECT_CALL(*mock_dds, publish(_, _)).Times(0);
@@ -102,10 +104,10 @@ TEST_F(TriggerFailsafeUseCaseTest, EdgeCase_WarningIntrusion_TriggersBypass) {
 }
 
 TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_TorqueExceeded_TriggersEStop) {
-    uint64_t now = common::utils::TimeProvider::get_steady_time_ns();
+    uint64_t now = TimeProvider::get_steady_time_ns();
     // 토크 160.0f > 한계 150.5f
-    realtime_telemetry::dtos::TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {160.0f});
-    std::vector<realtime_telemetry::dtos::VisionDetectionDto> detections;
+    TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {160.0f});
+    std::vector<VisionDetectionDto> detections;
 
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(1);
     EXPECT_CALL(*mock_dds, publish("failsafe/estop", _)).WillOnce(Return(true));
@@ -113,7 +115,7 @@ TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_TorqueExceeded_TriggersEStop) {
     try {
         usecase->evaluate_and_trigger(telemetry, detections);
         FAIL() << "Expected EdgeSystemException to be thrown";
-    } catch (const common::exceptions::EdgeSystemException& e) {
+    } catch (const EdgeSystemException& e) {
         EXPECT_EQ(e.get_error_code(), "ERR_EDGE_FAILSAFE_TRIGGERED");
     } catch (...) {
         FAIL() << "Expected EdgeSystemException, but a different exception was thrown";
@@ -121,13 +123,13 @@ TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_TorqueExceeded_TriggersEStop) {
 }
 
 TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_HeartbeatTimeout_TriggersEStop) {
-    uint64_t past_150ms = common::utils::TimeProvider::get_steady_time_ns() - 150'000'000ULL;
-    realtime_telemetry::dtos::TelemetryPacketDto telemetry("DOOSAN_M1013_002", past_150ms);
-    std::vector<realtime_telemetry::dtos::VisionDetectionDto> detections;
+    uint64_t past_150ms = TimeProvider::get_steady_time_ns() - 150'000'000ULL;
+    TelemetryPacketDto telemetry("DOOSAN_M1013_002", past_150ms);
+    std::vector<VisionDetectionDto> detections;
 
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(1);
     EXPECT_CALL(*mock_dds, publish("failsafe/estop", _)).WillOnce(Return(true));
 
     EXPECT_THROW(
-        { usecase->evaluate_and_trigger(telemetry, detections); }, common::exceptions::EdgeSystemException);
+        { usecase->evaluate_and_trigger(telemetry, detections); }, EdgeSystemException);
 }

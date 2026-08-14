@@ -4,7 +4,7 @@
 namespace sftwin::edge_control::anomaly_failsafe::domain {
 
 uint64_t FailsafeController::_get_current_time_ns() const {
-    return common::utils::TimeProvider::get_steady_time_ns();
+    return TimeProvider::get_steady_time_ns();
 }
 
 EvaluationResult FailsafeController::check_violations(const TelemetrySnapshot& snapshot) {
