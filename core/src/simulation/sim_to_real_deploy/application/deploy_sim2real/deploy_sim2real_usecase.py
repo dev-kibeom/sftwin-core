@@ -25,7 +25,7 @@ class DeploySim2RealUseCase:
     ):
         self._fleet_deploy_port = fleet_deploy_port
         self._logger = logger or GlobalSystemLogger(
-            component_name="RunFmsSimulationUseCase"
+            component_name="DeploySim2RealUseCase"
         )
 
     def execute(
