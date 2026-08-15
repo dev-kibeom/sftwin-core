@@ -6,16 +6,15 @@
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
 
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
+    ProductionOrderRequestDto,
+)
+from kpi_b2b.b2b_procurement.domain.factory_phase_enum import FactoryPhaseEnum
 from shared.enums.packml_state_enum import PackMLStateEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-
-
-class FactoryPhaseEnum(str, Enum):
-    KAMP_BASELINE = "KAMP_BASELINE"  # FMS 도입 전 (Real-to-Sim 검증 단계)
-    FMS_OPTIMIZED = "FMS_OPTIMIZED"  # FMS 도입 후 (스마트팩토리 가동 단계)
+from shared.security.user_context import UserContext
 
 
 @dataclass
@@ -32,25 +31,31 @@ class ProductionOrder:
 
     @classmethod
     def create_order(
-        cls,
-        product_code: str,
-        target_quantity: int,
-        company_id: str,
-        factory_phase: FactoryPhaseEnum,
+        cls, dto: ProductionOrderRequestDto, ctx: UserContext
     ) -> "ProductionOrder":
-        if target_quantity <= 0:
+        """발주 요청 DTO와 인가된 UserContext만을 조합하여 엔티티 생성"""
+        if dto.target_quantity <= 0:
             raise BaseSystemException(
                 error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
                 message="Target order quantity must be greater than zero.",
                 status_code=400,
             )
 
+        if not ctx.company_id or not ctx.company_id.strip():
+            raise BaseSystemException(
+                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
+                message="Valid company context is required to create a production order.",
+                status_code=401,
+            )
+
+        generated_order_id = dto.order_id or f"ORD-{uuid.uuid4().hex[:8].upper()}"
+
         return cls(
-            order_id=f"ORD-{uuid.uuid4().hex[:8].upper()}",
-            product_code=product_code,
-            target_quantity=target_quantity,
-            company_id=company_id,
-            factory_phase=factory_phase,
+            order_id=generated_order_id,
+            product_code=dto.product_code,
+            target_quantity=dto.target_quantity,
+            company_id=ctx.company_id,
+            factory_phase=FactoryPhaseEnum(dto.factory_phase),
             packml_state=PackMLStateEnum.IDLE,
         )
 

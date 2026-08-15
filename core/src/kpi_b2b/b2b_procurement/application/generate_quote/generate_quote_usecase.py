@@ -3,31 +3,26 @@
 @description 견적 생성 및 외부 마켓플레이스 연동, 예외 검증을 제어하는 유즈케이스
 """
 
-from typing import Any
-
-from shared.dtos.log_dtos import LogContext
-from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
-
 from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
     B2bQuoteDto,
 )
 from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
-from kpi_b2b.b2b_procurement.ports.outbound.base_b2b_marketplace import (
-    BaseB2bMarketplacePort,
+from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+    IProcurementCommandRepository,
 )
+from shared.logger.system_logger.log_context import LogContext
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 
 class GenerateQuoteUseCase:
     def __init__(
         self,
-        b2b_adapter: BaseB2bMarketplacePort,
-        mysql_repo: Any,
+        command_repo: IProcurementCommandRepository,
         logger: GlobalSystemLogger | None = None,
     ):
-        self._b2b_adapter = b2b_adapter
-        self._mysql_repo = mysql_repo
+        self._command_repo = command_repo
         self._logger = logger or GlobalSystemLogger(
             component_name="B2B_GenerateQuote_UseCase"
         )
@@ -40,7 +35,7 @@ class GenerateQuoteUseCase:
 
         # Guard 2: 외부 통신 / 타임아웃 예외 처리
         try:
-            b2b_response = self._b2b_adapter.request_turnkey_quote(asset_ids)
+            b2b_response = self._command_repo.request_turnkey_quote(asset_ids)
         except Exception as e:
             log_ctx.exc = e
             self._logger.error("B2B API Timeout or Connection Error.", log_ctx)
@@ -84,10 +79,9 @@ class GenerateQuoteUseCase:
             assets=asset_ids, total_price=total_price, days=delivery_days
         )
 
-        # MySQL DB 영속화 예외 가드
         try:
-            if self._mysql_repo:
-                self._mysql_repo.save(quote_entity)
+            if self._command_repo:
+                self._command_repo.save_quote(quote_entity)
         except Exception as e:
             log_ctx.exc = e
             self._logger.error(

@@ -8,7 +8,7 @@ import os
 from typing import Any
 
 import redis
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 
 class RedisCacheAdapter:

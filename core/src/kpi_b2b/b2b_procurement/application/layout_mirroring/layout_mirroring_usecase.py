@@ -3,25 +3,26 @@
 @description 상담 세션 엔티티 생성 및 DB 영속화, 인프라 에러 마스킹을 제어하는 유즈케이스
 """
 
-from typing import Any
-
 from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
     SessionDataDto,
 )
 from kpi_b2b.b2b_procurement.domain.expert_session import ExpertSession
-from shared.dtos.log_dtos import LogContext
+from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+    IProcurementCommandRepository,
+)
+from shared.logger.system_logger.log_context import LogContext
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 
 class LayoutMirroringUseCase:
     def __init__(
         self,
-        mysql_repo: Any,
+        command_repo: IProcurementCommandRepository,
         logger: GlobalSystemLogger | None = None,
     ):
-        self._mysql_repo = mysql_repo
+        self._command_repo = command_repo
         self._logger = logger or GlobalSystemLogger(
             component_name="LayoutMirroring_UseCase"
         )
@@ -37,8 +38,8 @@ class LayoutMirroringUseCase:
         session_entity = ExpertSession.create_new_session(baseline_id=baseline_id)
 
         try:
-            if self._mysql_repo:
-                self._mysql_repo.save(session_entity)
+            if self._command_repo:
+                self._command_repo.save_expert_session(session_entity)
         except Exception as e:
             log_ctx.exc = e
             self._logger.error(

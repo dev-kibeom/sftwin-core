@@ -6,27 +6,24 @@
 import uuid
 from datetime import datetime, timezone
 
-from shared.dtos.log_dtos import LogContext
-from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
-
 from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
     KpiReportDto,
 )
 from kpi_b2b.kpi_dashboard.domain.oee_calculator import OeeCalculator
-from kpi_b2b.kpi_dashboard.ports.outbound.base_time_series import (
-    BaseTimeSeriesPort,
-)
+from kpi_b2b.ports.outbound.i_kpi_query_repository import IKpiQueryRepository
+from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.log_context import LogContext
 
 
 class CalculateKpiUseCase:
     def __init__(
         self,
-        ts_adapter: BaseTimeSeriesPort,
+        query_repo: IKpiQueryRepository,
         logger: GlobalSystemLogger | None = None,
     ):
-        self._ts_adapter = ts_adapter
+        self._query_repo = query_repo
         self._oee_calculator = OeeCalculator()
         self._logger = logger or GlobalSystemLogger(
             component_name="KpiDashboard_UseCase"
@@ -39,7 +36,7 @@ class CalculateKpiUseCase:
         )
 
         try:
-            logs = self._ts_adapter.fetch_simulation_logs(sim_id)
+            logs = self._query_repo.fetch_simulation_telemetry_logs(sim_id)
         except Exception as e:
             log_ctx.exc = e
             self._logger.error(

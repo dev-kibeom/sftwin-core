@@ -1,146 +1,171 @@
 """
-@file test_calculate_kpi.py
-@description 표준 제조 KPI 연산(CalculateKpiUseCase) 및 파사드 단위 테스트 (언패킹 및 RBAC 연동 픽스)
+@file test_layout_mirroring.py
+@description 3D 미러링 비대면 상담 세션 생성 (LayoutMirroringUseCase) 및 멀티테넌시 파사드 권한 검증 단위 테스트
 """
 
 from unittest.mock import MagicMock, patch
 
 import pytest
-from kpi_b2b.facades.kpi_query_facade import KpiQueryFacadeImpl
-from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
-    CalculateKpiUseCase,
+from kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
+    LayoutMirroringUseCase,
 )
-from kpi_b2b.kpi_dashboard.ports.outbound.base_time_series import (
-    BaseTimeSeriesPort,
+from kpi_b2b.b2b_procurement.domain.expert_session import ExpertSessionStatusEnum
+from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
+from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+    IProcurementCommandRepository,
+)
+from kpi_b2b.ports.outbound.i_procurement_query_repository import (
+    IProcurementQueryRepository,
 )
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 from shared.security.user_context import UserContext
 
 
+# ==============================================================================
+# Fixtures
+# ==============================================================================
 @pytest.fixture
-def mock_ts_adapter():
-    return MagicMock(spec=BaseTimeSeriesPort)
+def mock_command_repo():
+    return MagicMock(spec=IProcurementCommandRepository)
+
+
+@pytest.fixture
+def mock_query_repo():
+    return MagicMock(spec=IProcurementQueryRepository)
+
+
+@pytest.fixture
+def mock_gen_quote_uc():
+    return MagicMock()
 
 
 @pytest.fixture
 def mock_rbac_manager():
-    return MagicMock()
+    return MagicMock(spec=RbacAuthorizationManager)
 
 
 @pytest.fixture
-def mock_sim_repo():
-    return MagicMock()
+def valid_ctx():
+    return UserContext(
+        user_id="USR-200",
+        username="factory_manager_b",
+        company_id="TENANT_B",
+        role=UserRoleEnum.FACTORY_MANAGER,
+    )
 
 
 @pytest.fixture
-def target_system(mock_ts_adapter, mock_rbac_manager, mock_sim_repo):
-    with patch(
-        "kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase.GlobalSystemLogger"
+def target_system(
+    mock_query_repo, mock_command_repo, mock_gen_quote_uc, mock_rbac_manager
+):
+    with (
+        patch(
+            "kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase.GlobalSystemLogger"
+        ),
+        patch("kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
     ):
-        usecase = CalculateKpiUseCase(ts_adapter=mock_ts_adapter)
-        facade = KpiQueryFacadeImpl(
-            calculate_kpi_uc=usecase,
+        mirroring_uc = LayoutMirroringUseCase(command_repo=mock_command_repo)
+
+        facade = ProcurementCommandFacade(
+            generate_quote_uc=mock_gen_quote_uc,
+            mirroring_uc=mirroring_uc,
+            command_repo=mock_command_repo,
+            query_repo=mock_query_repo,
             rbac_manager=mock_rbac_manager,
-            sim_repo=mock_sim_repo,
-        )
-        # 4개의 객체를 정확히 yield
-        yield facade, mock_ts_adapter, mock_rbac_manager, mock_sim_repo
-
-
-class TestCalculateKpi:
-    def test_calculate_oee_happy_path(self, target_system):
-        # 4개 변수 언패킹으로 ValueError 해결
-        facade, mock_ts_adapter, mock_rbac, mock_repo = target_system
-
-        valid_ctx = UserContext(
-            user_id="USR-001",
-            username="test_manager",
-            company_id="TENANT_A",
-            role=UserRoleEnum.FACTORY_MANAGER,
-        )
-        sim_id = "SIM-20231010-01"
-
-        mock_repo.get_owner.return_value = "TENANT_A"
-        mock_rbac.validate_company_isolation.return_value = True
-
-        mock_ts_adapter.fetch_simulation_logs.return_value = [
-            {
-                "uptime": 40.0,
-                "total_time": 50.0,
-                "ideal_cycle": 10.0,
-                "actual_cycle": 12.0,
-                "good_count": 48,
-                "total_count": 50,
-            },
-            {
-                "uptime": 45.0,
-                "total_time": 50.0,
-                "ideal_cycle": 10.0,
-                "actual_cycle": 11.0,
-                "good_count": 47,
-                "total_count": 50,
-            },
-        ]
-
-        result_dto = facade.calculate_oee(sim_id=sim_id, ctx=valid_ctx)
-
-        mock_rbac.validate_company_isolation.assert_called_once()
-        assert result_dto is not None
-        assert round(result_dto.oee, 2) == 0.70
-
-    def test_calculate_oee_isolation_violation(self, target_system):
-        facade, _, mock_rbac, mock_repo = target_system
-
-        invalid_ctx = UserContext(
-            user_id="USR-HACKER",
-            username="hacker",
-            company_id="HACKER_TENANT",
-            role=UserRoleEnum.CREATOR,
-        )
-        sim_id = "SIM-SECRET-01"
-
-        mock_repo.get_owner.return_value = "TARGET_TENANT"
-        mock_rbac.validate_company_isolation.side_effect = BaseSystemException(
-            error_code=GlobalErrorCodes.ERR_SHARED_FORBIDDEN,
-            message="Access denied",
-            status_code=403,
         )
 
-        with pytest.raises(BaseSystemException) as exc_info:
-            facade.calculate_oee(sim_id=sim_id, ctx=invalid_ctx)
+        yield (facade, mock_command_repo, mock_query_repo, mock_rbac_manager)
 
-        assert exc_info.value.status_code == 403
 
-    def test_calculate_oee_sim_not_found(self, target_system):
-        facade, mock_ts_adapter, mock_rbac, mock_repo = target_system
-        valid_ctx = UserContext(
-            user_id="USR-001",
-            username="mgr",
-            company_id="TENANT_A",
-            role=UserRoleEnum.FACTORY_MANAGER,
-        )
-        mock_repo.get_owner.return_value = "TENANT_A"
-        mock_rbac.validate_company_isolation.return_value = True
-        mock_ts_adapter.fetch_simulation_logs.return_value = []
+# ==============================================================================
+# Test Cases
+# ==============================================================================
+def test_create_expert_session_happy_path(target_system, valid_ctx):
+    """TC-정상 (Happy Path): 권한이 일치할 때 도면 유출 방지용 1회성 토큰 발급 및 세션 생성 검증"""
+    facade, mock_cmd_repo, mock_qry_repo, mock_rbac = target_system
+    baseline_id = "BASELINE-3D-001"
 
-        with pytest.raises(BaseSystemException) as exc_info:
-            facade.calculate_oee(sim_id="SIM-EMPTY", ctx=valid_ctx)
-        assert exc_info.value.error_code == GlobalErrorCodes.ERR_KPI_SIM_NOT_FOUND
+    # Given: 도면 소유주와 사용자 테넌트 일치 설정
+    mock_qry_repo.get_baseline_owner.return_value = "TENANT_B"
+    mock_rbac.validate_company_isolation.return_value = True
 
-    def test_calculate_oee_db_timeout(self, target_system):
-        facade, mock_ts_adapter, mock_rbac, mock_repo = target_system
-        valid_ctx = UserContext(
-            user_id="USR-001",
-            username="mgr",
-            company_id="TENANT_A",
-            role=UserRoleEnum.FACTORY_MANAGER,
-        )
-        mock_repo.get_owner.return_value = "TENANT_A"
-        mock_rbac.validate_company_isolation.return_value = True
-        mock_ts_adapter.fetch_simulation_logs.side_effect = Exception("Timeout")
+    # When
+    result_dto = facade.create_expert_session(baseline_id=baseline_id, ctx=valid_ctx)
 
-        with pytest.raises(BaseSystemException) as exc_info:
-            facade.calculate_oee(sim_id="SIM-TIMEOUT", ctx=valid_ctx)
-        assert exc_info.value.error_code == GlobalErrorCodes.ERR_KPI_DB_TIMEOUT
+    # Then
+    # 1. 멀티테넌시 보안 검증 호출 확인
+    mock_rbac.validate_company_isolation.assert_called_once_with(
+        user_ctx=valid_ctx,
+        target_company_id="TENANT_B",
+        target_resource=f"BASELINE:{baseline_id}",
+    )
+
+    # 2. DB 영속화 호출 여부 및 엔티티 상태 검증
+    mock_cmd_repo.save_expert_session.assert_called_once()
+    saved_session = mock_cmd_repo.save_expert_session.call_args[0][0]
+
+    assert saved_session.baseline_id == baseline_id
+    assert saved_session.expert_id == "UNASSIGNED"
+    assert saved_session.status == ExpertSessionStatusEnum.WAITING
+    assert saved_session.session_token.startswith("TKN-")
+
+    # 3. 응답 DTO 검증
+    assert result_dto.session_id.startswith("SESS-")
+    assert result_dto.session_token == saved_session.session_token
+    assert result_dto.status == ExpertSessionStatusEnum.WAITING.value
+    assert result_dto.expires_in_seconds == 14400
+
+
+def test_create_expert_session_isolation_violation(target_system):
+    """TC-예외 (Edge Case): 멀티테넌시 권한 불일치 시 403 에러 발생 검증"""
+    facade, mock_cmd_repo, mock_qry_repo, mock_rbac = target_system
+
+    invalid_ctx = UserContext(
+        user_id="USR-HACKER",
+        username="unauthorized_user",
+        company_id="UNAUTHORIZED_TENANT",
+        role=UserRoleEnum.CREATOR,
+    )
+    baseline_id = "BASELINE-SECRET-001"
+
+    # Given: 실제 도면 소유주와 다른 테넌트 접근 모사 -> RBAC 매니저 403 예외 발생
+    mock_qry_repo.get_baseline_owner.return_value = "ORIGINAL_OWNER_TENANT"
+    mock_rbac.validate_company_isolation.side_effect = BaseSystemException(
+        error_code=GlobalErrorCodes.ERR_COMMON_FORBIDDEN,
+        message="Multitenancy isolation policy violation.",
+        status_code=403,
+    )
+
+    # When & Then
+    with pytest.raises(BaseSystemException) as exc_info:
+        facade.create_expert_session(baseline_id=baseline_id, ctx=invalid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_FORBIDDEN
+    assert exc_info.value.status_code == 403
+
+    # DB 저장이 실행되지 않았음을 검증
+    mock_cmd_repo.save_expert_session.assert_not_called()
+
+
+def test_create_expert_session_db_failure(target_system, valid_ctx):
+    """TC-에러 (Error Handling): DB 영속화 실패 시 500 내부 서버 에러로 마스킹되는지 검증"""
+    facade, mock_cmd_repo, mock_qry_repo, mock_rbac = target_system
+    baseline_id = "BASELINE-ERROR-001"
+
+    # Given
+    mock_qry_repo.get_baseline_owner.return_value = "TENANT_B"
+    mock_rbac.validate_company_isolation.return_value = True
+    mock_cmd_repo.save_expert_session.side_effect = Exception(
+        "OperationalError: Connection lost"
+    )
+
+    # When & Then
+    with pytest.raises(BaseSystemException) as exc_info:
+        facade.create_expert_session(baseline_id=baseline_id, ctx=valid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR
+    assert exc_info.value.status_code == 500
+    assert "시스템 내부 장애가 발생했습니다" in exc_info.value.message

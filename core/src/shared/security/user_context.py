@@ -25,7 +25,7 @@ class UserContext:
     @classmethod
     def create_system_context(cls, company_id: str = "SYSTEM_PUBLIC") -> "UserContext":
         """시스템 내부 실행용 불변 UserContext 생성 팩토리 메서드"""
-        return cls(
+        return UserContext(
             user_id="SYSTEM",
             username="system",
             company_id=company_id,

@@ -3,18 +3,7 @@
 @description RbacAuthorizationManager를 연동한 B2B 및 상담 세션 커맨드 파사드
 """
 
-from abc import ABC, abstractmethod
-from typing import Any
-
-from shared.adapters.redis_cache_adapter import RedisCacheAdapter
-from shared.dtos.log_dtos import LogContext
-from shared.logger.global_system_logger import GlobalSystemLogger
-from shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from shared.security.user_context import UserContext
-
-from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
-    B2bQuoteDto,
-)
+from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import B2bQuoteDto
 from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
@@ -24,37 +13,37 @@ from kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_useca
 from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
     SessionDataDto,
 )
+from kpi_b2b.ports.inbound.i_procurement_command_facade import IProcurementCommandFacade
+from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+    IProcurementCommandRepository,
+)
+from kpi_b2b.ports.outbound.i_procurement_query_repository import (
+    IProcurementQueryRepository,
+)
+from shared.logger.system_logger.log_context import LogContext
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+from shared.security.user_context import UserContext
 
 
-class ProcurementCommandFacade(ABC):
-    @abstractmethod
-    def generate_quote(
-        self, asset_ids: list[str], idempotency_key: str, ctx: UserContext
-    ) -> B2bQuoteDto:
-        pass
-
-    @abstractmethod
-    def create_expert_session(
-        self, baseline_id: str, ctx: UserContext
-    ) -> SessionDataDto:
-        pass
-
-
-class ProcurementCommandFacadeImpl(ProcurementCommandFacade):
+class ProcurementCommandFacade(IProcurementCommandFacade):
     def __init__(
         self,
         generate_quote_uc: GenerateQuoteUseCase,
         mirroring_uc: LayoutMirroringUseCase,
-        redis_adapter: RedisCacheAdapter,
+        command_repo: IProcurementCommandRepository,
+        query_repo: IProcurementQueryRepository,
         rbac_manager: RbacAuthorizationManager,
-        baseline_repo: Any = None,
+        logger: GlobalSystemLogger | None = None,
     ):
         self._generate_quote_uc = generate_quote_uc
         self._mirroring_uc = mirroring_uc
-        self._redis_adapter = redis_adapter
+        self._command_repo = command_repo
+        self._query_repo = query_repo
         self._rbac_manager = rbac_manager
-        self._baseline_repo = baseline_repo
-        self._logger = GlobalSystemLogger(component_name="Procurement_Facade")
+        self._logger = logger or GlobalSystemLogger(
+            component_name="B2B_GenerateQuote_UseCase"
+        )
 
     def generate_quote(
         self, asset_ids: list[str], idempotency_key: str, ctx: UserContext
@@ -63,14 +52,13 @@ class ProcurementCommandFacadeImpl(ProcurementCommandFacade):
             context={"idempotency_key": idempotency_key, "user_id": ctx.user_id}
         )
 
-        # Guard 1: 멱등성 검증
         if idempotency_key:
-            cached_data = self._redis_adapter.get_cached_quote(idempotency_key)
-            if cached_data:
+            quote = self._query_repo.find_cached_quote(idempotency_key)
+            if quote:
                 self._logger.info(
                     "Idempotency Cache Hit. Returning cached quote.", log_ctx
                 )
-                return B2bQuoteDto(**cached_data)
+                return B2bQuoteDto(**quote)
 
         self._logger.info("Cache Miss. Proceeding to generate new quote.", log_ctx)
         quote_dto = self._generate_quote_uc.execute(
@@ -78,32 +66,23 @@ class ProcurementCommandFacadeImpl(ProcurementCommandFacade):
         )
 
         if idempotency_key:
-            self._redis_adapter.set_cached_quote(
-                idempotency_key, quote_dto.__dict__, 86400
-            )
+            self._command_repo.save_cached_quote(idempotency_key, quote_dto.__dict__)
 
         return quote_dto
 
     def create_expert_session(
         self, baseline_id: str, ctx: UserContext
     ) -> SessionDataDto:
-        # 실제 DB에서 Baseline 도면 소유주 조회
         target_company_id = (
-            self._baseline_repo.get_owner(baseline_id)
-            if hasattr(self._baseline_repo, "get_owner")
-            else "UNAUTHORIZED_TENANT"
+            self._query_repo.get_baseline_owner(baseline_id) or "UNAUTHORIZED_TENANT"
         )
 
-        # 전역 보안 모듈에 위임 (실패 시 403 예외 및 CRITICAL 로깅 자동 수행)
         self._rbac_manager.validate_company_isolation(
             user_ctx=ctx,
             target_company_id=target_company_id,
             target_resource=f"BASELINE:{baseline_id}",
         )
 
-        self._logger.info(
-            f"Authorized session creation for baseline {baseline_id} by {ctx.company_id}"
-        )
         return self._mirroring_uc.execute(
             baseline_id=baseline_id, company_id=ctx.company_id
         )

@@ -3,25 +3,11 @@
 @description FMS 도입 전/후 듀얼 KPI 비교 결과와 ROI 산출 결과를 결합하여 최종 리포트를 생성하는 유즈케이스
 """
 
-from dataclasses import dataclass
-
-from kpi_b2b.kpi_dashboard.domain.services.dual_kpi_comparator import (
-    DualKpiComparator,
+from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.dual_kpi_report_dto import (
+    DualKpiReportDto,
 )
-from kpi_b2b.kpi_dashboard.domain.services.roi_calculator import RoiCalculator
-
-
-@dataclass
-class DualKpiReportDto:
-    baseline_oee: float
-    improved_oee: float
-    oee_improvement_rate: float
-    baseline_fpy: float
-    improved_fpy: float
-    fpy_improvement_rate: float
-    investment_cost_krw: float
-    annual_benefit_krw: float
-    payback_period_months: float
+from kpi_b2b.kpi_dashboard.domain.dual_kpi_comparator import DualKpiComparator
+from kpi_b2b.kpi_dashboard.domain.roi_calculator import RoiCalculator
 
 
 class GenerateDualKpiReportUseCase:

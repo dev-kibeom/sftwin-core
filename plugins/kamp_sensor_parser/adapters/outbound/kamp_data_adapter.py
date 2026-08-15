@@ -1,7 +1,7 @@
 """
 ===============================================================================
 [File Name] kamp_data_adapter.py
-[Location ] /src/asset_twin/twin_reconstruction/adapters/kamp_data_adapter.py
+[Location ] /src/digital_twin/twin_reconstruction/adapters/kamp_data_adapter.py
 [Description]
  - IKampDataAdapter 포트를 구현하며, RAM 16GB OOM 방지를 위해 pandas의 chunksize 기반
    스트리밍 분할 파싱 전략을 적용합니다.
@@ -11,13 +11,13 @@
 import os
 
 import pandas as pd
-from asset_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser import (
+from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
+from digital_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser import (
     ISensorLogParserPort,
 )
-from asset_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 
 class KampDataAdapter(ISensorLogParserPort):

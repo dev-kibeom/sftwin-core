@@ -4,7 +4,7 @@ Base Shared Memory Adapter Implementation
 설계 의도:
 AI-물리/모션 엔진 간 Zero-Copy POSIX Shared Memory IPC 접근을 추상화합니다.
 shm_fd 및 shm_ptr 포인터 손상 시 메모리 세그폴트 발생 전 Guard Clause로 차단하여
-ERR_SHARED_INTERNAL_ERROR 예외를 안전하게 던집니다.
+ERR_COMMON_INTERNAL_ERROR 예외를 안전하게 던집니다.
 """
 
 from abc import ABC, abstractmethod
@@ -12,7 +12,7 @@ from typing import Any, Generic, TypeVar
 
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
 

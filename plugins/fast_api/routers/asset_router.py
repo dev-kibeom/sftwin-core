@@ -9,12 +9,12 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
-
 # 1. core application 및 DTO 참조
-from core.src.asset_twin.asset_library.application.manage_asset.manage_asset_usecase import (
+from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     ManageAssetUseCase,
 )
+from fastapi import APIRouter, Depends, status
+
 from core.src.shared.dtos.asset_dto import AssetDto
 from core.src.shared.dtos.global_response_dto import GlobalResponseDto
 from core.src.shared.security.user_context import UserContext, get_current_user

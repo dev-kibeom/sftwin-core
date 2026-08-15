@@ -10,10 +10,10 @@ Base Repository Adapter Implementation
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
-from shared.dtos.log_dtos import LogContext
+from shared.logger.system_logger.log_context import LogContext
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
 

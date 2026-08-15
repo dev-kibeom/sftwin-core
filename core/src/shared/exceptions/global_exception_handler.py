@@ -14,7 +14,7 @@ from typing import Any
 from shared.dtos.global_response_dto import GlobalResponseDto
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 
 logger = logging.getLogger("shared.exceptions.global_exception_handler")
 

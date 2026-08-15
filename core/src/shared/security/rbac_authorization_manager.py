@@ -4,12 +4,12 @@ RbacAuthorizationManager Implementation
 
 import logging
 
-from shared.dtos.audit_dtos import SecurityAuditEvent
 from shared.enums.audit_severity_enum import AuditSeverityEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.audit_logger import AuditLogger
+from shared.logger.audit_logger.audit_logger import AuditLogger
+from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
 from shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.security.rbac_authorization_manager")
@@ -44,7 +44,7 @@ class RbacAuthorizationManager:
                 f"attempted to access resource requiring '{required_role.value}'."
             )
             self._audit_logger.log_security_event(
-                SecurityAuditEvent(
+                SecurityAuditEventPo(
                     action="ACCESS_DENIED",
                     target=target_resource,
                     severity=AuditSeverityEnum.WARNING,
@@ -74,7 +74,7 @@ class RbacAuthorizationManager:
                 f"attempted to access asset belonging to Company '{target_company_id}'."
             )
             self._audit_logger.log_security_event(
-                SecurityAuditEvent(
+                SecurityAuditEventPo(
                     action="ISOLATION_VIOLATION",
                     target=f"{target_resource}:{target_company_id}",
                     severity=AuditSeverityEnum.CRITICAL,

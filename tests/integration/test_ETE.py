@@ -21,7 +21,7 @@ def test_01_health_check_all_services():
     assert res.json().get("status") == "ok"
 
 
-def test_02_asset_twin_registration_and_reconstruct(auth_header):
+def test_02_digital_twin_registration_and_reconstruct(auth_header):
     """2. 자산 등록 및 KAMP 데이터 모킹 기반 복각 테스트"""
     # Asset 동적 등록 (Command Facade)
     asset_payload = {

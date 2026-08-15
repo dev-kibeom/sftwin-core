@@ -7,11 +7,11 @@ InjectFaultUseCase (Stateless Singleton)
 
 from datetime import datetime, timezone
 
-from shared.dtos.log_dtos import LogContext
+from shared.logger.system_logger.log_context import LogContext
 from shared.dtos.sim_result_dto import SimResultDto
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 from shared.security.user_context import UserContext
 from simulation.fault_injection.domain.fault_scenario import (
     FaultScenario,

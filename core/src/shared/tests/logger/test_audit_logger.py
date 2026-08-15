@@ -5,9 +5,12 @@ Unit Test Specification for FEAT-SHARED-03
 from unittest.mock import MagicMock
 
 import pytest
-from shared.dtos.audit_dtos import FailsafeAuditEvent, SecurityAuditEvent
-from shared.logger.audit_logger import AuditLogger, AuditSeverityEnum
-from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.logger.audit_logger.audit_logger import AuditLogger, AuditSeverityEnum
+from shared.logger.audit_logger.failsafe_audit_event_po import (
+    FailsafeAuditEventPo,
+)
+from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
+from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
 from shared.security.user_context import UserContext, UserRoleEnum
 
 
@@ -34,7 +37,7 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
         role=UserRoleEnum.FIELD_ENGINEER,
     )
 
-    event = SecurityAuditEvent(
+    event = SecurityAuditEventPo(
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
         severity=AuditSeverityEnum.WARNING,
@@ -97,7 +100,7 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
         role=UserRoleEnum.FIELD_ENGINEER,
     )
 
-    event = SecurityAuditEvent(
+    event = SecurityAuditEventPo(
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
         severity=AuditSeverityEnum.WARNING,

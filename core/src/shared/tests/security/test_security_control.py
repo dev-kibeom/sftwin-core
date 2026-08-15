@@ -9,12 +9,12 @@ from unittest.mock import MagicMock
 
 import jwt
 import pytest
-from shared.dtos.audit_dtos import SecurityAuditEvent
 from shared.enums.audit_severity_enum import AuditSeverityEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.audit_logger import AuditLogger
+from shared.logger.audit_logger.audit_logger import AuditLogger
+from shared.logger.audit_logger.failsafe_audit_event_po import SecurityAuditEventPo
 from shared.security.jwt_auth_interceptor import (
     JwtAuthInterceptor,
 )
@@ -121,7 +121,7 @@ def test_tc_sec_04_insufficient_rbac_role(rbac_manager, mock_audit_logger):
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(
-        SecurityAuditEvent(
+        SecurityAuditEventPo(
             action="ACCESS_DENIED",
             target="API_ENDPOINT",
             severity=AuditSeverityEnum.WARNING,
@@ -150,7 +150,7 @@ def test_tc_sec_05_cross_company_access_violation(rbac_manager, mock_audit_logge
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(
-        SecurityAuditEvent(
+        SecurityAuditEventPo(
             action="ISOLATION_VIOLATION",
             target="CAD_AAS_ASSET:COMP-B",
             severity=AuditSeverityEnum.CRITICAL,

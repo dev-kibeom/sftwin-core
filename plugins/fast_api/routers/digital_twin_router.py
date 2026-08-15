@@ -12,11 +12,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 # 1. core application 및 DTO 참조
-from core.src.asset_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+from core.src.digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
-    LayoutRenderingDto,
+    LayoutRenderDto,
 )
-from core.src.asset_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
+from core.src.digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     RawDataDto,
     ReconstructTwinUseCase,
     TwinMetricsDto,
@@ -55,7 +55,7 @@ async def reconstruct_twin(
 
 @router.get(
     "/layouts/{baseline_id}",
-    response_model=GlobalResponseDto[LayoutRenderingDto],
+    response_model=GlobalResponseDto[LayoutRenderDto],
     summary="[Step 1/2] 3D 가상 공장 레이아웃 데이터 조회",
     description="웹 UI 3D 캔버스 렌더링에 필요한 TwinBaseline 및 자산 매핑 좌표/회전 데이터를 조회합니다.",
 )
@@ -63,7 +63,7 @@ async def get_layout(
     baseline_id: str,
     ctx: Annotated[UserContext, Depends(get_current_user)],
     use_case: Annotated[GetLayoutUseCase, Depends(get_get_layout_usecase)],
-) -> GlobalResponseDto[LayoutRenderingDto]:
+) -> GlobalResponseDto[LayoutRenderDto]:
     """3D 레이아웃 데이터 조회 유스케이스 실행"""
     result = use_case.execute(baseline_id=baseline_id, ctx=ctx)
     return GlobalResponseDto.success_response(

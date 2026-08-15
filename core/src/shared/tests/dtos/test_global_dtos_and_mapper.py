@@ -17,7 +17,7 @@ from shared.exceptions.error_codes import GlobalErrorCodes
 @dataclass
 class SampleDomainEvent:
     event_type: str = "AssetTwinUpdatedEvent"
-    source_component: str = "asset_twin"
+    source_component: str = "digital_twin"
     payload: dict = None
 
 
@@ -46,7 +46,7 @@ def test_tc_dto_02_domain_to_integration_event_mapping():
 
     assert integration_event.header["trace_id"] == "TRC-99081234a"
     assert integration_event.header["event_type"] == "AssetTwinUpdatedEvent"
-    assert integration_event.header["source_component"] == "asset_twin"
+    assert integration_event.header["source_component"] == "digital_twin"
 
     # UUID v4 검증
     event_id = integration_event.header["event_id"]

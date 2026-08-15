@@ -36,7 +36,7 @@ services:
   asset-svc:
     build:
       context: ./core
-      dockerfile: src/asset_twin/Dockerfile
+      dockerfile: src/digital_twin/Dockerfile
     container_name: asset-svc
     restart: always
     env_file:

@@ -123,7 +123,7 @@ jobs:
       matrix:
         service:
           - name: asset-svc
-            dockerfile: core/src/asset_twin/Dockerfile
+            dockerfile: core/src/digital_twin/Dockerfile
           - name: sim-svc
             dockerfile: core/src/simulation/Dockerfile
           - name: kpi-svc

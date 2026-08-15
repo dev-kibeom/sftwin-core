@@ -2,7 +2,7 @@
 import os
 
 import pytest
-from asset_twin.twin_reconstruction.adapters.outbound.kamp_data_adapter import (
+from digital_twin.twin_reconstruction.adapters.outbound.kamp_data_adapter import (
     KampDataAdapter,
 )
 
