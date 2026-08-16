@@ -1,18 +1,33 @@
-"""
-Unit Test Specification for GlobalSystemLogger
-"""
+import json
+import logging
+from unittest.mock import patch
 
-from shared.logger.system_logger.log_context import LogContext
 from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.system_logger.log_context import LogContext
 
 
 def test_tc_log_system_logger_json_formatting():
-    logger = GlobalSystemLogger(component_name="TestComponent")
+    logger = GlobalSystemLogger(
+        component_name="TestComponent", logger_name="sftwin.global"
+    )
     log_ctx = LogContext(trace_id="TRC-1234", context={"service": "auth"})
 
-    log_payload = logger.info(message="System initialisation complete", log_ctx=log_ctx)
+    # 내부 logging.Logger.log 호출 및 JSON 페이로드 검증
+    with (
+        patch.object(logger._logger, "isEnabledFor", return_value=True),
+        patch.object(logger._logger, "log") as mock_log,
+    ):
+        logger.info(message="System initialisation complete", log_ctx=log_ctx)
 
-    assert log_payload["component"] == "TestComponent"
-    assert log_payload["log_level"] == "INFO"
-    assert log_payload["trace_id"] == "TRC-1234"
-    assert log_payload["context"]["service"] == "auth"
+        mock_log.assert_called_once()
+        called_level, called_json_str = mock_log.call_args[0]
+
+        # 로그 레벨 확인
+        assert called_level == logging.INFO
+
+        # 직렬화된 JSON 구조 및 필드 검증
+        log_payload = json.loads(called_json_str)
+        assert log_payload["component"] == "TestComponent"
+        assert log_payload["log_level"] == "INFO"
+        assert log_payload["trace_id"] == "TRC-1234"
+        assert log_payload["context"]["service"] == "auth"

@@ -14,7 +14,7 @@ from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.logger.audit_logger.audit_logger import AuditLogger
-from shared.logger.audit_logger.failsafe_audit_event_po import SecurityAuditEventPo
+from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
 from shared.security.jwt_auth_interceptor import (
     JwtAuthInterceptor,
 )

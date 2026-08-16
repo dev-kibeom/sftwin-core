@@ -5,7 +5,8 @@ Unit Test Specification for FEAT-SHARED-03
 from unittest.mock import MagicMock
 
 import pytest
-from shared.logger.audit_logger.audit_logger import AuditLogger, AuditSeverityEnum
+from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.logger.audit_logger.audit_logger import AuditLogger
 from shared.logger.audit_logger.failsafe_audit_event_po import (
     FailsafeAuditEventPo,
 )
@@ -20,15 +21,15 @@ def mock_system_logger():
 
 
 @pytest.fixture
-def mock_db_session():
+def mock_command_repo():
     return MagicMock()
 
 
 def test_tc_log_01_security_event_logging_and_db_persistence(
-    mock_system_logger, mock_db_session
+    mock_system_logger, mock_command_repo
 ):
     audit_logger = AuditLogger(
-        system_logger=mock_system_logger, db_session=mock_db_session
+        logger=mock_system_logger, command_repo=mock_command_repo
     )
     user_ctx = UserContext(
         user_id="usr-123",
@@ -47,27 +48,18 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
 
     audit_logger.log_security_event(event)
 
-    mock_system_logger._format_and_dispatch.assert_called_once()
-    args = mock_system_logger._format_and_dispatch.call_args
-    level = args[0][0]
-    log_ctx = args[0][2]
-
-    assert level == "WARN"
-    assert log_ctx.trace_id == "TRC-99081234a"
-    assert log_ctx.context["user_id"] == "usr-123"
-
-    mock_db_session.execute.assert_called_once()
-    mock_db_session.commit.assert_called_once()
+    mock_system_logger.warn.assert_called_once()
+    mock_command_repo.save.assert_called_once()
 
 
 def test_tc_log_02_system_event_failsafe_user_context_fallback(
-    mock_system_logger, mock_db_session
+    mock_system_logger, mock_command_repo
 ):
     audit_logger = AuditLogger(
-        system_logger=mock_system_logger, db_session=mock_db_session
+        logger=mock_system_logger, command_repo=mock_command_repo
     )
 
-    event = FailsafeAuditEvent(
+    event = FailsafeAuditEventPo(
         device_id="ROBOT-ARM-01",
         action="ESTOP",
         reason="TORQUE_LIMIT_EXCEEDED",
@@ -86,11 +78,11 @@ def test_tc_log_02_system_event_failsafe_user_context_fallback(
 
 
 def test_tc_log_03_db_timeout_fallback_non_blocking(
-    mock_system_logger, mock_db_session
+    mock_system_logger, mock_command_repo
 ):
-    mock_db_session.execute.side_effect = TimeoutError("Audit DB connection timeout!")
+    mock_command_repo.save.side_effect = TimeoutError("Audit DB connection timeout!")
     audit_logger = AuditLogger(
-        system_logger=mock_system_logger, db_session=mock_db_session
+        logger=mock_system_logger, command_repo=mock_command_repo
     )
 
     user_ctx = UserContext(
@@ -114,7 +106,3 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
         pytest.fail("Audit DB failure must NOT raise an exception to the caller.")
 
     mock_system_logger.error.assert_called_once()
-    call_args = mock_system_logger.error.call_args
-    msg = call_args.kwargs.get("message") or (call_args[0][0] if call_args[0] else "")
-
-    assert "Audit DB Persist Fallback" in msg

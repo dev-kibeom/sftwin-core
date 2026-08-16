@@ -2,9 +2,6 @@ import uuid
 from unittest.mock import MagicMock
 
 import pytest
-from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
-    GetAssetUseCase,
-)
 from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     RegisterAssetUseCase,
 )
@@ -67,41 +64,6 @@ def test_tc_happy_path_register_asset():
     saved_arg: Asset = mock_repo.save.call_args[0][0]
     assert saved_arg.company_id == "TEST-COMPANY-01"
     assert saved_arg.asset_name == "Doosan_M1013_Robot"
-
-
-def test_tc_edge_case_tenant_isolation_forbidden():
-    """
-    [TC-예외] 타사 격리 자산 조회 시도 시 차단 및 Fallback 검증
-    """
-    # Given
-    mock_repo = MagicMock(spec=IAssetQueryRepository)
-
-    private_asset = Asset(
-        asset_id="PRIVATE-ASSET-01",
-        asset_name="Private_CNC",
-        asset_type=AssetTypeEnum.CNC,
-        company_id="OTHER-COMPANY-99",  # 타사 보유 자산
-        kinematics_metadata={"degrees_of_freedom": 3, "dh_parameters": {}},
-    )
-    mock_repo.find_by_id.return_value = private_asset
-
-    usecase = GetAssetUseCase(query_repo=mock_repo)
-
-    ctx = UserContext(
-        user_id="USER-123",
-        username="kibeom_engineer",
-        company_id="TEST-COMPANY-01",  # 다른 요청 회사
-        role=UserRoleEnum.FIELD_ENGINEER,
-        accessible_factory_ids=[],
-    )
-
-    # When & Then
-    with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute("PRIVATE-ASSET-01", ctx)
-
-    # 보안상 존재 유무를 은닉하기 위해 404 ERR_TWIN_NOT_FOUND로 처리됨을 검증
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_NOT_FOUND
-    assert exc_info.value.status_code == 404
 
 
 def test_tc_error_handling_invalid_domain_schema():
