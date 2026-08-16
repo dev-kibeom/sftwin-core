@@ -8,6 +8,7 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     GetLayoutUseCase,
     LayoutRenderDto,
 )
+from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.dtos.asset_dto import AssetDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
@@ -28,28 +29,48 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
         self._get_asset_uc = get_asset_uc
         self._get_layout_uc = get_layout_uc
         self._logger = logger or GlobalSystemLogger(
-            component_name="DigitalwinQueryFacade"
+            component_name="DigitalTwinQueryFacade"
         )
 
     def get_asset_info(self, asset_id: str, ctx: UserContext | None = None) -> AssetDto:
-        self._logger.info(f"get_asset_info for asset_id: {asset_id}")
-
         ctx = self._get_fallback_context_if_none(ctx)
-        return self._get_asset_uc.get_asset(asset_id, ctx)
+
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
+            context={"asset_id": asset_id, "user_id": ctx.user_id},
+        )
+        self._logger.debug(
+            f"Facade routing get_asset_info: {asset_id}", log_ctx=log_ctx
+        )
+
+        return self._get_asset_uc.execute(asset_id, ctx)
 
     def get_layout_data(
         self, baseline_id: str, ctx: UserContext | None = None
     ) -> LayoutRenderDto:
-        self._logger.info(f"get_layout_data for baseline_id: {baseline_id}")
+        ctx = self._get_fallback_context_if_none(ctx)
+
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
+            context={
+                "baseline_id": baseline_id,
+                "user_id": ctx.user_id,
+            },
+        )
+        self._logger.debug(
+            f"Facade routing get_layout_data: {baseline_id}", log_ctx=log_ctx
+        )
 
         if self._get_layout_uc is None:
+            self._logger.error(
+                "GetLayoutUseCase dependency missing in facade", log_ctx=log_ctx
+            )
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
-                message="GetLayoutUseCase is not injected into DigitalwinQueryImpl.",
+                message="GetLayoutUseCase is not injected into DigitalTwinQueryFacade.",
                 status_code=500,
             )
 
-        ctx = self._get_fallback_context_if_none(ctx)
         return self._get_layout_uc.execute(baseline_id, ctx)
 
     def _get_fallback_context_if_none(self, ctx: UserContext | None) -> UserContext:

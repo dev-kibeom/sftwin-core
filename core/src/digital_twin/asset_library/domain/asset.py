@@ -1,13 +1,3 @@
-"""
-===============================================================================
-[File Name] asset.py
-[Location ] /src/digital_twin/asset_library/domain/asset.py
-[Description]
- - 순수 Python 도메인 엔티티 객체 및 자산 규격 유효성 검증 로직을 포함합니다.
- - 특정 외부 자산 규격(AAS 등)이나 프레임워크에 종속되지 않은 Core Asset 엔티티입니다.
-===============================================================================
-"""
-
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
