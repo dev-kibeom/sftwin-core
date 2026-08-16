@@ -9,12 +9,12 @@ from unittest.mock import MagicMock
 
 import jwt
 import pytest
+from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.audit_logger.audit_logger import AuditLogger
-from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
+from shared.logger.audit_logger import AuditLogger, SecurityAuditEvent
 from shared.security.jwt_auth_interceptor import (
     JwtAuthInterceptor,
 )
@@ -22,7 +22,6 @@ from shared.security.rbac_authorization_manager import (
     AuditSeverityEnum,
     RbacAuthorizationManager,
 )
-from shared.security.user_context import UserContext
 
 SECRET_KEY = "sftwin_global_security_jwt_secret_key_256bit!"
 
@@ -96,7 +95,7 @@ def test_tc_sec_03_expired_or_invalid_jwt(jwt_interceptor):
         jwt_interceptor.intercept(headers)
 
     assert (
-        exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED
+        exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED
     ), "Error code should be ERR_COMMON_UNAUTHORIZED."
     assert exc_info.value.status_code == 401, "HTTP status code should be 401."
 
@@ -116,12 +115,12 @@ def test_tc_sec_04_insufficient_rbac_role(rbac_manager, mock_audit_logger):
         )
 
     assert (
-        exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_FORBIDDEN
+        exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN
     ), "Error code should be ERR_COMMON_FORBIDDEN."
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(
-        SecurityAuditEventPo(
+        SecurityAuditEvent(
             action="ACCESS_DENIED",
             target="API_ENDPOINT",
             severity=AuditSeverityEnum.WARNING,
@@ -145,12 +144,12 @@ def test_tc_sec_05_cross_company_access_violation(rbac_manager, mock_audit_logge
         )
 
     assert (
-        exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_FORBIDDEN
+        exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN
     ), "Error code should be ERR_COMMON_FORBIDDEN."
     assert exc_info.value.status_code == 403, "HTTP status code should be 403."
 
     mock_audit_logger.log_security_event.assert_called_once_with(
-        SecurityAuditEventPo(
+        SecurityAuditEvent(
             action="ISOLATION_VIOLATION",
             target="CAD_AAS_ASSET:COMP-B",
             severity=AuditSeverityEnum.CRITICAL,

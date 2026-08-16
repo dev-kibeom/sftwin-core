@@ -11,10 +11,10 @@ from kpi_b2b.b2b_procurement.application.process_production_order.production_ord
     ProductionOrderRequestDto,
 )
 from kpi_b2b.b2b_procurement.domain.factory_phase_enum import FactoryPhaseEnum
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.packml_state_enum import PackMLStateEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.security.user_context import UserContext
 
 
 @dataclass
@@ -36,14 +36,14 @@ class ProductionOrder:
         """발주 요청 DTO와 인가된 UserContext만을 조합하여 엔티티 생성"""
         if dto.target_quantity <= 0:
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message="Target order quantity must be greater than zero.",
                 status_code=400,
             )
 
         if not ctx.company_id or not ctx.company_id.strip():
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="Valid company context is required to create a production order.",
                 status_code=401,
             )
@@ -62,7 +62,7 @@ class ProductionOrder:
     def transition_to_starting(self) -> PackMLStateEnum:
         if self.packml_state not in (PackMLStateEnum.IDLE, PackMLStateEnum.STOPPED):
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message=f"Cannot transition to STARTING from state {self.packml_state.value}",
                 status_code=422,
             )
@@ -72,7 +72,7 @@ class ProductionOrder:
     def transition_to_execute(self) -> PackMLStateEnum:
         if self.packml_state != PackMLStateEnum.STARTING:
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message=f"Cannot transition to EXECUTE from state {self.packml_state.value}",
                 status_code=422,
             )

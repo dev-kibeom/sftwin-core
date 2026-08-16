@@ -12,9 +12,9 @@ import logging
 from typing import Any
 
 from shared.dtos.global_response_dto import GlobalResponseDto
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 logger = logging.getLogger("shared.exceptions.global_exception_handler")
 
@@ -66,7 +66,7 @@ class GlobalExceptionHandler:
         """
         logger.error(f"Handling Unexpected Exception: {str(exc)}", exc_info=True)
         dto = GlobalResponseDto.error_response(
-            code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+            code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
             message="An unexpected internal server error occurred.",
             data=None,
         )
@@ -91,7 +91,7 @@ class GlobalExceptionHandler:
                 "CRITICAL: Sensitive pattern (Stack Trace / DB Query) detected in error response payload! Triggering Safe Fallback."
             )
             return GlobalResponseDto.error_response(
-                code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+                code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
                 message="An unexpected internal server error occurred.",
                 data=None,
             )

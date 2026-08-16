@@ -1,14 +1,35 @@
 import json
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverityEnum
-from shared.logger.audit_logger.failsafe_audit_event_po import FailsafeAuditEventPo
-from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.logger.system_logger.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.ports.outbound.i_audit_command_repository import IAuditRepository
-from shared.security.user_context import UserContext
+
+
+@dataclass(frozen=True)
+class SecurityAuditEvent:
+    """보안 감사 이벤트 Parameter Object"""
+
+    action: str
+    target: str
+    severity: AuditSeverityEnum
+    user_ctx: UserContext | None = None
+    trace_id: str = "TRC-AUDIT"
+
+
+@dataclass(frozen=True)
+class FailsafeAuditEvent:
+    """에지 관제 비상 제어 이벤트 Parameter Object"""
+
+    device_id: str
+    action: str
+    reason: str
+    user_ctx: UserContext | None = None
+    trace_id: str = "TRC-FAILSAFE"
 
 
 class AuditLogger:
@@ -24,7 +45,7 @@ class AuditLogger:
         )
         self._command_repo = command_repo
 
-    def log_security_event(self, event: SecurityAuditEventPo) -> None:
+    def log_security_event(self, event: SecurityAuditEvent) -> None:
         """보안 감사 이벤트 처리 및 영속화"""
         user_id, company_id = self._extract_user_identity(event.user_ctx)
         audit_id = str(uuid.uuid4())
@@ -67,7 +88,7 @@ class AuditLogger:
 
         self._persist_audit_log(context_data, event.trace_id)
 
-    def log_failsafe_event(self, event: FailsafeAuditEventPo) -> None:
+    def log_failsafe_event(self, event: FailsafeAuditEvent) -> None:
         """에지 관제 비상 제어 이벤트 처리 및 영속화"""
         user_id, company_id = self._extract_user_identity(event.user_ctx)
         audit_id = str(uuid.uuid4())

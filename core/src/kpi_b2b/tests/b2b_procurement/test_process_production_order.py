@@ -11,7 +11,7 @@ from kpi_b2b.b2b_procurement.application.process_production_order.production_ord
     ProductionOrderRequestDto,
 )
 from shared.enums.user_role_enum import UserRoleEnum
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 @pytest.fixture

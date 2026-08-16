@@ -9,7 +9,7 @@ from unittest.mock import Mock
 import pytest
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
     InjectFaultUseCase,
 )

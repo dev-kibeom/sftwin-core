@@ -4,13 +4,12 @@ RbacAuthorizationManager Implementation
 
 import logging
 
+from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.audit_logger.audit_logger import AuditLogger
-from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
-from shared.security.user_context import UserContext
+from shared.logger.audit_logger import AuditLogger, SecurityAuditEvent
 
 logger = logging.getLogger("shared.security.rbac_authorization_manager")
 
@@ -44,7 +43,7 @@ class RbacAuthorizationManager:
                 f"attempted to access resource requiring '{required_role.value}'."
             )
             self._audit_logger.log_security_event(
-                SecurityAuditEventPo(
+                SecurityAuditEvent(
                     action="ACCESS_DENIED",
                     target=target_resource,
                     severity=AuditSeverityEnum.WARNING,
@@ -52,7 +51,7 @@ class RbacAuthorizationManager:
                 )
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_FORBIDDEN,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN,
                 message=f"Access denied. Required role level: {required_role.value}",
                 status_code=403,
             )
@@ -74,7 +73,7 @@ class RbacAuthorizationManager:
                 f"attempted to access asset belonging to Company '{target_company_id}'."
             )
             self._audit_logger.log_security_event(
-                SecurityAuditEventPo(
+                SecurityAuditEvent(
                     action="ISOLATION_VIOLATION",
                     target=f"{target_resource}:{target_company_id}",
                     severity=AuditSeverityEnum.CRITICAL,
@@ -82,7 +81,7 @@ class RbacAuthorizationManager:
                 )
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_FORBIDDEN,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN,
                 message="Access denied. Cross-company data access is strictly forbidden.",
                 status_code=403,
             )

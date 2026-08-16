@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from shared.dtos.global_response_dto import GlobalResponseDto
 from shared.dtos.sim_result_dto import SimResultDto
-from shared.security.user_context import UserContext, get_current_user
+from shared.context.user_context import UserContext, get_current_user
 from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
     InjectFaultUseCase,
 )

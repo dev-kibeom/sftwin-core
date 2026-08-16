@@ -9,13 +9,11 @@ from digital_twin.asset_library.domain.asset import Asset
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
-from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
+from shared.context.user_context import UserContext
 from shared.dtos.asset_dto import AssetDto
-from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.security.user_context import UserContext
 
 
 def test_tc_happy_path_register_asset():
@@ -97,7 +95,7 @@ def test_tc_error_handling_invalid_domain_schema():
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute(invalid_dto, ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_INVALID_SCHEMA
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA
     assert exc_info.value.status_code == 400
     # Mock 저장소의 save() 메서드가 단 한 번도 호출되지 않았음을 단언
     mock_repo.save.assert_not_called()

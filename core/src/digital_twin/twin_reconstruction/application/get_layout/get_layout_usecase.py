@@ -1,10 +1,11 @@
 from digital_twin.ports.outbound.i_baseline_query_repository import (
     IBaselineQueryRepository,
 )
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 from .asset_mapping_render_dto import AssetMappingRenderDto
 from .layout_render_dto import LayoutRenderDto
@@ -20,54 +21,72 @@ class GetLayoutUseCase:
         self._logger = logger or GlobalSystemLogger(component_name="GetLayoutUseCase")
 
     def execute(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
-        if not ctx:
-            self._logger.error("[GetLayoutUseCase] UserContext missing")
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
+            context={
+                "baseline_id": baseline_id,
+                "user_id": getattr(ctx, "user_id", "UNKNOWN"),
+                "company_id": getattr(ctx, "company_id", "UNKNOWN"),
+            },
+        )
+
+        if not ctx or not ctx.company_id:
+            self._logger.warn(
+                "Layout query rejected: Missing UserContext or company_id",
+                log_ctx=log_ctx,
+            )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message="UserContext is required for authorization.",
                 status_code=400,
             )
 
-        raw_data = self._query_repo.find_by_id(baseline_id)
+        self._logger.debug(f"Querying baseline layout: {baseline_id}", log_ctx=log_ctx)
 
+        raw_data = self._query_repo.find_by_id(baseline_id)
         if not raw_data:
             self._logger.warn(
-                f"[GetLayoutUseCase] Baseline layout not found: '{baseline_id}'"
+                f"Baseline layout not found: '{baseline_id}'",
+                log_ctx=log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_TWIN_NOT_FOUND,
+                error_code=GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND,
                 message=f"Requested 3D baseline layout '{baseline_id}' does not exist.",
                 status_code=404,
             )
 
         owner_company_id = raw_data.get("company_id", "")
-        if not self.verify_access_rights(baseline_id, owner_company_id, ctx):
+        if not self._is_accessible(baseline_id, owner_company_id, ctx):
             self._logger.warn(
-                f"[GetLayoutUseCase] Access denied for baseline_id='{baseline_id}'. "
-                f"Owner company='{owner_company_id}', Request company='{ctx.company_id}'"
+                f"Access denied for baseline '{baseline_id}' (Owner: {owner_company_id}, Requester: {ctx.company_id})",
+                log_ctx=log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_TWIN_NOT_FOUND,
+                error_code=GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND,
                 message=f"Requested 3D baseline layout '{baseline_id}' does not exist.",
                 status_code=404,
             )
 
-        mappings_list: list[AssetMappingRenderDto] = []
-        for item in raw_data.get("asset_mappings", []):
-            mappings_list.append(
-                AssetMappingRenderDto(
-                    asset_id=item.get("asset_id", ""),
-                    asset_name=item.get("asset_name", ""),
-                    asset_type=item.get("asset_type", "UNKNOWN"),
-                    cad_file_path=item.get("cad_file_path"),
-                    position_xyz_json=item.get(
-                        "position_xyz_json", {"x": 0.0, "y": 0.0, "z": 0.0}
-                    ),
-                    rotation_q_json=item.get(
-                        "rotation_q_json", {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0}
-                    ),
-                )
+        mappings_list = [
+            AssetMappingRenderDto(
+                asset_id=item.get("asset_id", ""),
+                asset_name=item.get("asset_name", ""),
+                asset_type=item.get("asset_type", "UNKNOWN"),
+                cad_file_path=item.get("cad_file_path"),
+                position_xyz_json=item.get(
+                    "position_xyz_json", {"x": 0.0, "y": 0.0, "z": 0.0}
+                ),
+                rotation_q_json=item.get(
+                    "rotation_q_json", {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0}
+                ),
             )
+            for item in raw_data.get("asset_mappings", [])
+        ]
+
+        self._logger.info(
+            f"Baseline layout '{baseline_id}' retrieved successfully",
+            log_ctx=log_ctx,
+        )
 
         return LayoutRenderDto(
             baseline_id=raw_data.get("baseline_id", baseline_id),
@@ -78,12 +97,11 @@ class GetLayoutUseCase:
             asset_mappings=mappings_list,
         )
 
-    def verify_access_rights(
+    def _is_accessible(
         self, baseline_id: str, owner_company_id: str, ctx: UserContext
     ) -> bool:
         if ctx.accessible_factory_ids and baseline_id in ctx.accessible_factory_ids:
             return True
-
         return bool(
             owner_company_id and ctx.company_id and owner_company_id == ctx.company_id
         )

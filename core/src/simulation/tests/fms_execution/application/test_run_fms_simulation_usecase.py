@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase import (
     RunFmsSimulationUseCase,
 )

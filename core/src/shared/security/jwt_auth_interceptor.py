@@ -6,10 +6,10 @@ import logging
 from typing import Any
 
 import jwt
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.security.user_context import UserContext
 
 logger = logging.getLogger("shared.security.jwt_auth_interceptor")
 
@@ -32,7 +32,7 @@ class JwtAuthInterceptor:
                 "Authentication failed: Missing or invalid Authorization header format."
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="Authorization header with Bearer token is missing or invalid.",
                 status_code=401,
             )
@@ -59,27 +59,27 @@ class JwtAuthInterceptor:
         except (KeyError, ValueError) as e:
             logger.error(f"JWT payload claim parsing error: {str(e)}")
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="JWT payload claims are invalid or incomplete.",
                 status_code=401,
-            )
+            ) from e
 
     def _decode_and_validate_jwt(self, token: str) -> dict[str, Any]:
         try:
             return jwt.decode(token, self._jwt_secret_key, algorithms=[self._algorithm])
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
             logger.warning("Authentication failed: JWT token has expired.")
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="JWT token has expired.",
                 status_code=401,
-            )
+            ) from e
         except jwt.PyJWTError as e:
             logger.warning(
                 f"Authentication failed: Invalid JWT token signature/structure ({str(e)})."
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="Invalid JWT token signature or payload format.",
                 status_code=401,
-            )
+            ) from e

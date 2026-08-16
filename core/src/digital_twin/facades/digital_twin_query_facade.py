@@ -8,12 +8,12 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     GetLayoutUseCase,
     LayoutRenderDto,
 )
+from shared.context.user_context import UserContext
 from shared.dtos.asset_dto import AssetDto
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
@@ -44,7 +44,7 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
 
         if self._get_layout_uc is None:
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
                 message="GetLayoutUseCase is not injected into DigitalwinQueryImpl.",
                 status_code=500,
             )

@@ -6,12 +6,12 @@ from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
 )
 from digital_twin.asset_library.domain.asset import Asset
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
+from shared.context.user_context import UserContext
 from shared.dtos.asset_dto import AssetDto
 from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.security.user_context import UserContext
 
 
 @pytest.fixture
@@ -86,7 +86,7 @@ def test_tc_edge_case_asset_not_found(
         usecase.execute("NON-EXISTENT-ID", standard_context)
 
     mock_query_repo.find_by_id.assert_called_once_with("NON-EXISTENT-ID")
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404
 
 
@@ -113,7 +113,7 @@ def test_tc_edge_case_soft_deleted_asset(
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute("DELETED-CNC-01", standard_context)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404
 
 
@@ -140,5 +140,5 @@ def test_tc_edge_case_tenant_isolation_forbidden(
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute("PRIVATE-ASSET-01", standard_context)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404

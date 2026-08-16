@@ -7,12 +7,12 @@ FMS 시뮬레이션 가동 흐름을 오케스트레이션합니다.
 from datetime import datetime, timezone
 from typing import Any
 
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.dtos.sim_result_dto import SimResultDto
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 from simulation.fms_execution.domain.collision_detector import CollisionDetector
 from simulation.fms_execution.domain.fms_scenario import FmsScenario
 from simulation.ports.outbound.i_physics_engine import IPhysicsEngine
@@ -47,7 +47,7 @@ class RunFmsSimulationUseCase:
         if not scenario.validate_scenario():
             self._logger.warn("Invalid scenario metadata", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_INVALID_SCENARIO,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_INVALID_SCENARIO,
                 message="AAS or Kinematics metadata schema violation or missing baseline_id.",
                 status_code=400,
             )
@@ -55,7 +55,7 @@ class RunFmsSimulationUseCase:
         if not self._check_vram_resource_limit():
             self._logger.error("VRAM Resource exhausted over 4.2GB limit", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_RESOURCE_EXHAUSTED,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_RESOURCE_EXHAUSTED,
                 message="GPU VRAM cache exceeds the 4.2GB limit. Request rejected to prevent OOM.",
                 status_code=503,
             )
@@ -66,7 +66,7 @@ class RunFmsSimulationUseCase:
             log_ctx.exc = exc
             self._logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_IPC_TIMEOUT,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT,
                 message="POSIX Shared Memory IPC synchronization timeout exceeded 1ms.",
                 status_code=500,
             ) from exc
@@ -78,7 +78,7 @@ class RunFmsSimulationUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_COLLISION_DETECTED,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_COLLISION_DETECTED,
                 message="Physical collision or Fleet deadlock detected during computation.",
                 status_code=409,
             )

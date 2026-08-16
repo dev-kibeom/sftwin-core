@@ -6,8 +6,8 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_t
     ReconstructTwinUseCase,
     TwinMetricsDto,
 )
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.context.user_context import UserContext
 
 
 class DigitalTwinCommandFacade(IDigitalTwinCommandFacade):

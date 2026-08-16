@@ -5,8 +5,8 @@
 
 from dataclasses import dataclass
 
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 @dataclass
@@ -19,7 +19,7 @@ class MaterialInventory:
         required_stock = order_quantity * self.unit_per_product
         if self.available_stock < required_stock:
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message=f"Insufficient material stock for '{self.material_code}'. Required: {required_stock}, Available: {self.available_stock}",
                 status_code=422,
                 details={

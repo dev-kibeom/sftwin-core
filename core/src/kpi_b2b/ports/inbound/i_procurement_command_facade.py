@@ -4,7 +4,7 @@ from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import B2b
 from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
     SessionDataDto,
 )
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 class IProcurementCommandFacade(Protocol):

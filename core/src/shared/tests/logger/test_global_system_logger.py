@@ -2,8 +2,8 @@ import json
 import logging
 from unittest.mock import patch
 
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 def test_tc_log_system_logger_json_formatting():

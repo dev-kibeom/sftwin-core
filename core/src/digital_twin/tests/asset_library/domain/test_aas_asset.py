@@ -9,8 +9,8 @@
 import pytest
 from digital_twin.asset_library.domain.asset import Asset
 from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 def test_aas_asset_valid_schema():
@@ -42,6 +42,6 @@ def test_aas_asset_invalid_schema_missing_kinematics_keys():
     with pytest.raises(BaseSystemException) as exc_info:
         asset.validate_schema()
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_INVALID_SCHEMA
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA
     assert exc_info.value.status_code == 400
     assert "Missing required key" in exc_info.value.message

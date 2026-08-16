@@ -11,10 +11,10 @@ from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
 )
 from kpi_b2b.kpi_dashboard.domain.oee_calculator import OeeCalculator
 from kpi_b2b.ports.outbound.i_kpi_query_repository import IKpiQueryRepository
+from shared.context.log_context import LogContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.logger.system_logger.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class CalculateKpiUseCase:
@@ -44,7 +44,7 @@ class CalculateKpiUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_KPI_DB_TIMEOUT,
+                error_code=GlobalErrorCodeEnum.ERR_KPI_DB_TIMEOUT,
                 message="데이터베이스 쿼리 시간 초과 또는 내부 오류 발생.",
                 status_code=500,
             ) from e
@@ -52,7 +52,7 @@ class CalculateKpiUseCase:
         if not logs:
             self._logger.warn(f"No simulation logs found for {sim_id}", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_KPI_SIM_NOT_FOUND,
+                error_code=GlobalErrorCodeEnum.ERR_KPI_SIM_NOT_FOUND,
                 message="종료되거나 유효하지 않은 시뮬레이션입니다.",
                 status_code=404,
             )

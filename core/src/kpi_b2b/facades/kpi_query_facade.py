@@ -12,7 +12,7 @@ from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kp
 )
 from kpi_b2b.ports.inbound.i_kpi_query_facade import IKpiQueryFacade
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 class KpiQueryFacade(IKpiQueryFacade):

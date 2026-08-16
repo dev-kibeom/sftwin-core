@@ -2,12 +2,13 @@ from digital_twin.asset_library.domain.asset import Asset
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.dtos.asset_dto import AssetDto
 from shared.enums.asset_type_enum import AssetTypeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class RegisterAssetUseCase:
@@ -22,9 +23,23 @@ class RegisterAssetUseCase:
         )
 
     def execute(self, asset_dto: AssetDto, ctx: UserContext) -> str:
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
+            context={
+                "asset_name": asset_dto.asset_name,
+                "asset_type": asset_dto.asset_type,
+                "user_id": getattr(ctx, "user_id", "UNKNOWN"),
+                "company_id": getattr(ctx, "company_id", "UNKNOWN"),
+            },
+        )
+
         if not ctx or not ctx.company_id:
+            self._logger.warn(
+                "Asset registration rejected: Missing company_id",
+                log_ctx=log_ctx,
+            )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message="UserContext with valid company_id is required.",
                 status_code=400,
             )
@@ -32,8 +47,16 @@ class RegisterAssetUseCase:
         try:
             asset_enum = AssetTypeEnum(asset_dto.asset_type)
         except ValueError as e:
+            self._logger.warn(
+                f"Invalid asset type: {asset_dto.asset_type}",
+                log_ctx=LogContext(
+                    trace_id=log_ctx.trace_id,
+                    context=log_ctx.context,
+                    exc=e,
+                ),
+            )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_TWIN_INVALID_SCHEMA,
+                error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
                 message=f"Invalid asset type '{asset_dto.asset_type}'.",
                 status_code=400,
                 details={"asset_type": asset_dto.asset_type},
@@ -52,6 +75,10 @@ class RegisterAssetUseCase:
         domain_entity.validate_schema()
         saved_entity = self._command_repo.save(domain_entity)
 
-        self._logger.info(f"{saved_entity.asset_id} registered successfully")
+        log_ctx.context["asset_id"] = saved_entity.asset_id
+        self._logger.info(
+            f"Asset '{saved_entity.asset_id}' registered successfully",
+            log_ctx=log_ctx,
+        )
 
         return saved_entity.asset_id

@@ -17,11 +17,11 @@ from kpi_b2b.ports.outbound.i_procurement_command_repository import (
 from kpi_b2b.ports.outbound.i_procurement_query_repository import (
     IProcurementQueryRepository,
 )
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from shared.security.user_context import UserContext
 
 
 # ==============================================================================
@@ -134,7 +134,7 @@ def test_create_expert_session_isolation_violation(target_system):
     # Given: 실제 도면 소유주와 다른 테넌트 접근 모사 -> RBAC 매니저 403 예외 발생
     mock_qry_repo.get_baseline_owner.return_value = "ORIGINAL_OWNER_TENANT"
     mock_rbac.validate_company_isolation.side_effect = BaseSystemException(
-        error_code=GlobalErrorCodes.ERR_COMMON_FORBIDDEN,
+        error_code=GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN,
         message="Multitenancy isolation policy violation.",
         status_code=403,
     )
@@ -143,7 +143,7 @@ def test_create_expert_session_isolation_violation(target_system):
     with pytest.raises(BaseSystemException) as exc_info:
         facade.create_expert_session(baseline_id=baseline_id, ctx=invalid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_FORBIDDEN
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN
     assert exc_info.value.status_code == 403
 
     # DB 저장이 실행되지 않았음을 검증
@@ -166,6 +166,6 @@ def test_create_expert_session_db_failure(target_system, valid_ctx):
     with pytest.raises(BaseSystemException) as exc_info:
         facade.create_expert_session(baseline_id=baseline_id, ctx=valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
     assert exc_info.value.status_code == 500
     assert "시스템 내부 장애가 발생했습니다" in exc_info.value.message

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from shared.adapters.base_dds_publisher_adapter import BaseDdsPublisherAdapter
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 class ConcreteFastDdsPublisherAdapter(BaseDdsPublisherAdapter[dict]):
@@ -39,5 +39,5 @@ def test_tc_adp_02_edge_dds_session_disconnected():
     with pytest.raises(BaseSystemException) as exc_info:
         adapter.publish(topic="telemetry", data={"speed": 100})
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_EDGE_COMM_TIMEOUT
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_EDGE_COMM_TIMEOUT
     assert exc_info.value.status_code == 504

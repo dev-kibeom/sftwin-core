@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from shared.adapters.base_repository_adapter import BaseRepositoryAdapter
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
 
 
 class ConcreteAasRepositoryAdapter(BaseRepositoryAdapter[dict]):
@@ -52,6 +52,6 @@ def test_tc_adp_04_repository_driver_timeout_wrapping():
     with pytest.raises(BaseSystemException) as exc_info:
         adapter.find_by_id("AAS-001")
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
     assert exc_info.value.status_code == 500
     assert "Database driver failure" in exc_info.value.message

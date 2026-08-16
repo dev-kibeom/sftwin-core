@@ -4,7 +4,7 @@ from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import KpiRe
 from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.dual_kpi_report_dto import (
     DualKpiReportDto,
 )
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 class IKpiQueryFacade(Protocol):

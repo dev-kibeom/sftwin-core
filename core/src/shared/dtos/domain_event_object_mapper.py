@@ -10,8 +10,8 @@ import logging
 from typing import Any
 
 from shared.dtos.integration_event_dto import IntegrationEventDto
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
 
 logger = logging.getLogger("shared.dtos.domain_event_object_mapper")
 
@@ -71,7 +71,7 @@ class DomainEventObjectMapper:
                 "Validation Error: Invalid or missing trace_id during event mapping."
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message="trace_id is required and cannot be empty when mapping domain events.",
                 status_code=400,
                 details={"provided_trace_id": trace_id},

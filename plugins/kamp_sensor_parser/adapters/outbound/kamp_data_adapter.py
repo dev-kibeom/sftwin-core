@@ -15,9 +15,9 @@ from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from digital_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser import (
     ISensorLogParserPort,
 )
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class KampDataAdapter(ISensorLogParserPort):
@@ -42,7 +42,7 @@ class KampDataAdapter(ISensorLogParserPort):
         if not os.path.exists(file_path):
             self._logger.error(f"[KampDataAdapter] File not found: {file_path}")
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_TWIN_KAMP_PARSE_FAIL,
+                error_code=GlobalErrorCodeEnum.ERR_TWIN_KAMP_PARSE_FAIL,
                 message=f"KAMP sensor log file not found at '{file_path}'.",
                 status_code=500,
             )
@@ -81,7 +81,7 @@ class KampDataAdapter(ISensorLogParserPort):
                 f"[KampDataAdapter] Exception during KAMP log streaming parsing: {str(exc)}"
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_TWIN_KAMP_PARSE_FAIL,
+                error_code=GlobalErrorCodeEnum.ERR_TWIN_KAMP_PARSE_FAIL,
                 message=f"Failed to parse KAMP sensor log dataset: {str(exc)}",
                 status_code=500,
                 details={"file_path": file_path, "error": str(exc)},

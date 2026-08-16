@@ -26,7 +26,7 @@ from kpi_b2b.b2b_procurement.application.process_production_order.production_ord
 from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
 from pydantic import BaseModel, Field
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.security.user_context import UserContext, get_current_user
+from shared.context.user_context import UserContext, get_current_user
 
 from plugins.fast_api.dependencies import (
     get_process_production_order_usecase,

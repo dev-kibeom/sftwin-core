@@ -22,7 +22,7 @@ from core.src.digital_twin.twin_reconstruction.application.reconstruct_twin.reco
     TwinMetricsDto,
 )
 from core.src.shared.dtos.global_response_dto import GlobalResponseDto
-from core.src.shared.security.user_context import UserContext, get_current_user
+from shared.context.user_context import UserContext, get_current_user
 
 # 2. plugins/fast_api 전용 의존성 주입자 참조
 from plugins.fast_api.dependencies import (

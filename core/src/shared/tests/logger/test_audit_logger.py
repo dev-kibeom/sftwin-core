@@ -1,18 +1,15 @@
-"""
-Unit Test Specification for FEAT-SHARED-03
-"""
-
 from unittest.mock import MagicMock
 
 import pytest
+from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverityEnum
-from shared.logger.audit_logger.audit_logger import AuditLogger
-from shared.logger.audit_logger.failsafe_audit_event_po import (
-    FailsafeAuditEventPo,
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.logger.audit_logger import (
+    AuditLogger,
+    FailsafeAuditEvent,
+    SecurityAuditEvent,
 )
-from shared.logger.audit_logger.security_audit_event_po import SecurityAuditEventPo
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext, UserRoleEnum
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 @pytest.fixture
@@ -38,7 +35,7 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
         role=UserRoleEnum.FIELD_ENGINEER,
     )
 
-    event = SecurityAuditEventPo(
+    event = SecurityAuditEvent(
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
         severity=AuditSeverityEnum.WARNING,
@@ -59,7 +56,7 @@ def test_tc_log_02_system_event_failsafe_user_context_fallback(
         logger=mock_system_logger, command_repo=mock_command_repo
     )
 
-    event = FailsafeAuditEventPo(
+    event = FailsafeAuditEvent(
         device_id="ROBOT-ARM-01",
         action="ESTOP",
         reason="TORQUE_LIMIT_EXCEEDED",
@@ -92,7 +89,7 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
         role=UserRoleEnum.FIELD_ENGINEER,
     )
 
-    event = SecurityAuditEventPo(
+    event = SecurityAuditEvent(
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
         severity=AuditSeverityEnum.WARNING,

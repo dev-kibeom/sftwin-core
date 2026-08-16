@@ -24,7 +24,7 @@ from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kp
 )
 from pydantic import BaseModel, Field
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.security.user_context import UserContext, get_current_user
+from shared.context.user_context import UserContext, get_current_user
 
 from plugins.fast_api.dependencies import (
     get_calculate_kpi_usecase,

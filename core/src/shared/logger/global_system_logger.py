@@ -4,7 +4,7 @@ import traceback
 from datetime import datetime, timezone
 from typing import Any
 
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
 
 
 class GlobalSystemLogger:

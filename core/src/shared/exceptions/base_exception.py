@@ -9,7 +9,7 @@ BaseSystemException Architecture
 from typing import Any
 
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.exceptions.error_codes import ERROR_CODE_METADATA, GlobalErrorCodes
+from shared.enums.global_error_code_enum import ERROR_CODE_METADATA, GlobalErrorCodeEnum
 
 
 class BaseSystemException(Exception):
@@ -17,7 +17,7 @@ class BaseSystemException(Exception):
 
     def __init__(
         self,
-        error_code: GlobalErrorCodes = GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+        error_code: GlobalErrorCodeEnum = GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
         message: str | None = None,
         status_code: int | None = None,
         details: dict[str, Any] | None = None,

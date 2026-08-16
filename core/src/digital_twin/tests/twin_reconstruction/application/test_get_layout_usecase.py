@@ -7,10 +7,10 @@ from digital_twin.ports.outbound.i_baseline_query_repository import (
 from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
 )
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.security.user_context import UserContext
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ def test_tc_edge_case_unauthorized_isolation_violation(
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute("PRIVATE-TWIN-999", unauthorized_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404
 
 
@@ -115,5 +115,5 @@ def test_tc_error_handling_baseline_not_found(usecase, mock_query_repo, valid_ct
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute("INVALID-TWIN-000", valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodes.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404

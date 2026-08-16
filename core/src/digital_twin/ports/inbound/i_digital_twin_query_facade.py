@@ -4,7 +4,7 @@ from digital_twin.twin_reconstruction.application.get_layout.layout_render_dto i
     LayoutRenderDto,
 )
 from shared.dtos.asset_dto import AssetDto
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 class IDigitalTwinQueryFacade(Protocol):

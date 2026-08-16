@@ -17,7 +17,7 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     LayoutRenderDto,
 )
 from shared.enums.user_role_enum import UserRoleEnum
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 def test_facade_get_layout_data_delegation():

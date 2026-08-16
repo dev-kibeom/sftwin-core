@@ -12,9 +12,9 @@ from kpi_b2b.b2b_procurement.domain.production_order import ProductionOrder
 from kpi_b2b.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
 )
-from shared.logger.system_logger.log_context import LogContext
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.context.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.context.user_context import UserContext
 
 
 class ProcessProductionOrderUseCase:

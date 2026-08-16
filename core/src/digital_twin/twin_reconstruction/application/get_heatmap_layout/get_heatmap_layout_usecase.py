@@ -1,33 +1,34 @@
-"""
-@file get_heatmap_layout_usecase.py
-@description 3D 레이아웃 데이터에 설비별 정합성 핫스팟 색상을 결합하여 반환하는 유즈케이스
-"""
-
-from dataclasses import dataclass
 from typing import Any
 
 from digital_twin.twin_reconstruction.domain.hotspot_color_calculator import (
     HotspotColorCalculator,
 )
+from shared.context.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
-
-@dataclass
-class AssetHeatmapDto:
-    asset_id: str
-    error_rate: float
-    status_code: str
-    color_hex: str
+from .asset_heatmap_dto import AssetHeatmapDto
 
 
 class GetHeatmapLayoutUseCase:
-    def __init__(self):
-        self._color_calculator = HotspotColorCalculator()
+    def __init__(
+        self,
+        color_calculator: HotspotColorCalculator | None = None,
+        logger: GlobalSystemLogger | None = None,
+    ) -> None:
+        self._color_calculator = color_calculator or HotspotColorCalculator()
+        self._logger = logger or GlobalSystemLogger(
+            component_name="GetHeatmapLayoutUseCase"
+        )
 
-    def execute(self, layout_data: dict[str, Any]) -> list[AssetHeatmapDto]:
-        results = []
-        for asset in layout_data.get("asset_mappings", []):
+    def execute(
+        self, layout_data: dict[str, Any], log_ctx: LogContext | None = None
+    ) -> list[AssetHeatmapDto]:
+        results: list[AssetHeatmapDto] = []
+        asset_mappings = layout_data.get("asset_mappings", [])
+
+        for asset in asset_mappings:
             asset_id = asset.get("asset_id", "UNKNOWN")
-            error_rate = asset.get("sync_error_rate", 0.0)
+            error_rate = float(asset.get("sync_error_rate", 0.0))
 
             color_res = self._color_calculator.calculate_color(error_rate)
             results.append(
@@ -38,4 +39,11 @@ class GetHeatmapLayoutUseCase:
                     color_hex=color_res.color_hex,
                 )
             )
+
+        if log_ctx:
+            self._logger.debug(
+                f"Calculated heatmap colors for {len(results)} assets",
+                log_ctx=log_ctx,
+            )
+
         return results

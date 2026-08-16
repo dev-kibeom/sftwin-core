@@ -10,10 +10,10 @@ from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
 from kpi_b2b.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
 )
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class GenerateQuoteUseCase:
@@ -40,7 +40,7 @@ class GenerateQuoteUseCase:
             log_ctx.exc = e
             self._logger.error("B2B API Timeout or Connection Error.", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_B2B_API_FAILURE,
+                error_code=GlobalErrorCodeEnum.ERR_B2B_API_FAILURE,
                 message="B2B 마켓플레이스 공급망 연결이 지연되고 있습니다.",
                 status_code=502,
             ) from e
@@ -55,7 +55,7 @@ class GenerateQuoteUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_B2B_INVALID_QUOTE,
+                error_code=GlobalErrorCodeEnum.ERR_B2B_INVALID_QUOTE,
                 message="비정상적인 견적 응답입니다. 수동 확인이 필요합니다.",
                 status_code=422,
             )
@@ -69,7 +69,7 @@ class GenerateQuoteUseCase:
                 "Invalid quote schema returned from Marketplace.", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_B2B_INVALID_QUOTE,
+                error_code=GlobalErrorCodeEnum.ERR_B2B_INVALID_QUOTE,
                 message="비정상적인 견적 응답입니다. 수동 확인이 필요합니다.",
                 status_code=422,
             ) from e
@@ -88,7 +88,7 @@ class GenerateQuoteUseCase:
                 "Database persistence failed during quote generation.", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
                 message="시스템 내부 장애가 발생했습니다. 잠시 후 다시 시도해주세요.",
                 status_code=500,
             ) from e

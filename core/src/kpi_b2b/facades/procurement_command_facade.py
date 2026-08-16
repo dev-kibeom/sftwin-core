@@ -20,10 +20,10 @@ from kpi_b2b.ports.outbound.i_procurement_command_repository import (
 from kpi_b2b.ports.outbound.i_procurement_query_repository import (
     IProcurementQueryRepository,
 )
-from shared.logger.system_logger.log_context import LogContext
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.context.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
-from shared.security.user_context import UserContext
+from shared.context.user_context import UserContext
 
 
 class ProcurementCommandFacade(IProcurementCommandFacade):

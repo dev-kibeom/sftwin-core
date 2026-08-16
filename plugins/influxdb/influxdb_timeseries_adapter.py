@@ -8,8 +8,8 @@ from typing import Any
 
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from kpi_b2b.ports.outbound.i_time_series import ITimeSeries
-from shared.logger.system_logger.log_context import LogContext
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.context.log_context import LogContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class InfluxDbTimeSeriesAdapter(ITimeSeries):

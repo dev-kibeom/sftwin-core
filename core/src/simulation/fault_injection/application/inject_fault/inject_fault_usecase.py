@@ -7,12 +7,12 @@ InjectFaultUseCase (Stateless Singleton)
 
 from datetime import datetime, timezone
 
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.dtos.sim_result_dto import SimResultDto
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 from simulation.fault_injection.domain.fault_scenario import (
     FaultScenario,
     FaultTypeEnum,
@@ -50,7 +50,7 @@ class InjectFaultUseCase:
         if not model.parse_and_validate():
             self._logger.warn("Sequence script validation failed", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_BT_EVAL_FAILED,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED,
                 message="Invalid recovery sequence script structure or missing Recovery node.",
                 status_code=422,
             )
@@ -88,7 +88,7 @@ class InjectFaultUseCase:
             log_ctx.exc = exc
             self._logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_IPC_TIMEOUT,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT,
                 message="Shared Memory synchronization timed out.",
                 status_code=500,
             ) from exc
@@ -96,7 +96,7 @@ class InjectFaultUseCase:
         if not waypoints:
             self._logger.warn("AI Planner could not find bypass trajectory", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_SIM_BT_EVAL_FAILED,
+                error_code=GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED,
                 message="Unsolvable bypass trajectory due to spatial constraints.",
                 status_code=422,
             )

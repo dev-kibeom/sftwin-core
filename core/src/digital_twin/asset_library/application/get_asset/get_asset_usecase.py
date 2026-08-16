@@ -1,9 +1,10 @@
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.dtos.asset_dto import AssetDto
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class GetAssetUseCase:
@@ -16,14 +17,32 @@ class GetAssetUseCase:
         self._logger = logger or GlobalSystemLogger(component_name="GetAssetUseCase")
 
     def execute(self, asset_id: str, ctx: UserContext) -> AssetDto:
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
+            context={
+                "asset_id": asset_id,
+                "user_id": getattr(ctx, "user_id", "UNKNOWN"),
+                "company_id": getattr(ctx, "company_id", "UNKNOWN"),
+            },
+        )
+
+        self._logger.debug(f"Querying asset: {asset_id}", log_ctx=log_ctx)
+
         entity = self._query_repo.find_by_id(asset_id)
 
         if not entity or entity.is_deleted or entity.company_id != ctx.company_id:
+            self._logger.warn(
+                f"Asset query failed - not found or unauthorized: {asset_id}",
+                log_ctx=log_ctx,
+            )
+
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_TWIN_NOT_FOUND,
+                error_code=GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND,
                 message=f"Requested asset '{asset_id}' does not exist.",
                 status_code=404,
             )
+
+        self._logger.info(f"Asset '{asset_id}' retrieved successfully", log_ctx=log_ctx)
 
         return AssetDto(
             asset_id=entity.asset_id,

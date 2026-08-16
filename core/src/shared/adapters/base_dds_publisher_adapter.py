@@ -9,9 +9,9 @@ DDS DomainParticipant 및 Publisher 연결 세션 단절 시 ERR_EDGE_COMM_TIMEO
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
 
@@ -38,7 +38,7 @@ class BaseDdsPublisherAdapter(ABC, Generic[T]):
                 f"DDS Session Invalid: Failed to publish message to topic '{topic}'."
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_EDGE_COMM_TIMEOUT,
+                error_code=GlobalErrorCodeEnum.ERR_EDGE_COMM_TIMEOUT,
                 message=f"DDS connection session invalid or timed out while publishing to topic '{topic}'.",
                 status_code=504,
                 details={"topic": topic},

@@ -10,10 +10,10 @@ Base Repository Adapter Implementation
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
 
@@ -59,7 +59,7 @@ class BaseRepositoryAdapter(ABC, Generic[T]):
         )
 
         raise BaseSystemException(
-            error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+            error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
             message=f"Database driver failure encountered during '{action_context}': {str(exc)}",
             status_code=500,
             details={

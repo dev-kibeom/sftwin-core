@@ -7,11 +7,11 @@ DeploySim2RealUseCase (Stateless Singleton)
 
 from typing import Any
 
-from shared.logger.system_logger.log_context import LogContext
+from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.exceptions.error_codes import GlobalErrorCodes
-from shared.logger.system_logger.global_system_logger import GlobalSystemLogger
-from shared.security.user_context import UserContext
+from shared.logger.global_system_logger import GlobalSystemLogger
 from simulation.ports.outbound.i_fleet_deploy import IFleetDeploy
 from simulation.sim_to_real_deploy.domain.deploy_format_enums import (
     DeployPackageFormatEnum,
@@ -47,7 +47,7 @@ class DeploySim2RealUseCase:
                 f"Unverified or invalid scenario for package {package_id}", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message="FMS scenario is unverified or missing required configurations.",
                 status_code=400,
             )
@@ -57,7 +57,7 @@ class DeploySim2RealUseCase:
             target_format = DeployPackageFormatEnum(format_type)
         except ValueError as ve:
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
                 message=f"Unsupported deploy format: {format_type}",
                 status_code=400,
             ) from ve
@@ -82,7 +82,7 @@ class DeploySim2RealUseCase:
             log_ctx.exc = exc
             self._logger.error("I/O Error during package export", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodes.ERR_COMMON_INTERNAL_ERROR,
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
                 message="Failed to write package to file system due to I/O or permission error.",
                 status_code=500,
             ) from exc
