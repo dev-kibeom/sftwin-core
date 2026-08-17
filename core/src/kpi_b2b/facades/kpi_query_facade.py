@@ -3,16 +3,17 @@ from typing import Any
 from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
-from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import KpiReportDto
-from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.dual_kpi_report_dto import (
-    DualKpiReportDto,
+from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_dto import (
+    GenerateDualKpiReportRequestDto,
 )
 from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (
     GenerateDualKpiReportUseCase,
 )
+from kpi_b2b.ports.inbound.dtos.dual_kpi_report_dto import DualKpiReportDto
+from kpi_b2b.ports.inbound.dtos.kpi_report_dto import KpiReportDto
 from kpi_b2b.ports.inbound.i_kpi_query_facade import IKpiQueryFacade
-from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 from shared.context.user_context import UserContext
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 
 
 class KpiQueryFacade(IKpiQueryFacade):
@@ -41,21 +42,9 @@ class KpiQueryFacade(IKpiQueryFacade):
             target_resource=f"SIMULATION:{sim_id}",
         )
 
-        return self._calculate_kpi_uc.execute(sim_id=sim_id, company_id=ctx.company_id)
+        return self._calculate_kpi_uc.execute(sim_id=sim_id, ctx=ctx)
 
     def generate_dual_kpi_report(
-        self,
-        baseline_oee: float,
-        improved_oee: float,
-        baseline_fpy: float,
-        improved_fpy: float,
-        turnkey_quote_cost: float,
-        ctx: UserContext,
+        self, request_dto: GenerateDualKpiReportRequestDto, ctx: UserContext
     ) -> DualKpiReportDto:
-        return self._dual_kpi_uc.execute(
-            baseline_oee=baseline_oee,
-            improved_oee=improved_oee,
-            baseline_fpy=baseline_fpy,
-            improved_fpy=improved_fpy,
-            turnkey_quote_cost=turnkey_quote_cost,
-        )
+        return self._dual_kpi_uc.execute(request_dto=request_dto, ctx=ctx)

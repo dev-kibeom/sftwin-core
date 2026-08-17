@@ -1,17 +1,14 @@
-"""
-@file test_process_production_order.py
-@description 생산 발주 및 PackML 상태 전환 유즈케이스 단위 테스트
-"""
-
 import pytest
 from kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
     ProcessProductionOrderUseCase,
 )
-from kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_request_dto import (
     ProductionOrderRequestDto,
 )
-from shared.enums.user_role_enum import UserRoleEnum
 from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
 
 
 @pytest.fixture
@@ -53,3 +50,17 @@ def test_production_order_fms_optimized_happy_path(usecase, valid_ctx):
 
     assert result.packml_state == "EXECUTE"
     assert result.factory_phase == "FMS_OPTIMIZED"
+
+
+def test_production_order_insufficient_stock_error(usecase, valid_ctx):
+    req = ProductionOrderRequestDto(
+        product_code="PRD-HEAVY-003",
+        target_quantity=50000,
+        factory_phase="BASELINE",
+    )
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        usecase.execute(req, valid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
+    assert exc_info.value.status_code == 422

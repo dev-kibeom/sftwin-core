@@ -1,45 +1,40 @@
-"""
-@file calculate_kpi_usecase.py
-@description 표준 제조 KPI 연산을 조율하는 무상태 UseCase
-"""
-
 import uuid
 from datetime import datetime, timezone
 
-from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
-    KpiReportDto,
-)
-from kpi_b2b.kpi_dashboard.domain.oee_calculator import OeeCalculator
+from kpi_b2b.kpi_dashboard.domain.oee_metric import OeeMetric
+from kpi_b2b.ports.inbound.dtos.kpi_report_dto import KpiReportDto
 from kpi_b2b.ports.outbound.i_kpi_query_repository import IKpiQueryRepository
 from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 
 class CalculateKpiUseCase:
     def __init__(
         self,
         query_repo: IKpiQueryRepository,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ):
         self._query_repo = query_repo
-        self._oee_calculator = OeeCalculator()
-        self._logger = logger or GlobalSystemLogger(
-            component_name="KpiDashboard_UseCase"
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="CalculateKpiUseCase"
         )
 
-    def execute(self, sim_id: str, company_id: str) -> KpiReportDto:
-        log_ctx = LogContext(context={"sim_id": sim_id, "company_id": company_id})
-        self._logger.info(
-            f"Initiating KPI (OEE) calculation for simulation: {sim_id}", log_ctx
+    @require_user_context
+    def execute(self, sim_id: str, ctx: UserContext) -> KpiReportDto:
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-CALC-KPI"),
+            context={"sim_id": sim_id, "company_id": ctx.company_id},
         )
 
         try:
             logs = self._query_repo.fetch_simulation_telemetry_logs(sim_id)
         except Exception as e:
             log_ctx.exc = e
-            self._logger.error(
+            self._system_logger.error(
                 "Database query timeout or internal failure while fetching simulation logs.",
                 log_ctx,
             )
@@ -50,7 +45,7 @@ class CalculateKpiUseCase:
             ) from e
 
         if not logs:
-            self._logger.warn(f"No simulation logs found for {sim_id}", log_ctx)
+            self._system_logger.warn(f"No simulation logs found for {sim_id}", log_ctx)
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_KPI_SIM_NOT_FOUND,
                 message="종료되거나 유효하지 않은 시뮬레이션입니다.",
@@ -58,53 +53,45 @@ class CalculateKpiUseCase:
             )
 
         log_count = len(logs)
-        (
-            uptime,
-            total_time,
-            ideal_cycle_sum,
-            actual_cycle_sum,
-            good_count,
-            total_count,
-        ) = (
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0,
-            0,
-        )
-
-        for log in logs:
-            uptime += log.get("uptime", 0.0)
-            total_time += log.get("total_time", 1.0)
-            ideal_cycle_sum += log.get("ideal_cycle", 0.0)
-            actual_cycle_sum += log.get("actual_cycle", 1.0)
-            good_count += log.get("good_count", 0)
-            total_count += log.get("total_count", 1)
+        uptime = sum(log.get("uptime", 0.0) for log in logs)
+        total_time = sum(log.get("total_time", 1.0) for log in logs)
+        ideal_cycle_sum = sum(log.get("ideal_cycle", 0.0) for log in logs)
+        actual_cycle_sum = sum(log.get("actual_cycle", 1.0) for log in logs)
+        good_count = sum(log.get("good_count", 0) for log in logs)
+        total_count = sum(log.get("total_count", 1) for log in logs)
 
         ideal_cycle = ideal_cycle_sum / log_count if log_count > 0 else 0.0
         actual_cycle = actual_cycle_sum / log_count if log_count > 0 else 1.0
 
-        availability = self._oee_calculator.calculate_availability(uptime, total_time)
-        performance = self._oee_calculator.calculate_performance(
-            ideal_cycle, actual_cycle
-        )
-        quality = self._oee_calculator.calculate_quality(good_count, total_count)
+        try:
+            metric = OeeMetric.from_raw_counts(
+                uptime=uptime,
+                total_time=total_time,
+                ideal_cycle_time=ideal_cycle,
+                actual_cycle_time=actual_cycle,
+                good_count=good_count,
+                total_count=total_count,
+            )
+        except ValueError as e:
+            self._system_logger.warn(
+                f"OEE computation failed validation: {str(e)}", log_ctx
+            )
+            raise BaseSystemException(
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                message=str(e),
+                status_code=422,
+            ) from e
 
-        overall_oee = self._oee_calculator.compute_overall_oee(
-            availability, performance, quality
-        )
-        teep = overall_oee * 0.85
-
-        self._logger.info(
-            f"Successfully computed OEE ({overall_oee:.4f}) for {sim_id}", log_ctx
+        self._system_logger.info(
+            f"Successfully computed OEE ({metric.overall_oee:.4f}) for {sim_id}",
+            log_ctx,
         )
 
         return KpiReportDto(
             report_id=f"RPT-{uuid.uuid4()}",
-            oee=round(overall_oee, 4),
-            teep=round(teep, 4),
-            fpy=round(quality, 4),
+            oee=round(metric.overall_oee, 4),
+            teep=round(metric.teep, 4),
+            fpy=round(metric.quality, 4),
             generated_at=datetime.now(timezone.utc).isoformat(),
             estimated_roi_months=18.5,
         )

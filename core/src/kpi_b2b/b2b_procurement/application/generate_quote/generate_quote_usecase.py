@@ -1,56 +1,50 @@
-"""
-@file generate_quote_usecase.py
-@description 견적 생성 및 외부 마켓플레이스 연동, 예외 검증을 제어하는 유즈케이스
-"""
-
-from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
-    B2bQuoteDto,
-)
 from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuote
+from kpi_b2b.ports.inbound.dtos.b2b_quote_dto import B2bQuoteDto
 from kpi_b2b.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
 )
 from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 
 class GenerateQuoteUseCase:
     def __init__(
         self,
         command_repo: IProcurementCommandRepository,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ):
         self._command_repo = command_repo
-        self._logger = logger or GlobalSystemLogger(
-            component_name="B2B_GenerateQuote_UseCase"
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="GenerateQuoteUseCase"
         )
 
-    def execute(self, asset_ids: list[str], company_id: str) -> B2bQuoteDto:
-        log_ctx = LogContext(context={"asset_ids": asset_ids, "company_id": company_id})
-        self._logger.info(
-            "Initiating Turnkey Quote Request to B2B Marketplace.", log_ctx
+    @require_user_context
+    def execute(self, asset_ids: list[str], ctx: UserContext) -> B2bQuoteDto:
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", "TRC-B2B-QUOTE"),
+            context={"asset_ids": asset_ids, "company_id": ctx.company_id},
         )
 
-        # Guard 2: 외부 통신 / 타임아웃 예외 처리
         try:
             b2b_response = self._command_repo.request_turnkey_quote(asset_ids)
         except Exception as e:
             log_ctx.exc = e
-            self._logger.error("B2B API Timeout or Connection Error.", log_ctx)
+            self._system_logger.error("B2B API Timeout or Connection Error.", log_ctx)
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_B2B_API_FAILURE,
                 message="B2B 마켓플레이스 공급망 연결이 지연되고 있습니다.",
                 status_code=502,
             ) from e
 
-        # Guard 3: 스키마 유효성 검증 (필수 필드 누락 및 타입 에러 방어)
         if (
             "total_estimated_price" not in b2b_response
             or "delivery_days_estimated" not in b2b_response
         ):
-            self._logger.warn(
+            self._system_logger.warn(
                 "Invalid quote schema returned from Marketplace: missing fields.",
                 log_ctx,
             )
@@ -63,10 +57,10 @@ class GenerateQuoteUseCase:
         try:
             total_price = float(b2b_response["total_estimated_price"])
             delivery_days = int(b2b_response["delivery_days_estimated"])
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             log_ctx.exc = e
-            self._logger.warn(
-                "Invalid quote schema returned from Marketplace.", log_ctx
+            self._system_logger.warn(
+                "Invalid quote numeric format from Marketplace.", log_ctx
             )
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_B2B_INVALID_QUOTE,
@@ -74,17 +68,22 @@ class GenerateQuoteUseCase:
                 status_code=422,
             ) from e
 
-        # 도메인 엔티티 인스턴스화 (REQUESTED 상태 강제 할당)
-        quote_entity = B2bQuote.create_new_quote(
-            assets=asset_ids, total_price=total_price, days=delivery_days
-        )
+        try:
+            quote_entity = B2bQuote.create_new_quote(
+                assets=asset_ids, total_price=total_price, days=delivery_days
+            )
+        except ValueError as e:
+            raise BaseSystemException(
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                message=str(e),
+                status_code=400,
+            ) from e
 
         try:
-            if self._command_repo:
-                self._command_repo.save_quote(quote_entity)
+            self._command_repo.save_quote(quote_entity)
         except Exception as e:
             log_ctx.exc = e
-            self._logger.error(
+            self._system_logger.error(
                 "Database persistence failed during quote generation.", log_ctx
             )
             raise BaseSystemException(
@@ -93,7 +92,7 @@ class GenerateQuoteUseCase:
                 status_code=500,
             ) from e
 
-        self._logger.info(
+        self._system_logger.info(
             f"Successfully generated turnkey quote: {quote_entity.quote_id}", log_ctx
         )
 

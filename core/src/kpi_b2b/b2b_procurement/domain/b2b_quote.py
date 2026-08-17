@@ -1,18 +1,7 @@
-"""
-@file b2b_quote.py
-@description 발주 총액, 납기일, 상태 등을 캡슐화한 순수 B2B 견적 도메인 엔티티
-"""
-
 import uuid
 from dataclasses import dataclass
-from enum import Enum
 
-
-class B2bQuoteStatusEnum(str, Enum):
-    REQUESTED = "REQUESTED"  # 견적 요청 완료 및 대기 중
-    PROCESSED = "PROCESSED"  # 공급사 견적 산출 완료
-    ACCEPTED = "ACCEPTED"  # 발주 확정 (결제 완료)
-    REJECTED = "REJECTED"  # 견적 거절 또는 취소
+from .enums.b2b_quote_status_enum import B2bQuoteStatusEnum
 
 
 @dataclass

@@ -10,16 +10,16 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, status
-from kpi_b2b.b2b_procurement.application.generate_quote.b2b_quote_dto import (
+from kpi_b2b.ports.inbound.dtos.b2b_quote_dto import (
     B2bQuoteDto,
 )
-from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
+from kpi_b2b.ports.inbound.dtos.session_data_dto import (
     SessionDataDto,
 )
 from kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
     ProcessProductionOrderUseCase,
 )
-from kpi_b2b.b2b_procurement.application.process_production_order.production_order_dto import (
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_request_dto import (
     ProductionOrderRequestDto,
     ProductionOrderResultDto,
 )

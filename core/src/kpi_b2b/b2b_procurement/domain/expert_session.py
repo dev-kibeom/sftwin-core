@@ -1,19 +1,7 @@
-"""
-@file expert_session.py
-@description 도면 유출 방지 제약(NFR-06-3)을 준수하여 1회성 토큰 발급 및 상태를 관리하는 도메인 엔티티
-"""
-
 import uuid
 from dataclasses import dataclass
-from enum import Enum
 
-
-class ExpertSessionStatusEnum(str, Enum):
-    """비대면 전문가 상담 세션의 생명주기 상태"""
-
-    WAITING = "WAITING"
-    ACTIVE = "ACTIVE"
-    CLOSED = "CLOSED"
+from .enums.expert_session_status_enum import ExpertSessionStatusEnum
 
 
 @dataclass

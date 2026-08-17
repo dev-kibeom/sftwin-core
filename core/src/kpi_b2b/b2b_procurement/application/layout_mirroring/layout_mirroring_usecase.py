@@ -1,48 +1,48 @@
-"""
-@file layout_mirroring_usecase.py
-@description 상담 세션 엔티티 생성 및 DB 영속화, 인프라 에러 마스킹을 제어하는 유즈케이스
-"""
-
-from kpi_b2b.b2b_procurement.application.layout_mirroring.session_data_dto import (
-    SessionDataDto,
-)
 from kpi_b2b.b2b_procurement.domain.expert_session import ExpertSession
+from kpi_b2b.ports.inbound.dtos.session_data_dto import SessionDataDto
 from kpi_b2b.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
 )
 from shared.context.log_context import LogContext
+from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 
 class LayoutMirroringUseCase:
     def __init__(
         self,
         command_repo: IProcurementCommandRepository,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ):
         self._command_repo = command_repo
-        self._logger = logger or GlobalSystemLogger(
-            component_name="LayoutMirroring_UseCase"
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="LayoutMirroringUseCase"
         )
 
-    def execute(self, baseline_id: str, company_id: str) -> SessionDataDto:
+    @require_user_context
+    def execute(self, baseline_id: str, ctx: UserContext) -> SessionDataDto:
         log_ctx = LogContext(
-            context={"baseline_id": baseline_id, "company_id": company_id}
+            trace_id=getattr(ctx, "trace_id", "TRC-MIRRORING"),
+            context={"baseline_id": baseline_id, "company_id": ctx.company_id},
         )
-        self._logger.info(
-            "Initiating secure 3D mirroring expert session creation.", log_ctx
-        )
-
-        session_entity = ExpertSession.create_new_session(baseline_id=baseline_id)
 
         try:
-            if self._command_repo:
-                self._command_repo.save_expert_session(session_entity)
+            session_entity = ExpertSession.create_new_session(baseline_id=baseline_id)
+        except ValueError as e:
+            raise BaseSystemException(
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                message=str(e),
+                status_code=400,
+            ) from e
+
+        try:
+            self._command_repo.save_expert_session(session_entity)
         except Exception as e:
             log_ctx.exc = e
-            self._logger.error(
+            self._system_logger.error(
                 "Database persistence failed during expert session creation.", log_ctx
             )
             raise BaseSystemException(
@@ -51,7 +51,7 @@ class LayoutMirroringUseCase:
                 status_code=500,
             ) from e
 
-        self._logger.info(
+        self._system_logger.info(
             f"Successfully generated expert session: {session_entity.session_id}",
             log_ctx,
         )

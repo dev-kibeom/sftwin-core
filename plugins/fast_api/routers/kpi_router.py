@@ -15,7 +15,7 @@ from kpi_b2b.facades.kpi_query_facade import KpiQueryFacade
 from kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usecase import (
     CalculateKpiUseCase,
 )
-from kpi_b2b.kpi_dashboard.application.calculate_kpi.kpi_report_dto import (
+from kpi_b2b.ports.inbound.dtos.kpi_report_dto import (
     KpiReportDto,
 )
 from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (

@@ -1,15 +1,12 @@
-"""
-@file test_generate_quote.py
-@description B2B 견적 발주 단위 테스트 (CQRS 포트 및 Facade 규격 동기화)
-"""
-
 from unittest.mock import MagicMock, patch
 
 import pytest
 from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from kpi_b2b.b2b_procurement.domain.b2b_quote import B2bQuoteStatusEnum
+from kpi_b2b.b2b_procurement.domain.enums.b2b_quote_status_enum import (
+    B2bQuoteStatusEnum,
+)
 from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
 from kpi_b2b.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
@@ -28,6 +25,7 @@ def target_system():
     mock_command_repo = MagicMock(spec=IProcurementCommandRepository)
     mock_query_repo = MagicMock(spec=IProcurementQueryRepository)
     mock_mirroring_uc = MagicMock()
+    mock_prod_order_uc = MagicMock()
     mock_rbac = MagicMock()
 
     with (
@@ -40,6 +38,7 @@ def target_system():
         facade = ProcurementCommandFacade(
             generate_quote_uc=usecase,
             mirroring_uc=mock_mirroring_uc,
+            process_production_order_uc=mock_prod_order_uc,
             command_repo=mock_command_repo,
             query_repo=mock_query_repo,
             rbac_manager=mock_rbac,
