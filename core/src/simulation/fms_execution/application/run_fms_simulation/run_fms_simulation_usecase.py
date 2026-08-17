@@ -9,7 +9,7 @@ from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.dtos.sim_result_dto import SimResultDto
+from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger

@@ -1,8 +1,3 @@
-"""
-JwtAuthInterceptor Implementation
-"""
-
-import logging
 from typing import Any
 
 import jwt
@@ -10,25 +5,28 @@ from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-
-logger = logging.getLogger("shared.security.jwt_auth_interceptor")
+from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class JwtAuthInterceptor:
-    """JWT 토큰 추출, 검증 및 UserContext 생성을 담당하는 싱글톤 인터셉터"""
-
-    def __init__(self, jwt_secret_key: str, algorithm: str = "HS256"):
+    def __init__(
+        self,
+        jwt_secret_key: str,
+        algorithm: str = "HS256",
+        system_logger: GlobalSystemLogger | None = None,
+    ) -> None:
         self._jwt_secret_key = jwt_secret_key
         self._algorithm = algorithm
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="JwtAuthInterceptor"
+        )
 
     def intercept(self, request_headers: dict[str, str]) -> UserContext:
-        logger.info("Starting JWT authentication interception process.")
-
         auth_header = request_headers.get("Authorization") or request_headers.get(
             "authorization"
         )
         if not auth_header or not auth_header.startswith("Bearer "):
-            logger.warning(
+            self._system_logger.warn(
                 "Authentication failed: Missing or invalid Authorization header format."
             )
             raise BaseSystemException(
@@ -52,12 +50,12 @@ class JwtAuthInterceptor:
                 accessible_factory_ids=payload.get("accessible_factory_ids", []),
                 is_edge_authenticated=payload.get("is_edge_authenticated", False),
             )
-            logger.info(
+            self._system_logger.info(
                 f"UserContext successfully built for user_id: {user_context.user_id}"
             )
             return user_context
         except (KeyError, ValueError) as e:
-            logger.error(f"JWT payload claim parsing error: {str(e)}")
+            self._system_logger.error(f"JWT payload claim parsing error: {str(e)}")
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="JWT payload claims are invalid or incomplete.",
@@ -68,14 +66,14 @@ class JwtAuthInterceptor:
         try:
             return jwt.decode(token, self._jwt_secret_key, algorithms=[self._algorithm])
         except jwt.ExpiredSignatureError as e:
-            logger.warning("Authentication failed: JWT token has expired.")
+            self._system_logger.warn("Authentication failed: JWT token has expired.")
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
                 message="JWT token has expired.",
                 status_code=401,
             ) from e
         except jwt.PyJWTError as e:
-            logger.warning(
+            self._system_logger.warn(
                 f"Authentication failed: Invalid JWT token signature/structure ({str(e)})."
             )
             raise BaseSystemException(

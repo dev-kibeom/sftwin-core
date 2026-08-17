@@ -3,45 +3,39 @@ from typing import Any
 
 
 class GlobalErrorCodeEnum(str, Enum):
-    """
-    [GTS 5.2 규약 전역 에러 코드 Enum]
-    - IDE 자동완성 및 정적 타입 검사를 지원하는 상수 집합
-    """
-
-    # 1. Common / Shared Infrastructure
+    # Common / Shared Infrastructure
     ERR_COMMON_INVALID_INPUT = "ERR_COMMON_INVALID_INPUT"
     ERR_COMMON_UNAUTHORIZED = "ERR_COMMON_UNAUTHORIZED"
     ERR_COMMON_FORBIDDEN = "ERR_COMMON_FORBIDDEN"
     ERR_COMMON_INTERNAL_ERROR = "ERR_COMMON_INTERNAL_ERROR"
 
-    # 2. Asset Twin Domain
+    # Asset Twin Domain
     ERR_TWIN_NOT_FOUND = "ERR_TWIN_NOT_FOUND"
     ERR_TWIN_INVALID_SCHEMA = "ERR_TWIN_INVALID_SCHEMA"
     ERR_TWIN_SYNC_OVER_LIMIT = "ERR_TWIN_SYNC_OVER_LIMIT"
     ERR_TWIN_KAMP_PARSE_FAIL = "ERR_TWIN_KAMP_PARSE_FAIL"
 
-    # 3. Simulation Domain
+    # Simulation Domain
     ERR_SIM_INVALID_SCENARIO = "ERR_SIM_INVALID_SCENARIO"
     ERR_SIM_COLLISION_DETECTED = "ERR_SIM_COLLISION_DETECTED"
     ERR_SIM_IPC_TIMEOUT = "ERR_SIM_IPC_TIMEOUT"
     ERR_SIM_BT_EVAL_FAILED = "ERR_SIM_BT_EVAL_FAILED"
     ERR_SIM_RESOURCE_EXHAUSTED = "ERR_SIM_RESOURCE_EXHAUSTED"
 
-    # 4. Edge Control Domain
+    # Edge Control Domain
     ERR_EDGE_COMM_TIMEOUT = "ERR_EDGE_COMM_TIMEOUT"
     ERR_EDGE_FAILSAFE_TRIGGERED = "ERR_EDGE_FAILSAFE_TRIGGERED"
 
-    # 5. B2B & KPI Domain
+    # B2B & KPI Domain
     ERR_B2B_API_FAILURE = "ERR_B2B_API_FAILURE"
     ERR_B2B_INVALID_QUOTE = "ERR_B2B_INVALID_QUOTE"
     ERR_KPI_DB_TIMEOUT = "ERR_KPI_DB_TIMEOUT"
     ERR_KPI_SIM_NOT_FOUND = "ERR_KPI_SIM_NOT_FOUND"
 
-    # 6. Shared Memory
+    # Shared Memory
     ERR_IPC_SHARED_MEMORY_ERROR = "ERR_IPC_SHARED_MEMORY_ERROR"
 
 
-# 에러 코드별 HTTP Status Code 및 기본 메시지 메타데이터 맵
 ERROR_CODE_METADATA: dict[GlobalErrorCodeEnum, dict[str, Any]] = {
     # 1. Common / Shared Infrastructure
     GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT: {

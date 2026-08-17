@@ -1,7 +1,7 @@
 from typing import Any, Protocol
 
 
-class IAuditRepository(Protocol):
-    """감사 로그 저장을 위한 도메인 추상화 인터페이스"""
+class IAuditCommandRepository(Protocol):
+    """감사 이력 영속화를 위한 전사 표준 Outbound Port"""
 
     def save(self, audit_dto: dict[str, Any]) -> None: ...

@@ -4,9 +4,9 @@ import pytest
 from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverityEnum
 from shared.enums.user_role_enum import UserRoleEnum
-from shared.logger.audit_logger import (
-    AuditLogger,
+from shared.logger.global_audit_logger import (
     FailsafeAuditEvent,
+    GlobalAuditLogger,
     SecurityAuditEvent,
 )
 from shared.logger.global_system_logger import GlobalSystemLogger
@@ -25,7 +25,7 @@ def mock_command_repo():
 def test_tc_log_01_security_event_logging_and_db_persistence(
     mock_system_logger, mock_command_repo
 ):
-    audit_logger = AuditLogger(
+    audit_logger = GlobalAuditLogger(
         logger=mock_system_logger, command_repo=mock_command_repo
     )
     user_ctx = UserContext(
@@ -52,7 +52,7 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
 def test_tc_log_02_system_event_failsafe_user_context_fallback(
     mock_system_logger, mock_command_repo
 ):
-    audit_logger = AuditLogger(
+    audit_logger = GlobalAuditLogger(
         logger=mock_system_logger, command_repo=mock_command_repo
     )
 
@@ -78,7 +78,7 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
     mock_system_logger, mock_command_repo
 ):
     mock_command_repo.save.side_effect = TimeoutError("Audit DB connection timeout!")
-    audit_logger = AuditLogger(
+    audit_logger = GlobalAuditLogger(
         logger=mock_system_logger, command_repo=mock_command_repo
     )
 

@@ -8,7 +8,7 @@
 
 import pytest
 from digital_twin.asset_library.domain.asset import Asset
-from shared.enums.asset_type_enum import AssetTypeEnum
+from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 

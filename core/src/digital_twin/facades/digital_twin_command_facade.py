@@ -11,7 +11,7 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_t
 )
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.dtos.asset_dto import AssetDto
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 

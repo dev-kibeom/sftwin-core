@@ -8,8 +8,6 @@ from shared.context.log_context import LogContext
 
 
 class GlobalSystemLogger:
-    """GTS 규격 JSON 구조화 시스템 로거"""
-
     def __init__(
         self,
         component_name: str = "SharedComponent",

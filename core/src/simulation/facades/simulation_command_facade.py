@@ -1,6 +1,6 @@
 from typing import Any
 
-from shared.dtos.sim_result_dto import SimResultDto
+from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from shared.context.user_context import UserContext
 
 from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (

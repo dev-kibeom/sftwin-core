@@ -1,16 +1,10 @@
-"""
-Unit Test Specification for FEAT-SHARED-04
-
-TC-DTO-01 ~ TC-DTO-04 단위 테스트 구현 (pytest)
-"""
-
 import uuid
 from dataclasses import dataclass
 
 import pytest
-from shared.dtos.domain_event_object_mapper import DomainEventObjectMapper
 from shared.dtos.global_response_dto import GlobalResponseDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.events.domain_event_mapper import DomainEventMapper
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -18,7 +12,7 @@ from shared.exceptions.base_exception import BaseSystemException
 class SampleDomainEvent:
     event_type: str = "AssetTwinUpdatedEvent"
     source_component: str = "digital_twin"
-    payload: dict = None
+    payload: dict | None = None
 
 
 # TC-DTO-01: Happy Path - 표준 API 성공 응답 Wrapper (GlobalResponseDto) 생성 검증
@@ -40,9 +34,7 @@ def test_tc_dto_02_domain_to_integration_event_mapping():
     domain_event = SampleDomainEvent(payload={"status": "ACTIVE"})
     trace_id = "TRC-99081234a"
 
-    integration_event = DomainEventObjectMapper.to_integration_event(
-        domain_event, trace_id
-    )
+    integration_event = DomainEventMapper.to_integration_event(domain_event, trace_id)
 
     assert integration_event.header["trace_id"] == "TRC-99081234a"
     assert integration_event.header["event_type"] == "AssetTwinUpdatedEvent"
@@ -77,7 +69,7 @@ def test_tc_dto_04_trace_id_missing_guard_clause():
 
     # trace_id가 빈 문자열인 경우 예외 발생 검증
     with pytest.raises(BaseSystemException) as exc_info:
-        DomainEventObjectMapper.to_integration_event(domain_event, trace_id="")
+        DomainEventMapper.to_integration_event(domain_event, trace_id="")
 
     assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
     assert exc_info.value.status_code == 400

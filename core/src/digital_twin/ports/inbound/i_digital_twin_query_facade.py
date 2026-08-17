@@ -3,7 +3,7 @@ from typing import Protocol
 from digital_twin.twin_reconstruction.application.get_layout.layout_render_dto import (
     LayoutRenderDto,
 )
-from shared.dtos.asset_dto import AssetDto
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from shared.context.user_context import UserContext
 
 

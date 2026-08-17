@@ -6,6 +6,7 @@ from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 from .asset_mapping_render_dto import AssetMappingRenderDto
 from .layout_render_dto import LayoutRenderDto
@@ -20,6 +21,7 @@ class GetLayoutUseCase:
         self._query_repo = query_repo
         self._logger = logger or GlobalSystemLogger(component_name="GetLayoutUseCase")
 
+    @require_user_context
     def execute(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
         log_ctx = LogContext(
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
@@ -29,17 +31,6 @@ class GetLayoutUseCase:
                 "company_id": getattr(ctx, "company_id", "UNKNOWN"),
             },
         )
-
-        if not ctx or not ctx.company_id:
-            self._logger.warn(
-                "Layout query rejected: Missing UserContext or company_id",
-                log_ctx=log_ctx,
-            )
-            raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
-                message="UserContext is required for authorization.",
-                status_code=400,
-            )
 
         self._logger.debug(f"Querying baseline layout: {baseline_id}", log_ctx=log_ctx)
 

@@ -1,22 +1,11 @@
-"""
-GlobalExceptionHandler Implementation
-
-설계 의도:
-최외곽으로 전파된 저수준 인프라 예외 및 도메인 커스텀 예외(BaseSystemException)를
-포획(Catch)하여 표준 포맷인 GlobalResponseDto JSON 포맷으로 파싱하고,
-응답 직전 스택트레이스 및 내부 DB 정보 등 민감 시그니처 마스킹을 강제합니다.
-"""
-
 import json
-import logging
 from typing import Any
 
+from shared.context.log_context import LogContext
 from shared.dtos.global_response_dto import GlobalResponseDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
-
-logger = logging.getLogger("shared.exceptions.global_exception_handler")
 
 
 class GlobalExceptionHandler:
@@ -34,61 +23,71 @@ class GlobalExceptionHandler:
         "pymysql.err",
     ]
 
-    def __init__(self, system_logger: GlobalSystemLogger | None = None):
-        self._system_logger = system_logger or GlobalSystemLogger(
+    def __init__(self, logger: GlobalSystemLogger | None = None):
+        self._logger = logger or GlobalSystemLogger(
             component_name="GlobalExceptionHandler"
         )
 
     def handle_base_system_exception(
-        self, exc: BaseSystemException
+        self, exc: BaseSystemException, trace_id: str = "TRC-EXCEPTION"
     ) -> tuple[GlobalResponseDto[Any], int]:
-        """
-        커스텀 도메인 예외(BaseSystemException)를 포획하여 GTS 규격 DTO로 변환합니다.
+        """BaseSystemException을 포획하여 표준 응답 DTO로 파싱 및 보안 검증"""
 
-        Newspaper Structure: 고수준 예외 파서
-        """
-        logger.warning(
-            f"Handling BaseSystemException: [{exc.error_code}] {exc.message}"
+        log_ctx = LogContext(
+            trace_id=trace_id,
+            context={"error_code": exc.error_code, "status_code": exc.status_code},
+            exc=exc,
         )
-        dto = exc.get_response_dto()
+        self._logger.warn(
+            f"Handling BaseSystemException: [{exc.error_code}] {exc.message}",
+            log_ctx=log_ctx,
+        )
 
-        # Guard Clause & Safe Fallback 적용 (보안 마스킹 검증)
-        safe_dto = self._sanitize_and_mask_response(dto)
+        dto = exc.get_response_dto()
+        safe_dto = self._sanitize_and_mask_response(dto, trace_id)
         return safe_dto, exc.status_code
 
     def handle_unexpected_exception(
-        self, exc: Exception
+        self, exc: Exception, trace_id: str = "TRC-UNHANDLED"
     ) -> tuple[GlobalResponseDto[Any], int]:
-        """
-        처리되지 않은 원시 런타임 예외를 포획하고 500 에러 및 마스킹을 강제합니다.
+        """처리되지 않은 런타임 예외를 포획하고 500 에러 및 마스킹 강제"""
 
-        Newspaper Structure: Unhandled 예외 처리기
-        """
-        logger.error(f"Handling Unexpected Exception: {str(exc)}", exc_info=True)
+        log_ctx = LogContext(
+            trace_id=trace_id,
+            context={"exception_type": exc.__class__.__name__},
+            exc=exc,
+        )
+        self._logger.error(
+            f"Handling Unexpected Exception: {str(exc)}",
+            log_ctx=log_ctx,
+        )
+
         dto = GlobalResponseDto.error_response(
             code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
             message="An unexpected internal server error occurred.",
             data=None,
         )
-        safe_dto = self._sanitize_and_mask_response(dto)
+
+        safe_dto = self._sanitize_and_mask_response(dto, trace_id)
         return safe_dto, 500
 
     def _sanitize_and_mask_response(
-        self, dto: GlobalResponseDto[Any]
+        self, dto: GlobalResponseDto[Any], trace_id: str
     ) -> GlobalResponseDto[Any]:
-        """
-        Guard Clause: 최종 응답 객체 내부의 민감 패턴(Stack Trace, DB Query 등) 유출을 스캔하고
-        감지 시 Safe Fallback 500 DTO로 교체합니다.
+        """최종 응답 객체 내부의 민감 패턴 유출을 스캔하고 감지 시 Safe Fallback 500 DTO로 교체"""
 
-        Newspaper Structure: 세부 보안 마스킹 로직
-        """
         payload_str = json.dumps(
             {"code": dto.code, "message": dto.message, "data": dto.data}, default=str
         )
 
         if self._is_sensitive_pattern_detected(payload_str):
-            logger.critical(
-                "CRITICAL: Sensitive pattern (Stack Trace / DB Query) detected in error response payload! Triggering Safe Fallback."
+            mask_ctx = LogContext(
+                trace_id=trace_id,
+                context={"detected_payload_snippet": payload_str[:100]},
+            )
+            self._logger.error(
+                "CRITICAL: Sensitive pattern (Stack Trace / DB Query) detected in error response payload! Triggering Safe Fallback.",
+                log_ctx=mask_ctx,
             )
             return GlobalResponseDto.error_response(
                 code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,

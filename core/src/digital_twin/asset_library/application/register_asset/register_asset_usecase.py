@@ -1,14 +1,15 @@
 from digital_twin.asset_library.domain.asset import Asset
+from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.dtos.asset_dto import AssetDto
-from shared.enums.asset_type_enum import AssetTypeEnum
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 
 class RegisterAssetUseCase:
@@ -22,6 +23,7 @@ class RegisterAssetUseCase:
             component_name="RegisterAssetUseCase"
         )
 
+    @require_user_context
     def execute(self, asset_dto: AssetDto, ctx: UserContext) -> str:
         log_ctx = LogContext(
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
@@ -32,17 +34,6 @@ class RegisterAssetUseCase:
                 "company_id": getattr(ctx, "company_id", "UNKNOWN"),
             },
         )
-
-        if not ctx or not ctx.company_id:
-            self._logger.warn(
-                "Asset registration rejected: Missing company_id",
-                log_ctx=log_ctx,
-            )
-            raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
-                message="UserContext with valid company_id is required.",
-                status_code=400,
-            )
 
         try:
             asset_enum = AssetTypeEnum(asset_dto.asset_type)

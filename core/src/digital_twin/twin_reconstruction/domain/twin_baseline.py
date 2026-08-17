@@ -3,7 +3,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
+from digital_twin.twin_reconstruction.domain.enums.twin_sync_status_enum import (
+    TwinSyncStatusEnum,
+)
 
 
 @dataclass

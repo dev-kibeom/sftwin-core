@@ -7,13 +7,11 @@ from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverityEnum
 from shared.logger.global_system_logger import GlobalSystemLogger
-from shared.ports.outbound.i_audit_command_repository import IAuditRepository
+from shared.ports.outbound.i_audit_command_repository import IAuditCommandRepository
 
 
 @dataclass(frozen=True)
 class SecurityAuditEvent:
-    """보안 감사 이벤트 Parameter Object"""
-
     action: str
     target: str
     severity: AuditSeverityEnum
@@ -23,8 +21,6 @@ class SecurityAuditEvent:
 
 @dataclass(frozen=True)
 class FailsafeAuditEvent:
-    """에지 관제 비상 제어 이벤트 Parameter Object"""
-
     device_id: str
     action: str
     reason: str
@@ -32,13 +28,13 @@ class FailsafeAuditEvent:
     trace_id: str = "TRC-FAILSAFE"
 
 
-class AuditLogger:
+class GlobalAuditLogger:
     """보안 및 에지 관제 이력 감사 로거 서비스"""
 
     def __init__(
         self,
         logger: GlobalSystemLogger | None = None,
-        command_repo: IAuditRepository | None = None,
+        command_repo: IAuditCommandRepository | None = None,
     ):
         self._logger = logger or GlobalSystemLogger(
             component_name="SecurityAuditComponent"
@@ -46,7 +42,6 @@ class AuditLogger:
         self._command_repo = command_repo
 
     def log_security_event(self, event: SecurityAuditEvent) -> None:
-        """보안 감사 이벤트 처리 및 영속화"""
         user_id, company_id = self._extract_user_identity(event.user_ctx)
         audit_id = str(uuid.uuid4())
 
@@ -89,7 +84,6 @@ class AuditLogger:
         self._persist_audit_log(context_data, event.trace_id)
 
     def log_failsafe_event(self, event: FailsafeAuditEvent) -> None:
-        """에지 관제 비상 제어 이벤트 처리 및 영속화"""
         user_id, company_id = self._extract_user_identity(event.user_ctx)
         audit_id = str(uuid.uuid4())
 
@@ -125,7 +119,6 @@ class AuditLogger:
         return user_ctx.user_id, user_ctx.company_id
 
     def _persist_audit_log(self, audit_dto: dict[str, Any], trace_id: str) -> bool:
-        """Port를 통해 감사 이력을 영속화하고, 실패 시 시스템 로거로 Fallback 처리"""
         if not self._command_repo:
             return True
 

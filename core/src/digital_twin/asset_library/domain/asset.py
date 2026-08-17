@@ -3,9 +3,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from shared.enums.asset_type_enum import AssetTypeEnum
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
+
+from .enums.asset_type_enum import AssetTypeEnum
 
 
 @dataclass

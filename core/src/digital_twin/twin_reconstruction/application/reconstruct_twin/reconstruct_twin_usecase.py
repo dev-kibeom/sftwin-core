@@ -4,13 +4,16 @@ from digital_twin.ports.outbound.i_baseline_command_repository import (
     IBaselineCommandRepository,
 )
 from digital_twin.ports.outbound.i_sensor_log_parser import ISensorLogParser
+from digital_twin.twin_reconstruction.domain.enums.twin_sync_status_enum import (
+    TwinSyncStatusEnum,
+)
 from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.twin_sync_status_enum import TwinSyncStatusEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 from .raw_factory_data_dto import (
     RawFactoryDataDto,
@@ -35,6 +38,7 @@ class ReconstructTwinUseCase:
             component_name="ReconstructTwinUseCase"
         )
 
+    @require_user_context
     def execute(self, raw_data: RawFactoryDataDto, ctx: UserContext) -> TwinMetricsDto:
         log_ctx = LogContext(
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
@@ -44,17 +48,6 @@ class ReconstructTwinUseCase:
                 "company_id": getattr(ctx, "company_id", "UNKNOWN"),
             },
         )
-
-        if not ctx or not ctx.company_id:
-            self._logger.warn(
-                "Twin reconstruction rejected: Missing UserContext or company_id",
-                log_ctx=log_ctx,
-            )
-            raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
-                message="UserContext with valid company_id is required.",
-                status_code=400,
-            )
 
         try:
             self._logger.info(

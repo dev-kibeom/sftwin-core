@@ -1,10 +1,11 @@
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.dtos.asset_dto import AssetDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
 
 
 class GetAssetUseCase:
@@ -16,6 +17,7 @@ class GetAssetUseCase:
         self._query_repo = query_repo
         self._logger = logger or GlobalSystemLogger(component_name="GetAssetUseCase")
 
+    @require_user_context
     def execute(self, asset_id: str, ctx: UserContext) -> AssetDto:
         log_ctx = LogContext(
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),

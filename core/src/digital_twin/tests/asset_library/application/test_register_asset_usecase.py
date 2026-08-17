@@ -10,7 +10,7 @@ from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
 from shared.context.user_context import UserContext
-from shared.dtos.asset_dto import AssetDto
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException

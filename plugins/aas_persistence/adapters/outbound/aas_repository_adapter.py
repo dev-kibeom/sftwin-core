@@ -14,7 +14,7 @@ from digital_twin.asset_library.application.register_asset.register_asset_usecas
     IAASRepository,
 )
 from digital_twin.asset_library.domain.asset import Asset
-from shared.adapters.base_repository_adapter import BaseRepositoryAdapter
+from shared.persistence.base_repository import BaseRepositoryAdapter
 from shared.context.log_context import LogContext
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger

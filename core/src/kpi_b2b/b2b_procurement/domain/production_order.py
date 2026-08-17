@@ -13,7 +13,7 @@ from kpi_b2b.b2b_procurement.application.process_production_order.production_ord
 from kpi_b2b.b2b_procurement.domain.factory_phase_enum import FactoryPhaseEnum
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.packml_state_enum import PackMLStateEnum
+from edge_control.anomaly_failsafe.domain.enums.packml_state_enum import PackMLStateEnum
 from shared.exceptions.base_exception import BaseSystemException
 
 
