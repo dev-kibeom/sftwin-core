@@ -3,20 +3,16 @@
 #include <memory>
 #include <string>
 
-#include "src/edge_control/common/dtos/telemetry_packet_dto.hpp"
-
-namespace sftwin::edge_control::realtime_telemetry {
-class ITelemetrySubscriber;
-class IVisionDetector;
-}
+#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/ports/outbound/i_telemetry_subscriber.hpp"
+#include "edge_control/ports/outbound/i_vision_detector.hpp"
 
 namespace sftwin::edge_control::realtime_telemetry::application {
 
 class ProcessTelemetryUseCase {
    public:
-    ProcessTelemetryUseCase(
-        std::shared_ptr<ITelemetrySubscriber> telemetry_subscriber,
-        std::shared_ptr<IVisionDetector> vision_detector);
+    ProcessTelemetryUseCase(std::shared_ptr<ITelemetrySubscriber> telemetry_subscriber,
+                            std::shared_ptr<IVisionDetector> vision_detector);
 
     TelemetryPacketDto get_latest_telemetry(const std::string& device_id);
 

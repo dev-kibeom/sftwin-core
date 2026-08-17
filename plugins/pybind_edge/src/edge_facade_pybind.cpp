@@ -1,6 +1,6 @@
 /**
  * @file edge_facade_pybind.cpp
- * @location /plugins/pybind_edge/src/edge_facade_pybind.cpp
+ * @location /plugins/pybind_edge/edge_facade_pybind.cpp
  * @description Python에서 core C++ 에지 제어 엔진을 호출할 수 있도록 Pybind11로 래핑한 Inbound Adapter
  */
 
@@ -10,8 +10,8 @@
 #include <string>
 
 // 1. core 계층의 pure C++ Inbound Port 참조 (Protobuf 헤더 의존성 Zero)
-#include "core/src/edge_control/ports/inbound/i_edge_query_facade.hpp"
-#include "core/src/edge_control/ports/inbound/i_edge_command_facade.hpp"
+#include "core/edge_control/ports/inbound/i_edge_query_facade.hpp"
+#include "core/edge_control/ports/inbound/i_edge_command_facade.hpp"
 
 // 2. 독립된 Protobuf 변환 플러그인 참조
 #include "plugins/protobuf_codec/include/telemetry_protobuf_mapper.hpp"

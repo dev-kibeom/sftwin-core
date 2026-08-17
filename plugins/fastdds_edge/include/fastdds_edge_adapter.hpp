@@ -6,12 +6,12 @@
 #include <string>
 
 // 1. core 아웃바운드 포트 인클루드 (DIP 준수)
-#include "core/src/edge_control/realtime_telemetry/ports/outbound/i_telemetry_subscriber.hpp"
-#include "core/src/edge_control/anomaly_failsafe/ports/outbound/i_failsafe_publisher.hpp"
+#include "core/edge_control/realtime_telemetry/ports/outbound/i_telemetry_subscriber.hpp"
+#include "core/edge_control/anomaly_failsafe/ports/outbound/i_failsafe_publisher.hpp"
 
 // 2. core 순수 DTO
-#include "core/src/edge_control/realtime_telemetry/ports/outbound/telemetry_packet_dto.hpp"
-#include "core/src/edge_control/anomaly_failsafe/ports/outbound/failsafe_command_dto.hpp"
+#include "core/edge_control/realtime_telemetry/ports/outbound/telemetry_packet_dto.hpp"
+#include "core/edge_control/anomaly_failsafe/ports/outbound/failsafe_command_dto.hpp"
 
 // 3. 외곽 Protobuf / IDL 스키마 (플러그인 내부에서만 참조!)
 #include "telemetry_packet.pb.h"

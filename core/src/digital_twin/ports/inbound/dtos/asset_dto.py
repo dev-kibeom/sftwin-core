@@ -1,7 +1,7 @@
 """
 ===============================================================================
 [File Name] asset_dto.py
-[Location ] /src/shared/dtos/asset_dto.py
+[Location ] /shared/dtos/asset_dto.py
 [Description]
  - 컴포넌트 간 로봇/설비 자산 및 CAD/기구학 정보 교환 시 사용되는 핵심 전역 DTO입니다.
  - GTS v3.0 및 FDS v3.0 규격을 엄격히 준수합니다.

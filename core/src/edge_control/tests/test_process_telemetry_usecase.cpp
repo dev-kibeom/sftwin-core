@@ -2,15 +2,16 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
-#include "src/edge_control/common/exceptions/edge_system_exception.hpp"
-#include "src/edge_control/common/utils/time_provider.hpp"
-#include "src/edge_control/realtime_telemetry/application/process_telemetry/process_telemetry_usecase.hpp"
-#include "src/edge_control/realtime_telemetry/ports/outbound/i_telemetry_subscriber.hpp"
-#include "src/edge_control/realtime_telemetry/ports/outbound/i_vision_detector.hpp"
-#include "src/edge_control/common/dtos/telemetry_packet_dto.hpp"
-#include "src/edge_control/common/dtos/vision_detection_dto.hpp"
+#include "edge_control/common/exceptions/edge_system_exception.hpp"
+#include "edge_control/common/utils/time_provider.hpp"
+#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
+#include "edge_control/ports/outbound/i_telemetry_subscriber.hpp"
+#include "edge_control/ports/outbound/i_vision_detector.hpp"
+#include "edge_control/realtime_telemetry/application/process_telemetry/process_telemetry_usecase.hpp"
 
 using ::testing::NiceMock;
 using ::testing::Return;
@@ -45,12 +46,12 @@ class ProcessTelemetryUseCaseTest : public ::testing::Test {
 TEST_F(ProcessTelemetryUseCaseTest, HappyPath_SuccessWithin100ms) {
     EXPECT_CALL(*mock_sub, is_initialized()).WillOnce(Return(true));
 
-    uint64_t current_time = sftwin::edge_control::TimeProvider::get_steady_time_ns();
-    TelemetryPacketDto dummy_dto("DOOSAN_M1013_001", current_time, {0.1f, 0.2f}, {10.0f, 20.0f});
+    const uint64_t current_time = TimeProvider::get_steady_time_ns();
+    const TelemetryPacketDto dummy_dto("DOOSAN_M1013_001", current_time, {0.1f, 0.2f}, {10.0f, 20.0f});
 
     EXPECT_CALL(*mock_sub, read_latest_packet("DOOSAN_M1013_001")).WillOnce(Return(dummy_dto));
 
-    VisionDetectionDto vision_dto{"PERSON", 0.95f, {0.0f, 0.0f, 1.0f, 1.0f}, current_time};
+    const VisionDetectionDto vision_dto{"PERSON", 0.95f, {0.0f, 0.0f, 1.0f, 1.0f}, current_time};
     EXPECT_CALL(*mock_vision, get_latest_detections())
         .WillOnce(Return(std::vector<VisionDetectionDto>{vision_dto}));
 
@@ -64,17 +65,15 @@ TEST_F(ProcessTelemetryUseCaseTest, HappyPath_SuccessWithin100ms) {
 TEST_F(ProcessTelemetryUseCaseTest, ErrorCase_CommTimeoutThrowsException) {
     EXPECT_CALL(*mock_sub, is_initialized()).WillOnce(Return(true));
 
-    // 150ms 지연 타임아웃 유도
-    uint64_t past_time =
-        sftwin::edge_control::TimeProvider::get_steady_time_ns() - 150'000'000ULL;
-    TelemetryPacketDto delayed_dto("DOOSAN_M1013_001", past_time);
+    const uint64_t past_time = TimeProvider::get_steady_time_ns() - 150'000'000ULL;
+    const TelemetryPacketDto delayed_dto("DOOSAN_M1013_001", past_time);
 
     EXPECT_CALL(*mock_sub, read_latest_packet("DOOSAN_M1013_001")).WillOnce(Return(delayed_dto));
 
     try {
         usecase->get_latest_telemetry("DOOSAN_M1013_001");
         FAIL() << "Expected EdgeSystemException";
-    } catch (const sftwin::edge_control::EdgeSystemException& e) {
+    } catch (const EdgeSystemException& e) {
         EXPECT_EQ(e.get_error_code(), "ERR_EDGE_COMM_TIMEOUT");
     }
 }

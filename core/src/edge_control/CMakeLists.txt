@@ -1,4 +1,4 @@
-# core/src/edge_control/CMakeLists.txt
+# core/edge_control/CMakeLists.txt
 
 # 1. edge_control 내부 소스 및 테스트 탐지
 file(GLOB_RECURSE EDGE_SRCS

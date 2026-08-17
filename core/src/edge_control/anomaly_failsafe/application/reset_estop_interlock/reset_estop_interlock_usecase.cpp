@@ -1,25 +1,35 @@
-#include "src/edge_control/anomaly_failsafe/application/reset_estop_interlock/reset_estop_interlock_usecase.hpp"
-#include "src/edge_control/common/logging/edge_logger.hpp"
+#include "reset_estop_interlock_usecase.hpp"
+
+#include <stdexcept>
+
+#include "edge_control/common/exceptions/edge_system_exception.hpp"
+#include "edge_control/common/logging/edge_logger.hpp"
+#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 
 domain::EdgeEngineState ResetEstopInterlockUseCase::execute(domain::EdgeEngineState current_state,
-                                                     bool is_field_inspected,
-                                                     bool is_manager_approved) {
+                                                             bool is_field_inspected,
+                                                             bool is_manager_approved) {
     EDGE_LOG_INFO("E-Stop 2-Step Reset requested for device: {}", _edge_device_id);
 
-    // 1. 도메인 정책 규칙 검증
-    _policy.validate_reset_request(current_state, is_field_inspected, is_manager_approved);
+    try {
+        _policy.validate_reset_request(current_state, is_field_inspected, is_manager_approved);
+    } catch (const std::invalid_argument& e) {
+        EDGE_LOG_WARN("E-Stop reset validation rejected: {}", e.what());
+        throw EdgeSystemException("ERR_COMMON_FORBIDDEN", e.what());
+    } catch (const std::logic_error& e) {
+        EDGE_LOG_WARN("E-Stop reset invalid state transition: {}", e.what());
+        throw EdgeSystemException("ERR_COMMON_INVALID_INPUT", e.what());
+    }
 
-    // 2. 통신망에 안전 해제 명령 발행
-    //    C++11/17 std::move를 통해 DTO 임시 객체를 복사 없이 publisher로 소유권 이동
-    _failsafe_pub->publish(
-        "failsafe/resume",
-        FailsafeCommandDto(_edge_device_id, "RESUME", "MANUAL_2STEP_RESET_SUCCESS")
-    );
+    if (_failsafe_pub) {
+        _failsafe_pub->publish(
+            "failsafe/resume",
+            FailsafeCommandDto(_edge_device_id, "RESUME", "MANUAL_2STEP_RESET_SUCCESS"));
+    }
 
-    EDGE_LOG_INFO("E-Stop Interlock successfully released. Engine state -> ACTIVE_MONITORING");
-
+    EDGE_LOG_INFO("E-Stop Interlock successfully released. State -> ACTIVE_MONITORING");
     return domain::EdgeEngineState::ACTIVE_MONITORING;
 }
 

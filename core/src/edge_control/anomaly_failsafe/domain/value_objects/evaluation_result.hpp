@@ -1,16 +1,14 @@
 #pragma once
 
 #include <string>
-#include <vector>
-#include <cstdint>
 
-#include "src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
+#include "../enums/failsafe_action_enum.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::domain {
 
 struct EvaluationResult {
-    FailsafeActionEnum action;
-    std::string reason;
+    FailsafeActionEnum action{FailsafeActionEnum::NONE};
+    std::string reason{"OK"};
 };
 
-}
+}  // namespace sftwin::edge_control::anomaly_failsafe::domain

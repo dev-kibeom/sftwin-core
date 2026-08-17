@@ -1,7 +1,7 @@
 """
 ===============================================================================
 [File Name] kamp_data_adapter.py
-[Location ] /src/digital_twin/twin_reconstruction/adapters/kamp_data_adapter.py
+[Location ] /digital_twin/twin_reconstruction/adapters/kamp_data_adapter.py
 [Description]
  - IKampDataAdapter 포트를 구현하며, RAM 16GB OOM 방지를 위해 pandas의 chunksize 기반
    스트리밍 분할 파싱 전략을 적용합니다.

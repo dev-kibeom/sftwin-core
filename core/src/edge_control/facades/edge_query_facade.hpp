@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "src/edge_control/ports/inbound/i_edge_query_facade.hpp"
+#include "edge_control/ports/inbound/i_edge_query_facade.hpp"
 
 namespace sftwin::edge_control::realtime_telemetry::application {
 class ProcessTelemetryUseCase;
@@ -18,8 +18,7 @@ class EdgeQueryFacade : public IEdgeQueryFacade {
 
     ~EdgeQueryFacade() override = default;
 
-    TelemetryPacketDto get_telemetry_status(
-        const std::string& device_id) override;
+    TelemetryPacketDto get_telemetry_status(const std::string& device_id) override;
 
    private:
     std::shared_ptr<realtime_telemetry::application::ProcessTelemetryUseCase> _telemetry_uc;

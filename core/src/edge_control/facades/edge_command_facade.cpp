@@ -1,14 +1,16 @@
 #include "edge_command_facade.hpp"
 
-#include "src/edge_control/anomaly_failsafe/application/reset_estop_interlock/reset_estop_interlock_usecase.hpp"
-#include "src/edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
-#include "src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
+#include <utility>
+
+#include "edge_control/anomaly_failsafe/application/reset_estop_interlock/reset_estop_interlock_usecase.hpp"
+#include "edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
+#include "edge_control/anomaly_failsafe/domain/enums/edge_engine_state_enum.hpp"
 
 namespace sftwin::edge_control {
 
 using anomaly_failsafe::application::ResetEstopInterlockUseCase;
 using anomaly_failsafe::application::TriggerFailsafeUseCase;
-using anomaly_failsafe::domain:: EdgeEngineState;
+using anomaly_failsafe::domain::EdgeEngineState;
 
 EdgeCommandFacade::EdgeCommandFacade(
     std::shared_ptr<TriggerFailsafeUseCase> failsafe_uc,

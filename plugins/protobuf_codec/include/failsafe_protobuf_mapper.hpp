@@ -4,8 +4,8 @@
 
 #include "failsafe_command.pb.h"
 
-#include "core/src/edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
-#include "core/src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
+#include "core/edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
+#include "core/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
 
 namespace sftwin::plugins::protobuf_codec {
 

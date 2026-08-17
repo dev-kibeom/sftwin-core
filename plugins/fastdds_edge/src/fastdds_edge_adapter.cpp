@@ -1,6 +1,6 @@
 #include "plugins/fastdds_edge/include/fastdds_edge_adapter.hpp"
-#include "core/src/edge_control/common/exceptions/edge_system_exception.hpp"
-#include "core/src/edge_control/common/logging/edge_logger.hpp"
+#include "core/edge_control/common/exceptions/edge_system_exception.hpp"
+#include "core/edge_control/common/logging/edge_logger.hpp"
 
 namespace sftwin::plugins::fastdds {
 

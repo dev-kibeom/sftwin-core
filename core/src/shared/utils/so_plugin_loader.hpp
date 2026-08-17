@@ -1,4 +1,4 @@
-// core/src/shared/utils/so_plugin_loader.hpp
+// core/shared/utils/so_plugin_loader.hpp
 #pragma once
 
 #include <dlfcn.h>

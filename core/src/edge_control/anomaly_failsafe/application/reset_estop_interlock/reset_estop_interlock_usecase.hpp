@@ -1,33 +1,28 @@
 #pragma once
+
 #include <memory>
 #include <string>
-#include <string_view>
+#include <utility>
 
-#include "src/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
-#include "src/edge_control/anomaly_failsafe/domain/estop_reset_policy.hpp"
-#include "src/edge_control/anomaly_failsafe/ports/outbound/i_failsafe_publisher.hpp"
-#include "src/edge_control/anomaly_failsafe/ports/outbound/i_hardware_interlock.hpp"
+#include "edge_control/anomaly_failsafe/domain/enums/edge_engine_state_enum.hpp"
+#include "edge_control/anomaly_failsafe/domain/estop_reset_policy.hpp"
+#include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 
 class ResetEstopInterlockUseCase {
-public:
-    ResetEstopInterlockUseCase(std::string device_id,
-                                domain::EstopResetPolicy policy,
-                                std::shared_ptr<IFailsafePublisher> failsafe_pub)
+   public:
+    ResetEstopInterlockUseCase(std::string device_id, domain::EstopResetPolicy policy,
+                               std::shared_ptr<IFailsafePublisher> failsafe_pub)
         : _edge_device_id(std::move(device_id)),
           _policy(std::move(policy)),
           _failsafe_pub(std::move(failsafe_pub)) {}
 
-    /**
-     * @brief E-Stop 2단계 리셋을 실행하고 변경된 엔진 상태를 반환합니다.
-     * @note C++17 [[nodiscard]]: 반환값을 무시할 경우 컴파일 경고를 발생시킵니다.
-     */
     [[nodiscard]] domain::EdgeEngineState execute(domain::EdgeEngineState current_state,
                                                    bool is_field_inspected,
                                                    bool is_manager_approved);
 
-private:
+   private:
     std::string _edge_device_id;
     domain::EstopResetPolicy _policy;
     std::shared_ptr<IFailsafePublisher> _failsafe_pub;

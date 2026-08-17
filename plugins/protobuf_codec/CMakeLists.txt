@@ -52,7 +52,7 @@ endforeach()
 # 3. Protobuf Codec 플러그인 타겟 라이브러리 빌드
 # ------------------------------------------------------------------------------
 # core DTO <-> Protobuf Mapper 변환 C++ 구현체 포함
-file(GLOB_RECURSE MAPPER_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE MAPPER_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 add_library(sftwin_protobuf_codec STATIC
     ${PROTO_SRCS}

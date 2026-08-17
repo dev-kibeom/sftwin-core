@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "core/src/edge_control/common/dtos/telemetry_packet_dto.hpp"
+#include "core/edge_control/common/dtos/telemetry_packet_dto.hpp"
 #include "telemetry_packet.pb.h"
 
 namespace sftwin::plugins::protobuf_codec {

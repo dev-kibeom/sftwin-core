@@ -1,4 +1,4 @@
-// core/src/shared/ipc/shm_telemetry_dto.hpp
+// core/shared/ipc/shm_telemetry_dto.hpp
 #pragma once
 #include <cstdint>
 

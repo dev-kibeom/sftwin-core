@@ -57,7 +57,7 @@ def test_tc_err_02_unexpected_runtime_exception_handling(exception_handler):
 def test_tc_err_03_sensitive_pattern_safe_fallback(exception_handler):
     # 민감 정보(Traceback 및 File 경로)가 details 컨텍스트에 포함된 예외 생성
     sensitive_details = {
-        "stack_trace": 'Traceback (most recent call last):\n  File "/src/main.py", line 42, in <module>'
+        "stack_trace": 'Traceback (most recent call last):\n  File "/main.py", line 42, in <module>'
     }
     exc = BaseSystemException(
         error_code=GlobalErrorCodeEnum.ERR_TWIN_SYNC_OVER_LIMIT,

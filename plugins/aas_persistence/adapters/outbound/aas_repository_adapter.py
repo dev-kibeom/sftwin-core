@@ -1,7 +1,7 @@
 """
 ===============================================================================
 [File Name] aas_repository_adapter.py
-[Location ] /src/digital_twin/asset_library/adapters/aas_repository_adapter.py
+[Location ] /digital_twin/asset_library/adapters/aas_repository_adapter.py
 [Description]
  - 전역 BaseRepositoryAdapter를 상속받아 IAASRepository 포트 인터페이스를 구현하는 MySQL 어댑터.
  - 저수준 DB 드라이버 에러 발생 시 BaseSystemException으로 래핑하여 상위로 전파합니다.
@@ -14,10 +14,10 @@ from digital_twin.asset_library.application.register_asset.register_asset_usecas
     IAASRepository,
 )
 from digital_twin.asset_library.domain.asset import Asset
-from shared.persistence.base_repository import BaseRepositoryAdapter
 from shared.context.log_context import LogContext
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.persistence.base_repository import BaseRepositoryAdapter
 
 
 class AASRepositoryAdapter(BaseRepositoryAdapter[Asset], IAASRepository):
