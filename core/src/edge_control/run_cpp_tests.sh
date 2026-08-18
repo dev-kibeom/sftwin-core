@@ -23,4 +23,4 @@ make edge_control_tests -j$(nproc)
 echo "=========================================================="
 echo " 🧪 Running Google Test Suite"
 echo "=========================================================="
-./edge_control/edge_control_tests "$@"
+./src/edge_control/edge_control_tests "$@"

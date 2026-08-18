@@ -20,13 +20,23 @@ TelemetryPacketDto ProcessTelemetryUseCase::get_latest_telemetry(const std::stri
                                   "Telemetry Subscriber is not initialized.");
     }
 
-    const auto packet = _telemetry_subscriber->read_latest_packet(device_id);
+    auto packet = _telemetry_subscriber->read_latest_packet(device_id);
 
     const domain::TelemetryStream stream{packet.device_id(), packet.timestamp_ns()};
 
     if (stream.is_stale(TimeProvider::get_steady_time_ns())) {
         throw EdgeSystemException("ERR_EDGE_COMM_TIMEOUT",
                                   "Telemetry heartbeat delayed over 100ms for " + device_id);
+    }
+
+    if (_vision_detector) {
+        const auto detections = _vision_detector->get_latest_detections();
+        for (const auto& det : detections) {
+            if (det.bbox[2] > 0.0f && det.bbox[2] < 1.5f) {
+                packet.set_warning(true);
+                break;
+            }
+        }
     }
 
     return packet;
