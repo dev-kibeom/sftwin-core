@@ -25,30 +25,25 @@ class GetAssetUseCase:
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
             context={
                 "asset_id": asset_id,
-                "user_id": getattr(ctx, "user_id", "UNKNOWN"),
-                "company_id": getattr(ctx, "company_id", "UNKNOWN"),
+                "user_id": ctx.user_id,
+                "company_id": ctx.company_id,
             },
         )
-
-        self._system_logger.debug(f"Querying asset: {asset_id}", log_ctx=log_ctx)
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         entity = self._query_repo.find_by_id(asset_id)
 
         if not entity or entity.is_deleted or entity.company_id != ctx.company_id:
             self._system_logger.warn(
                 f"Asset query failed - not found or unauthorized: {asset_id}",
-                log_ctx=log_ctx,
+                log_ctx,
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_TWIN_NOT_FOUND,
+                custom_message=f"Requested asset '{asset_id}' does not exist or access is denied.",
             )
 
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_TWIN_NOT_FOUND,
-                message=f"Requested asset '{asset_id}' does not exist.",
-                status_code=404,
-            )
-
-        self._system_logger.info(
-            f"Asset '{asset_id}' retrieved successfully", log_ctx=log_ctx
-        )
+        self._system_logger.info(f"Asset '{asset_id}' retrieved successfully", log_ctx)
 
         return AssetDto(
             asset_id=entity.asset_id,

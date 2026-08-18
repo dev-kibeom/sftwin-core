@@ -1,14 +1,8 @@
-"""
-===============================================================================
-[File Name] test_twin_baseline.py
-[Location ] /tests/digital_twin/twin_reconstruction/domain/test_twin_baseline.py
-[Description] TwinBaseline 도메인 엔티티 오차율 산출 및 상태 변경 단위 테스트
-===============================================================================
-"""
-
-from digital_twin.twin_reconstruction.domain.twin_baseline import (
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_baseline import (
     TwinBaseline,
-    TwinSyncStatusEnum,
+)
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_sync_status_enum import (
+    TwinSyncStatus,
 )
 
 
@@ -38,7 +32,7 @@ def test_twin_baseline_status_update():
     )
 
     # When
-    baseline.update_status(TwinSyncStatusEnum.COMPLETED)
+    baseline.update_status(TwinSyncStatus.COMPLETED)
 
     # Then
-    assert baseline.sync_status == TwinSyncStatusEnum.COMPLETED
+    assert baseline.sync_status == TwinSyncStatus.COMPLETED

@@ -1,5 +1,5 @@
-from digital_twin.asset_library.domain.asset import Asset
-from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
+from digital_twin.asset_library.domain.asset.asset import Asset
+from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
@@ -30,46 +30,48 @@ class RegisterAssetUseCase:
             context={
                 "asset_name": asset_dto.asset_name,
                 "asset_type": asset_dto.asset_type,
-                "user_id": getattr(ctx, "user_id", "UNKNOWN"),
-                "company_id": getattr(ctx, "company_id", "UNKNOWN"),
+                "user_id": ctx.user_id,
+                "company_id": ctx.company_id,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
-            asset_enum = AssetTypeEnum(asset_dto.asset_type)
+            asset_enum = AssetType(asset_dto.asset_type)
+            domain_entity = Asset(
+                asset_name=asset_dto.asset_name,
+                asset_type=asset_enum,
+                company_id=ctx.company_id,
+                kinematics_metadata=asset_dto.kinematics_metadata or {},
+                cad_file_path=asset_dto.cad_file_path,
+                created_by=ctx.username,
+                updated_by=ctx.username,
+            )
         except ValueError as e:
             self._system_logger.warn(
-                f"Invalid asset type: {asset_dto.asset_type}",
-                log_ctx=LogContext(
-                    trace_id=log_ctx.trace_id,
-                    context=log_ctx.context,
-                    exc=e,
-                ),
+                f"Asset domain validation failed: {str(e)}", log_ctx
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
-                message=f"Invalid asset type '{asset_dto.asset_type}'.",
-                status_code=400,
-                details={"asset_type": asset_dto.asset_type},
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
+                custom_message=str(e),
+                details={"invalid_input": asset_dto.asset_name},
             ) from e
 
-        domain_entity = Asset(
-            asset_name=asset_dto.asset_name,
-            asset_type=asset_enum,
-            company_id=ctx.company_id,
-            kinematics_metadata=asset_dto.kinematics_metadata or {},
-            cad_file_path=asset_dto.cad_file_path,
-            created_by=ctx.username,
-            updated_by=ctx.username,
-        )
-
-        domain_entity.validate_schema()
-        saved_entity = self._command_repo.save(domain_entity)
+        try:
+            saved_entity = self._command_repo.save(domain_entity)
+        except Exception as e:
+            log_ctx.exc = e
+            self._system_logger.error(
+                "Database persistence failed during asset registration.", log_ctx
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
+            ) from e
 
         log_ctx.context["asset_id"] = saved_entity.asset_id
         self._system_logger.info(
             f"Asset '{saved_entity.asset_id}' registered successfully",
-            log_ctx=log_ctx,
+            log_ctx,
         )
 
         return saved_entity.asset_id

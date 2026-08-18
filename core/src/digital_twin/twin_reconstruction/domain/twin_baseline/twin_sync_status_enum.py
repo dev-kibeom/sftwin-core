@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class TwinSyncStatusEnum(str, Enum):
+class TwinSyncStatus(str, Enum):
     """디지털 트윈 베이스라인 및 동기화 상태 열거형"""
 
     PENDING = "PENDING"

@@ -1,7 +1,9 @@
 # i_baseline_query_repository.py
 from typing import Protocol
 
-from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_baseline import (
+    TwinBaseline,
+)
 
 
 class IBaselineQueryRepository(Protocol):

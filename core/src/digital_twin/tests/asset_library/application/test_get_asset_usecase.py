@@ -4,8 +4,8 @@ import pytest
 from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
     GetAssetUseCase,
 )
-from digital_twin.asset_library.domain.asset import Asset
-from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
+from digital_twin.asset_library.domain.asset.asset import Asset
+from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
 from shared.context.user_context import UserContext
@@ -47,7 +47,7 @@ def test_tc_happy_path_get_asset(
     valid_asset = Asset(
         asset_id="VALID-CNC-01",
         asset_name="Standard_CNC",
-        asset_type=AssetTypeEnum.CNC,
+        asset_type=AssetType.CNC,
         company_id="TEST-COMPANY-01",
         cad_file_path="/cad/models/cnc_01.step",
         kinematics_metadata={"degrees_of_freedom": 3, "dh_parameters": {}},
@@ -64,7 +64,7 @@ def test_tc_happy_path_get_asset(
     assert isinstance(result, AssetDto)
     assert result.asset_id == "VALID-CNC-01"
     assert result.asset_name == "Standard_CNC"
-    assert result.asset_type == AssetTypeEnum.CNC.value
+    assert result.asset_type == AssetType.CNC.value
     assert result.cad_file_path == "/cad/models/cnc_01.step"
     assert result.kinematics_metadata == {"degrees_of_freedom": 3, "dh_parameters": {}}
     assert result.created_at == "2026-07-31T00:00:00Z"
@@ -102,16 +102,19 @@ def test_tc_edge_case_soft_deleted_asset(
     deleted_asset = Asset(
         asset_id="DELETED-CNC-01",
         asset_name="Deleted_CNC",
-        asset_type=AssetTypeEnum.CNC,
+        asset_type=AssetType.CNC,
         company_id="TEST-COMPANY-01",
-        kinematics_metadata={},
+        kinematics_metadata={
+            "degrees_of_freedom": 3,
+            "dh_parameters": {"a": [0, 0, 0]},
+        },
         is_deleted=True,
     )
     mock_query_repo.find_by_id.return_value = deleted_asset
 
     # When & Then
     with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute("DELETED-CNC-01", standard_context)
+        usecase.execute(asset_id="DELETED-CNC-01", ctx=standard_context)
 
     assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404
@@ -129,7 +132,7 @@ def test_tc_edge_case_tenant_isolation_forbidden(
     private_asset = Asset(
         asset_id="PRIVATE-ASSET-01",
         asset_name="Private_CNC",
-        asset_type=AssetTypeEnum.CNC,
+        asset_type=AssetType.CNC,
         company_id="OTHER-COMPANY-99",
         kinematics_metadata={"degrees_of_freedom": 3, "dh_parameters": {}},
         is_deleted=False,

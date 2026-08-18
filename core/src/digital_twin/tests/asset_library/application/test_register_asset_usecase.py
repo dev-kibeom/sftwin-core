@@ -5,7 +5,7 @@ import pytest
 from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     RegisterAssetUseCase,
 )
-from digital_twin.asset_library.domain.asset import Asset
+from digital_twin.asset_library.domain.asset.asset import Asset
 from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,

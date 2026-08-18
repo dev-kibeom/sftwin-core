@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from digital_twin.asset_library.domain.asset import Asset
+from digital_twin.asset_library.domain.asset.asset import Asset
 
 
 class IAssetCommandRepository(Protocol):

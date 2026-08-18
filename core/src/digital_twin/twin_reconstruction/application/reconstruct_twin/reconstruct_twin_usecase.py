@@ -4,10 +4,9 @@ from digital_twin.ports.outbound.i_baseline_command_repository import (
     IBaselineCommandRepository,
 )
 from digital_twin.ports.outbound.i_sensor_log_parser import ISensorLogParser
-from digital_twin.twin_reconstruction.domain.enums.twin_sync_status_enum import (
-    TwinSyncStatusEnum,
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_baseline import (
+    TwinBaseline,
 )
-from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
@@ -15,12 +14,8 @@ from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
 
-from .raw_factory_data_dto import (
-    RawFactoryDataDto,
-)
-from .twin_metrics_dto import (
-    TwinMetricsDto,
-)
+from .raw_factory_data_dto import RawFactoryDataDto
+from .twin_metrics_dto import TwinMetricsDto
 
 
 class ReconstructTwinUseCase:
@@ -44,56 +39,65 @@ class ReconstructTwinUseCase:
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
             context={
                 "baseline_name": raw_data.baseline_name,
-                "user_id": getattr(ctx, "user_id", "UNKNOWN"),
-                "company_id": getattr(ctx, "company_id", "UNKNOWN"),
+                "user_id": ctx.user_id,
+                "company_id": ctx.company_id,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
-            self._system_logger.info(
-                f"Starting twin reconstruction: {raw_data.baseline_name}",
-                log_ctx=log_ctx,
-            )
+            try:
+                sensor_data = self._sensor_parser.parse(raw_data.source_log_path)
+            except Exception as exc:
+                log_ctx.exc = exc
+                self._system_logger.error(
+                    f"Failed to parse sensor log file: '{raw_data.source_log_path}'",
+                    log_ctx,
+                )
+                raise BaseSystemException.from_error_code(
+                    GlobalErrorCode.ERR_TWIN_SENSOR_PARSE_FAIL
+                ) from exc
 
-            sensor_data = self._sensor_parser.parse(raw_data.source_log_path)
-            baseline = TwinBaseline.create_from_raw_data(
-                baseline_name=raw_data.baseline_name,
-                company_id=ctx.company_id,
-                created_by=ctx.username,
-                sensor_data=sensor_data,
-            )
+            try:
+                baseline = TwinBaseline.create_from_raw_data(
+                    baseline_name=raw_data.baseline_name,
+                    company_id=ctx.company_id,
+                    created_by=ctx.username,
+                    sensor_data=sensor_data,
+                    source_log_path=raw_data.source_log_path,
+                )
+            except ValueError as e:
+                raise BaseSystemException.from_error_code(
+                    GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                    custom_message=str(e),
+                ) from e
 
-            error_rate = baseline.calculate_precision()
+            error_rate = baseline.calculate_precision(
+                tolerance_threshold=self._default_tolerance
+            )
 
             if not baseline.is_precision_acceptable(tolerance=self._default_tolerance):
                 log_ctx.context["error_rate"] = error_rate
                 self._system_logger.warn(
                     f"Precision tolerance exceeded: {error_rate}% > {self._default_tolerance}%",
-                    log_ctx=log_ctx,
+                    log_ctx,
                 )
-                baseline.update_status(TwinSyncStatusEnum.TOLERANCE_EXCEEDED)
                 self._command_repo.save(baseline)
 
-                raise BaseSystemException(
-                    error_code=GlobalErrorCode.ERR_TWIN_SYNC_OVER_LIMIT,
-                    message=(
-                        f"Real-to-Sim precision error rate ({error_rate}%) "
-                        f"exceeds tolerance limit ({self._default_tolerance}%)."
-                    ),
-                    status_code=422,
+                raise BaseSystemException.from_error_code(
+                    GlobalErrorCode.ERR_TWIN_SYNC_OVER_LIMIT,
                     details={
                         "sync_error_rate": error_rate,
                         "tolerance": self._default_tolerance,
                     },
                 )
 
-            baseline.update_status(TwinSyncStatusEnum.COMPLETED)
             saved_baseline = self._command_repo.save(baseline)
-
             log_ctx.context["baseline_id"] = saved_baseline.baseline_id
+
             self._system_logger.info(
                 f"Twin reconstruction completed successfully: {saved_baseline.baseline_id}",
-                log_ctx=log_ctx,
+                log_ctx,
             )
 
             return TwinMetricsDto(
@@ -119,5 +123,5 @@ class ReconstructTwinUseCase:
             )
             self._system_logger.warn(
                 f"Failed to cleanup temp file '{file_path}': {exc}",
-                log_ctx=cleanup_ctx,
+                cleanup_ctx,
             )

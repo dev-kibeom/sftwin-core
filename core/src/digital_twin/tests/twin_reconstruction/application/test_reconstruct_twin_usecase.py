@@ -12,8 +12,8 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_d
 from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     ReconstructTwinUseCase,
 )
-from digital_twin.twin_reconstruction.domain.twin_baseline import (
-    TwinSyncStatusEnum,
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_sync_status_enum import (
+    TwinSyncStatus,
 )
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
@@ -79,7 +79,7 @@ def test_tc_happy_path_reconstruct_twin(
 
     # Then
     assert metrics.sync_error_rate == 1.25
-    assert metrics.sync_status == TwinSyncStatusEnum.COMPLETED.value
+    assert metrics.sync_status == TwinSyncStatus.COMPLETED.value
     assert metrics.is_verified is True
     assert mock_command_repo.save.call_count == 1
     # Clean-up 검증: 임시 원본 파일이 정상 삭제되었는지 확인
@@ -115,31 +115,31 @@ def test_tc_edge_case_tolerance_exceeded(
 
     # 저장소에 TOLERANCE_EXCEEDED 상태로 기록되었는지 검증
     saved_entity = mock_command_repo.save.call_args[0][0]
-    assert saved_entity.sync_status == TwinSyncStatusEnum.TOLERANCE_EXCEEDED
+    assert saved_entity.sync_status == TwinSyncStatus.TOLERANCE_EXCEEDED
 
 
-def test_tc_error_handling_kamp_parse_fail(
+def test_tc_error_handling_sensor_parse_fail(
     usecase, mock_sensor_parser, mock_command_repo, valid_ctx
 ):
     """
     [TC-에러] 센서 데이터셋 파싱 실패 및 I/O 예외 시나리오
     """
     # Given
-    mock_sensor_parser.parse.side_effect = BaseSystemException(
-        error_code=GlobalErrorCode.ERR_TWIN_KAMP_PARSE_FAIL,
-        message="Sensor log file not found.",
-        status_code=500,
-    )
-
-    raw_data = RawFactoryDataDto(
-        baseline_name="Missing_Twin",
-        source_log_path="/non_existent/sensor_log.csv",
+    mock_sensor_parser.parse.side_effect = BaseSystemException.from_error_code(
+        GlobalErrorCode.ERR_TWIN_SENSOR_PARSE_FAIL,
+        custom_message="Sensor log file not found.",
     )
 
     # When & Then
     with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute(raw_data, valid_ctx)
+        usecase.execute(
+            raw_data=RawFactoryDataDto(
+                baseline_name="Fail_Baseline",
+                source_log_path="/invalid/path/sensor.log",
+            ),
+            ctx=valid_ctx,
+        )
 
-    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_KAMP_PARSE_FAIL
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_SENSOR_PARSE_FAIL
     assert exc_info.value.status_code == 500
     mock_command_repo.save.assert_not_called()

@@ -1,11 +1,9 @@
 from dataclasses import dataclass, field
 
-from .asset_mapping_render_dto import (
-    AssetMappingRenderDto,
-)
+from .asset_mapping_render_dto import AssetMappingRenderDto
 
 
-@dataclass
+@dataclass(frozen=True)
 class LayoutRenderDto:
     """3D 가상 공장 레이아웃 통합 렌더링 DTO"""
 
@@ -14,4 +12,4 @@ class LayoutRenderDto:
     company_id: str
     sync_error_rate: float
     sync_status: str
-    asset_mappings: list[AssetMappingRenderDto] = field(default_factory=list)
+    asset_mappings: tuple[AssetMappingRenderDto, ...] = field(default_factory=tuple)

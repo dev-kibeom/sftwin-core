@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class AssetTypeEnum(str, Enum):
+class AssetType(str, Enum):
     """AAS 자산 분류 코드 열거형"""
 
     ROBOT = "ROBOT"

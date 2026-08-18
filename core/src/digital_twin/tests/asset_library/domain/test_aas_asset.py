@@ -1,15 +1,13 @@
 import pytest
-from digital_twin.asset_library.domain.asset import Asset
-from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.exceptions.base_system_exception import BaseSystemException
+from digital_twin.asset_library.domain.asset.asset import Asset
+from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 
 
 def test_aas_asset_valid_schema():
-    # Given
+    # Given & When: 유효한 스키마로 인스턴스화 성공 검증
     asset = Asset(
         asset_name="Doosan_M1013_Robot",
-        asset_type=AssetTypeEnum.ROBOT,
+        asset_type=AssetType.ROBOT,
         company_id="TEST-COMPANY-01",
         kinematics_metadata={
             "degrees_of_freedom": 6,
@@ -17,23 +15,23 @@ def test_aas_asset_valid_schema():
         },
     )
 
-    # When & Then
-    assert asset.validate_schema() is True, "Valid Asset schema must return True"
+    # Then
+    assert asset.asset_name == "Doosan_M1013_Robot"
+    assert asset.asset_type == AssetType.ROBOT
+    assert asset.company_id == "TEST-COMPANY-01"
+    assert asset.is_deleted is False
 
 
 def test_aas_asset_invalid_schema_missing_kinematics_keys():
-    # Given
-    asset = Asset(
-        asset_name="Doosan_M1013_Robot",
-        asset_type=AssetTypeEnum.ROBOT,
-        company_id="TEST-COMPANY-01",
-        kinematics_metadata={"invalid_key": "data"},  # missing degrees_of_freedom
+    # Given & When & Then: 필수 키 누락 시 객체 생성 단계에서 ValueError 발생 검증
+    with pytest.raises(ValueError) as exc_info:
+        Asset(
+            asset_name="Doosan_M1013_Robot",
+            asset_type=AssetType.ROBOT,
+            company_id="TEST-COMPANY-01",
+            kinematics_metadata={"invalid_key": "data"},  # degrees_of_freedom 누락
+        )
+
+    assert "Missing required key in kinematics_metadata: 'degrees_of_freedom'" in str(
+        exc_info.value
     )
-
-    # When & Then
-    with pytest.raises(BaseSystemException) as exc_info:
-        asset.validate_schema()
-
-    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA
-    assert exc_info.value.status_code == 400
-    assert "Missing required key" in exc_info.value.message
