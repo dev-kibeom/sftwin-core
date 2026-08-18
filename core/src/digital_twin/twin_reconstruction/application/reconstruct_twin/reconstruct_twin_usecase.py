@@ -29,12 +29,12 @@ class ReconstructTwinUseCase:
         sensor_parser: ISensorLogParser,
         command_repo: IBaselineCommandRepository,
         default_tolerance: float = 5.0,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._sensor_parser = sensor_parser
         self._command_repo = command_repo
         self._default_tolerance = default_tolerance
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="ReconstructTwinUseCase"
         )
 
@@ -50,7 +50,7 @@ class ReconstructTwinUseCase:
         )
 
         try:
-            self._logger.info(
+            self._system_logger.info(
                 f"Starting twin reconstruction: {raw_data.baseline_name}",
                 log_ctx=log_ctx,
             )
@@ -67,7 +67,7 @@ class ReconstructTwinUseCase:
 
             if not baseline.is_precision_acceptable(tolerance=self._default_tolerance):
                 log_ctx.context["error_rate"] = error_rate
-                self._logger.warn(
+                self._system_logger.warn(
                     f"Precision tolerance exceeded: {error_rate}% > {self._default_tolerance}%",
                     log_ctx=log_ctx,
                 )
@@ -91,7 +91,7 @@ class ReconstructTwinUseCase:
             saved_baseline = self._command_repo.save(baseline)
 
             log_ctx.context["baseline_id"] = saved_baseline.baseline_id
-            self._logger.info(
+            self._system_logger.info(
                 f"Twin reconstruction completed successfully: {saved_baseline.baseline_id}",
                 log_ctx=log_ctx,
             )
@@ -117,7 +117,7 @@ class ReconstructTwinUseCase:
                 context={"file_path": file_path},
                 exc=exc,
             )
-            self._logger.warn(
+            self._system_logger.warn(
                 f"Failed to cleanup temp file '{file_path}': {exc}",
                 log_ctx=cleanup_ctx,
             )

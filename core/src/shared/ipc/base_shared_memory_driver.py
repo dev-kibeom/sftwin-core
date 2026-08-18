@@ -17,11 +17,13 @@ class BaseSharedMemoryDriver(ABC, Generic[T]):
         shm_fd: int,
         shm_ptr: Any,
         component_name: str = "BaseSharedMemoryDriver",
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._shm_fd = shm_fd
         self._shm_ptr = shm_ptr
-        self._logger = logger or GlobalSystemLogger(component_name=component_name)
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name=component_name
+        )
 
     def write_to_shm(self, payload: T, trace_id: str = "TRC-SHM-WRITE") -> bool:
         log_ctx = LogContext(
@@ -31,7 +33,7 @@ class BaseSharedMemoryDriver(ABC, Generic[T]):
 
         self._validate_memory_mapping(log_ctx)
 
-        self._logger.debug(
+        self._system_logger.debug(
             "Writing payload to POSIX Shared Memory segment.", log_ctx=log_ctx
         )
         return self._do_write(payload)
@@ -44,7 +46,7 @@ class BaseSharedMemoryDriver(ABC, Generic[T]):
 
         self._validate_memory_mapping(log_ctx)
 
-        self._logger.debug(
+        self._system_logger.debug(
             "Reading payload from POSIX Shared Memory segment.", log_ctx=log_ctx
         )
         return self._do_read()
@@ -61,7 +63,7 @@ class BaseSharedMemoryDriver(ABC, Generic[T]):
         """shm_fd 및 shm_ptr 포인터 손상 여부를 조기 차단하여 Segfault 방지"""
 
         if self._shm_fd < 0 or self._shm_ptr is None:
-            self._logger.error(
+            self._system_logger.error(
                 f"SHM Descriptor Fault: shm_fd={self._shm_fd}, shm_ptr={self._shm_ptr}",
                 log_ctx=log_ctx,
             )

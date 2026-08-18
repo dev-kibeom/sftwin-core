@@ -16,10 +16,12 @@ class GetLayoutUseCase:
     def __init__(
         self,
         query_repo: IBaselineQueryRepository,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._query_repo = query_repo
-        self._logger = logger or GlobalSystemLogger(component_name="GetLayoutUseCase")
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="GetLayoutUseCase"
+        )
 
     @require_user_context
     def execute(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
@@ -32,11 +34,13 @@ class GetLayoutUseCase:
             },
         )
 
-        self._logger.debug(f"Querying baseline layout: {baseline_id}", log_ctx=log_ctx)
+        self._system_logger.debug(
+            f"Querying baseline layout: {baseline_id}", log_ctx=log_ctx
+        )
 
         raw_data = self._query_repo.find_by_id(baseline_id)
         if not raw_data:
-            self._logger.warn(
+            self._system_logger.warn(
                 f"Baseline layout not found: '{baseline_id}'",
                 log_ctx=log_ctx,
             )
@@ -48,7 +52,7 @@ class GetLayoutUseCase:
 
         owner_company_id = raw_data.get("company_id", "")
         if not self._is_accessible(baseline_id, owner_company_id, ctx):
-            self._logger.warn(
+            self._system_logger.warn(
                 f"Access denied for baseline '{baseline_id}' (Owner: {owner_company_id}, Requester: {ctx.company_id})",
                 log_ctx=log_ctx,
             )
@@ -74,7 +78,7 @@ class GetLayoutUseCase:
             for item in raw_data.get("asset_mappings", [])
         ]
 
-        self._logger.info(
+        self._system_logger.info(
             f"Baseline layout '{baseline_id}' retrieved successfully",
             log_ctx=log_ctx,
         )

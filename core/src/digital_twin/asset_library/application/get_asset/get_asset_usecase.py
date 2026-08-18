@@ -12,10 +12,12 @@ class GetAssetUseCase:
     def __init__(
         self,
         query_repo: IAssetQueryRepository,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._query_repo = query_repo
-        self._logger = logger or GlobalSystemLogger(component_name="GetAssetUseCase")
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="GetAssetUseCase"
+        )
 
     @require_user_context
     def execute(self, asset_id: str, ctx: UserContext) -> AssetDto:
@@ -28,12 +30,12 @@ class GetAssetUseCase:
             },
         )
 
-        self._logger.debug(f"Querying asset: {asset_id}", log_ctx=log_ctx)
+        self._system_logger.debug(f"Querying asset: {asset_id}", log_ctx=log_ctx)
 
         entity = self._query_repo.find_by_id(asset_id)
 
         if not entity or entity.is_deleted or entity.company_id != ctx.company_id:
-            self._logger.warn(
+            self._system_logger.warn(
                 f"Asset query failed - not found or unauthorized: {asset_id}",
                 log_ctx=log_ctx,
             )
@@ -44,7 +46,9 @@ class GetAssetUseCase:
                 status_code=404,
             )
 
-        self._logger.info(f"Asset '{asset_id}' retrieved successfully", log_ctx=log_ctx)
+        self._system_logger.info(
+            f"Asset '{asset_id}' retrieved successfully", log_ctx=log_ctx
+        )
 
         return AssetDto(
             asset_id=entity.asset_id,

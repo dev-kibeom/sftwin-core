@@ -13,10 +13,10 @@ class GetHeatmapLayoutUseCase:
     def __init__(
         self,
         color_calculator: HotspotColorCalculator | None = None,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._color_calculator = color_calculator or HotspotColorCalculator()
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="GetHeatmapLayoutUseCase"
         )
 
@@ -41,7 +41,7 @@ class GetHeatmapLayoutUseCase:
             )
 
         if log_ctx:
-            self._logger.debug(
+            self._system_logger.debug(
                 f"Calculated heatmap colors for {len(results)} assets",
                 log_ctx=log_ctx,
             )

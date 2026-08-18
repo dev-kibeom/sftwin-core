@@ -16,10 +16,10 @@ class RegisterAssetUseCase:
     def __init__(
         self,
         command_repo: IAssetCommandRepository,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._command_repo = command_repo
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="RegisterAssetUseCase"
         )
 
@@ -38,7 +38,7 @@ class RegisterAssetUseCase:
         try:
             asset_enum = AssetTypeEnum(asset_dto.asset_type)
         except ValueError as e:
-            self._logger.warn(
+            self._system_logger.warn(
                 f"Invalid asset type: {asset_dto.asset_type}",
                 log_ctx=LogContext(
                     trace_id=log_ctx.trace_id,
@@ -67,7 +67,7 @@ class RegisterAssetUseCase:
         saved_entity = self._command_repo.save(domain_entity)
 
         log_ctx.context["asset_id"] = saved_entity.asset_id
-        self._logger.info(
+        self._system_logger.info(
             f"Asset '{saved_entity.asset_id}' registered successfully",
             log_ctx=log_ctx,
         )

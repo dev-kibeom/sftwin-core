@@ -33,10 +33,10 @@ class GlobalAuditLogger:
 
     def __init__(
         self,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
         command_repo: IAuditCommandRepository | None = None,
     ):
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="SecurityAuditComponent"
         )
         self._command_repo = command_repo
@@ -75,11 +75,11 @@ class GlobalAuditLogger:
 
         # 공개 API를 통해 레벨별 로깅 디스패치
         if event.severity == AuditSeverityEnum.CRITICAL:
-            self._logger.error(message, log_ctx)
+            self._system_logger.error(message, log_ctx)
         elif event.severity == AuditSeverityEnum.WARNING:
-            self._logger.warn(message, log_ctx)
+            self._system_logger.warn(message, log_ctx)
         else:
-            self._logger.info(message, log_ctx)
+            self._system_logger.info(message, log_ctx)
 
         self._persist_audit_log(context_data, event.trace_id)
 
@@ -109,7 +109,7 @@ class GlobalAuditLogger:
         )
 
         log_ctx = LogContext(trace_id=event.trace_id, context=context_data)
-        self._logger.error(message, log_ctx)
+        self._system_logger.error(message, log_ctx)
 
         self._persist_audit_log(context_data, event.trace_id)
 
@@ -129,7 +129,7 @@ class GlobalAuditLogger:
             fallback_ctx = LogContext(
                 trace_id=trace_id, context=audit_dto, exc=repo_exc
             )
-            self._logger.error(
+            self._system_logger.error(
                 f"Audit log persistence failed via repository: {repo_exc}",
                 fallback_ctx,
             )

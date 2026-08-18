@@ -23,8 +23,8 @@ class GlobalExceptionHandler:
         "pymysql.err",
     ]
 
-    def __init__(self, logger: GlobalSystemLogger | None = None):
-        self._logger = logger or GlobalSystemLogger(
+    def __init__(self, system_logger: GlobalSystemLogger | None = None):
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="GlobalExceptionHandler"
         )
 
@@ -38,7 +38,7 @@ class GlobalExceptionHandler:
             context={"error_code": exc.error_code, "status_code": exc.status_code},
             exc=exc,
         )
-        self._logger.warn(
+        self._system_logger.warn(
             f"Handling BaseSystemException: [{exc.error_code}] {exc.message}",
             log_ctx=log_ctx,
         )
@@ -57,7 +57,7 @@ class GlobalExceptionHandler:
             context={"exception_type": exc.__class__.__name__},
             exc=exc,
         )
-        self._logger.error(
+        self._system_logger.error(
             f"Handling Unexpected Exception: {str(exc)}",
             log_ctx=log_ctx,
         )
@@ -85,7 +85,7 @@ class GlobalExceptionHandler:
                 trace_id=trace_id,
                 context={"detected_payload_snippet": payload_str[:100]},
             )
-            self._logger.error(
+            self._system_logger.error(
                 "CRITICAL: Sensitive pattern (Stack Trace / DB Query) detected in error response payload! Triggering Safe Fallback.",
                 log_ctx=mask_ctx,
             )

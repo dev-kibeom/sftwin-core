@@ -15,10 +15,12 @@ class BaseRepository(Generic[T]):
         self,
         db_session: Any,
         component_name: str = "BaseRepository",
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._db_session = db_session
-        self._logger = logger or GlobalSystemLogger(component_name=component_name)
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name=component_name
+        )
 
     def _handle_driver_exception(
         self, exc: Exception, action_context: str, log_ctx: LogContext | None = None
@@ -29,7 +31,7 @@ class BaseRepository(Generic[T]):
         ctx.exc = exc
         ctx.context["action"] = action_context
 
-        self._logger.error(
+        self._system_logger.error(
             f"DB Driver Exception caught during [{action_context}]: {str(exc)}",
             log_ctx=ctx,
         )

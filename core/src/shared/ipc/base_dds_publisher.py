@@ -17,11 +17,13 @@ class BaseDdsPublisher(ABC, Generic[T]):
         participant: Any,
         publisher: Any,
         component_name: str = "BaseDdsPublisher",
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._participant = participant
         self._publisher = publisher
-        self._logger = logger or GlobalSystemLogger(component_name=component_name)
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name=component_name
+        )
 
     def publish(self, topic: str, data: T, trace_id: str = "TRC-DDS-PUB") -> bool:
         log_ctx = LogContext(
@@ -30,7 +32,7 @@ class BaseDdsPublisher(ABC, Generic[T]):
         )
 
         if not self._check_connection_status():
-            self._logger.error(
+            self._system_logger.error(
                 f"DDS Session Invalid: Failed to publish message to topic '{topic}'.",
                 log_ctx=log_ctx,
             )
@@ -41,7 +43,7 @@ class BaseDdsPublisher(ABC, Generic[T]):
                 details={"topic": topic},
             )
 
-        self._logger.info(
+        self._system_logger.info(
             f"Publishing DDS message packet to topic '{topic}'", log_ctx=log_ctx
         )
         return self._do_publish(topic, data)

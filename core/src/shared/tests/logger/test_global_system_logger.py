@@ -7,17 +7,17 @@ from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 def test_tc_log_system_logger_json_formatting():
-    logger = GlobalSystemLogger(
+    system_logger = GlobalSystemLogger(
         component_name="TestComponent", logger_name="sftwin.global"
     )
     log_ctx = LogContext(trace_id="TRC-1234", context={"service": "auth"})
 
     # 내부 logging.Logger.log 호출 및 JSON 페이로드 검증
     with (
-        patch.object(logger._logger, "isEnabledFor", return_value=True),
-        patch.object(logger._logger, "log") as mock_log,
+        patch.object(system_logger._logger, "isEnabledFor", return_value=True),
+        patch.object(system_logger._logger, "log") as mock_log,
     ):
-        logger.info(message="System initialisation complete", log_ctx=log_ctx)
+        system_logger.info(message="System initialisation complete", log_ctx=log_ctx)
 
         mock_log.assert_called_once()
         called_level, called_json_str = mock_log.call_args[0]

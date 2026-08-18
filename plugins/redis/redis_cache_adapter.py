@@ -13,9 +13,11 @@ from shared.logger.global_system_logger import GlobalSystemLogger
 
 class RedisCacheAdapter:
     def __init__(
-        self, redis_client: Any = None, logger: GlobalSystemLogger | None = None
+        self, redis_client: Any = None, system_logger: GlobalSystemLogger | None = None
     ):
-        self._logger = logger or GlobalSystemLogger(component_name="RedisCacheAdapter")
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="RedisCacheAdapter"
+        )
 
         if redis_client:
             self._redis_client = redis_client
@@ -27,7 +29,7 @@ class RedisCacheAdapter:
                     host=redis_host, port=redis_port, db=0, socket_timeout=2
                 )
             except Exception as e:
-                self._logger.warning(
+                self._system_logger.warning(
                     f"Redis Client connection failed: {e}. Fallback to in-memory dict."
                 )
                 self._redis_client = None
@@ -42,7 +44,7 @@ class RedisCacheAdapter:
                     return json.loads(data)
                 return None
             except Exception as e:
-                self._logger.warning(f"Redis GET failed: {e}")
+                self._system_logger.warning(f"Redis GET failed: {e}")
 
         return self._local_fallback.get(idempotency_key)
 
@@ -56,7 +58,7 @@ class RedisCacheAdapter:
                 )
                 return True
             except Exception as e:
-                self._logger.warning(f"Redis SETEX failed: {e}")
+                self._system_logger.warning(f"Redis SETEX failed: {e}")
 
         self._local_fallback[idempotency_key] = data
         return True

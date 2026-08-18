@@ -13,8 +13,10 @@ from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class InfluxDbTimeSeriesAdapter(ITimeSeries):
-    def __init__(self, client: Any = None, logger: GlobalSystemLogger | None = None):
-        self._logger = logger or GlobalSystemLogger(
+    def __init__(
+        self, client: Any = None, system_logger: GlobalSystemLogger | None = None
+    ):
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="InfluxDbTimeSeriesAdapter"
         )
         url = os.getenv("INFLUXDB_URL", "http://sftwin-influxdb:8086")
@@ -30,7 +32,7 @@ class InfluxDbTimeSeriesAdapter(ITimeSeries):
                     url=url, token=token, org=org, timeout=3000
                 )
             except Exception as e:
-                self._logger.warn(f"InfluxDB client init fallback: {e}")
+                self._system_logger.warn(f"InfluxDB client init fallback: {e}")
                 self._client = None
 
     def fetch_simulation_logs(self, sim_id: str) -> list[dict[str, Any]]:
@@ -56,7 +58,7 @@ class InfluxDbTimeSeriesAdapter(ITimeSeries):
             return results
         except Exception as exc:
             log_ctx = LogContext(context={"sim_id": sim_id}, exc=exc)
-            self._logger.warn(
+            self._system_logger.warn(
                 f"InfluxDB Query failed for {sim_id}: {exc}. Returning fallback logs.",
                 log_ctx,
             )

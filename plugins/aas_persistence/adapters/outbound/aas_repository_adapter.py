@@ -26,10 +26,10 @@ class AASRepositoryAdapter(BaseRepositoryAdapter[Asset], IAASRepository):
     """
 
     def __init__(
-        self, db_session: Any, logger: GlobalSystemLogger | None = None
+        self, db_session: Any, system_logger: GlobalSystemLogger | None = None
     ) -> None:
         # 1. 부모 클래스에 adapter_logger 전달하여 로깅 주체 일치
-        adapter_logger = logger or GlobalSystemLogger(
+        adapter_logger = system_logger or GlobalSystemLogger(
             component_name="AASRepositoryAdapter"
         )
         super().__init__(db_session, logger=adapter_logger)
@@ -42,7 +42,7 @@ class AASRepositoryAdapter(BaseRepositoryAdapter[Asset], IAASRepository):
     ) -> Asset | None:
         try:
             # 2. debug() -> info() 전환 및 외부 log_ctx 전달받아 트레이싱 보존
-            self._logger.info(
+            self._system_logger.info(
                 f"[AASRepositoryAdapter] Finding asset by ID: {entity_id}",
                 log_ctx=log_ctx,
             )
@@ -62,7 +62,7 @@ class AASRepositoryAdapter(BaseRepositoryAdapter[Asset], IAASRepository):
 
     def save(self, entity: Asset, log_ctx: LogContext | None = None) -> Asset:
         try:
-            self._logger.info(
+            self._system_logger.info(
                 f"[AASRepositoryAdapter] Saving Asset: {entity.asset_id}",
                 log_ctx=log_ctx,
             )

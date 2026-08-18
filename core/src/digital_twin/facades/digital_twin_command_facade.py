@@ -1,6 +1,7 @@
 from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     RegisterAssetUseCase,
 )
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.inbound.i_digital_twin_command_facade import (
     IDigitalTwinCommandFacade,
 )
@@ -11,7 +12,6 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_t
 )
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 
@@ -22,11 +22,11 @@ class DigitalTwinCommandFacade(IDigitalTwinCommandFacade):
         self,
         register_asset_uc: RegisterAssetUseCase,
         reconstruct_uc: ReconstructTwinUseCase,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._register_asset_uc = register_asset_uc
         self._reconstruct_uc = reconstruct_uc
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="DigitalTwinCommandFacade"
         )
 
@@ -48,7 +48,7 @@ class DigitalTwinCommandFacade(IDigitalTwinCommandFacade):
             },
         )
 
-        self._logger.debug(
+        self._system_logger.debug(
             f"Facade routing reconstruct_twin: {raw_data.baseline_name}",
             log_ctx=log_ctx,
         )

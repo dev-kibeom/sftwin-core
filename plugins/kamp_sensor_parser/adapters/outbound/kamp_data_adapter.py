@@ -26,21 +26,25 @@ class KampDataAdapter(ISensorLogParserPort):
     """
 
     def __init__(
-        self, memory_chunk_size: int = 10000, logger: GlobalSystemLogger | None = None
+        self,
+        memory_chunk_size: int = 10000,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._memory_chunk_size = memory_chunk_size
-        self._logger = logger or GlobalSystemLogger(component_name="KampDataAdapter")
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="KampDataAdapter"
+        )
 
     def parse_sensor_log(self, file_path: str) -> TwinBaseline:
         """
         RAM 16GB OOM 방지를 위한 chunksize 스트리밍 파싱 수행
         """
-        self._logger.info(
+        self._system_logger.info(
             f"[KampDataAdapter] Parsing KAMP log with chunksize={self._memory_chunk_size}: {file_path}"
         )
 
         if not os.path.exists(file_path):
-            self._logger.error(f"[KampDataAdapter] File not found: {file_path}")
+            self._system_logger.error(f"[KampDataAdapter] File not found: {file_path}")
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_TWIN_KAMP_PARSE_FAIL,
                 message=f"KAMP sensor log file not found at '{file_path}'.",
@@ -77,7 +81,7 @@ class KampDataAdapter(ISensorLogParserPort):
             )
 
         except Exception as exc:
-            self._logger.error(
+            self._system_logger.error(
                 f"[KampDataAdapter] Exception during KAMP log streaming parsing: {str(exc)}"
             )
             raise BaseSystemException(

@@ -1,6 +1,7 @@
 from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
     GetAssetUseCase,
 )
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.inbound.i_digital_twin_query_facade import (
     IDigitalTwinQueryFacade,
 )
@@ -10,7 +11,6 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
 )
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
@@ -24,11 +24,11 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
         self,
         get_asset_uc: GetAssetUseCase,
         get_layout_uc: GetLayoutUseCase | None = None,
-        logger: GlobalSystemLogger | None = None,
+        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._get_asset_uc = get_asset_uc
         self._get_layout_uc = get_layout_uc
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="DigitalTwinQueryFacade"
         )
 
@@ -39,7 +39,7 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
             trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
             context={"asset_id": asset_id, "user_id": ctx.user_id},
         )
-        self._logger.debug(
+        self._system_logger.debug(
             f"Facade routing get_asset_info: {asset_id}", log_ctx=log_ctx
         )
 
@@ -57,12 +57,12 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
                 "user_id": ctx.user_id,
             },
         )
-        self._logger.debug(
+        self._system_logger.debug(
             f"Facade routing get_layout_data: {baseline_id}", log_ctx=log_ctx
         )
 
         if self._get_layout_uc is None:
-            self._logger.error(
+            self._system_logger.error(
                 "GetLayoutUseCase dependency missing in facade", log_ctx=log_ctx
             )
             raise BaseSystemException(
