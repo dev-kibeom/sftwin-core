@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .b2b_quote_status_enum import B2bQuoteStatus
 
 
-@dataclass
+@dataclass(frozen=True)
 class B2bQuote:
     """B2B 조달 턴키 견적 도메인 엔티티"""
 

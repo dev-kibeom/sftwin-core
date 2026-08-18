@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from .expert_session_status_enum import ExpertSessionStatus
 
 
-@dataclass
+@dataclass(frozen=True)
 class ExpertSession:
     """전문가 트윈 미러링 상담 세션 도메인 엔티티"""
 
