@@ -1,4 +1,4 @@
-# core/edge_control/CMakeLists.txt
+# core/src/edge_control/CMakeLists.txt
 
 # 1. edge_control 내부 소스 및 테스트 탐지
 file(GLOB_RECURSE EDGE_SRCS
@@ -24,6 +24,7 @@ target_include_directories(edge_control_tests PRIVATE
 
 # 4. 링킹
 target_link_libraries(edge_control_tests PRIVATE
+    shared_core
     GTest::gtest
     GTest::gtest_main
     GMock::gmock

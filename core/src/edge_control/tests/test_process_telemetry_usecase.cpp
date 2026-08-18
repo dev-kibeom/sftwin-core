@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "edge_control/common/exceptions/edge_system_exception.hpp"
-#include "edge_control/common/utils/time_provider.hpp"
+#include "shared/exceptions/global_exception_handler.hpp"
+#include "shared/utils/time_provider.hpp"
 #include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
 #include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
 #include "edge_control/ports/outbound/i_telemetry_subscriber.hpp"
@@ -16,6 +16,7 @@
 using ::testing::NiceMock;
 using ::testing::Return;
 
+using namespace sftwin::shared;
 using namespace sftwin::edge_control;
 using namespace sftwin::edge_control::realtime_telemetry;
 
@@ -46,7 +47,7 @@ class ProcessTelemetryUseCaseTest : public ::testing::Test {
 TEST_F(ProcessTelemetryUseCaseTest, HappyPath_SuccessWithin100ms) {
     EXPECT_CALL(*mock_sub, is_initialized()).WillOnce(Return(true));
 
-    const uint64_t current_time = TimeProvider::get_steady_time_ns();
+    const uint64_t current_time = GlobalTimeProvider::get_steady_time_ns();
     const TelemetryPacketDto dummy_dto("DOOSAN_M1013_001", current_time, {0.1f, 0.2f}, {10.0f, 20.0f});
 
     EXPECT_CALL(*mock_sub, read_latest_packet("DOOSAN_M1013_001")).WillOnce(Return(dummy_dto));
@@ -65,15 +66,15 @@ TEST_F(ProcessTelemetryUseCaseTest, HappyPath_SuccessWithin100ms) {
 TEST_F(ProcessTelemetryUseCaseTest, ErrorCase_CommTimeoutThrowsException) {
     EXPECT_CALL(*mock_sub, is_initialized()).WillOnce(Return(true));
 
-    const uint64_t past_time = TimeProvider::get_steady_time_ns() - 150'000'000ULL;
+    const uint64_t past_time = GlobalTimeProvider::get_steady_time_ns() - 150'000'000ULL;
     const TelemetryPacketDto delayed_dto("DOOSAN_M1013_001", past_time);
 
     EXPECT_CALL(*mock_sub, read_latest_packet("DOOSAN_M1013_001")).WillOnce(Return(delayed_dto));
 
     try {
         usecase->get_latest_telemetry("DOOSAN_M1013_001");
-        FAIL() << "Expected EdgeSystemException";
-    } catch (const EdgeSystemException& e) {
+        FAIL() << "Expected GlobalExceptionHandler";
+    } catch (const GlobalExceptionHandler& e) {
         EXPECT_EQ(e.get_error_code(), "ERR_EDGE_COMM_TIMEOUT");
     }
 }

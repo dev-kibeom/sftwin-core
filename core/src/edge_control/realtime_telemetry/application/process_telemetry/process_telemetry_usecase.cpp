@@ -2,11 +2,12 @@
 
 #include <utility>
 
-#include "edge_control/common/exceptions/edge_system_exception.hpp"
-#include "edge_control/common/utils/time_provider.hpp"
+#include "shared/exceptions/global_exception_handler.hpp"
+#include "shared/utils/time_provider.hpp"
 #include "edge_control/realtime_telemetry/domain/telemetry_stream.hpp"
 
 namespace sftwin::edge_control::realtime_telemetry::application {
+using namespace sftwin::shared;
 
 ProcessTelemetryUseCase::ProcessTelemetryUseCase(
     std::shared_ptr<ITelemetrySubscriber> telemetry_subscriber,
@@ -16,7 +17,7 @@ ProcessTelemetryUseCase::ProcessTelemetryUseCase(
 
 TelemetryPacketDto ProcessTelemetryUseCase::get_latest_telemetry(const std::string& device_id) {
     if (!_telemetry_subscriber || !_telemetry_subscriber->is_initialized()) {
-        throw EdgeSystemException("ERR_EDGE_DDS_INIT_FAIL",
+        throw GlobalExceptionHandler("ERR_EDGE_DDS_INIT_FAIL",
                                   "Telemetry Subscriber is not initialized.");
     }
 
@@ -24,8 +25,8 @@ TelemetryPacketDto ProcessTelemetryUseCase::get_latest_telemetry(const std::stri
 
     const domain::TelemetryStream stream{packet.device_id(), packet.timestamp_ns()};
 
-    if (stream.is_stale(TimeProvider::get_steady_time_ns())) {
-        throw EdgeSystemException("ERR_EDGE_COMM_TIMEOUT",
+    if (stream.is_stale(GlobalTimeProvider::get_steady_time_ns())) {
+        throw GlobalExceptionHandler("ERR_EDGE_COMM_TIMEOUT",
                                   "Telemetry heartbeat delayed over 100ms for " + device_id);
     }
 

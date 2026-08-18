@@ -8,8 +8,8 @@
 #include "edge_control/anomaly_failsafe/domain/enums/edge_engine_state_enum.hpp"
 #include "edge_control/anomaly_failsafe/domain/enums/interlock_state_enum.hpp"
 #include "edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
-#include "edge_control/common/exceptions/edge_system_exception.hpp"
-#include "edge_control/common/logging/edge_logger.hpp"
+#include "shared/exceptions/global_exception_handler.hpp"
+#include "shared/logger/global_system_logger.hpp"
 #include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
 #include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
 #include "edge_control/ports/outbound/i_hardware_interlock.hpp"
@@ -19,6 +19,7 @@ using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
 
+using namespace sftwin::shared;
 using namespace sftwin::edge_control;
 using namespace sftwin::edge_control::anomaly_failsafe;
 
@@ -49,7 +50,7 @@ class FailsafeRecoveryTest : public ::testing::Test {
     std::unique_ptr<application::TriggerFailsafeUseCase> usecase;
 
     void SetUp() override {
-        EdgeLogger::init();
+        GlobalSystemLogger::init();
 
         mock_hw = std::make_shared<NiceMock<MockHardwareInterlock>>();
         mock_dds = std::make_shared<NiceMock<MockFailsafePublisher>>();
@@ -92,10 +93,10 @@ TEST_F(FailsafeRecoveryTest, EdgeCase_InvalidStateTransition_Blocked) {
 
     try {
         EXPECT_FALSE(usecase->execute_recovery_sequence("<root>invalid_request</root>"));
-        FAIL() << "Expected EdgeSystemException to be thrown";
-    } catch (const EdgeSystemException& e) {
+        FAIL() << "Expected GlobalExceptionHandler to be thrown";
+    } catch (const GlobalExceptionHandler& e) {
         EXPECT_EQ(e.get_error_code(), "ERR_COMMON_INVALID_INPUT");
     } catch (...) {
-        FAIL() << "Expected EdgeSystemException, but a different exception was thrown";
+        FAIL() << "Expected GlobalExceptionHandler, but a different exception was thrown";
     }
 }

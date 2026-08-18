@@ -2,25 +2,26 @@
 
 #include <stdexcept>
 
-#include "edge_control/common/exceptions/edge_system_exception.hpp"
-#include "edge_control/common/logging/edge_logger.hpp"
+#include "shared/exceptions/global_exception_handler.hpp"
+#include "shared/logger/global_system_logger.hpp"
 #include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
+using namespace sftwin::shared;
 
 domain::EdgeEngineState ResetEstopInterlockUseCase::execute(domain::EdgeEngineState current_state,
                                                              bool is_field_inspected,
                                                              bool is_manager_approved) {
-    EDGE_LOG_INFO("E-Stop 2-Step Reset requested for device: {}", _edge_device_id);
+    GLOBAL_LOG_INFO("E-Stop 2-Step Reset requested for device: {}", _edge_device_id);
 
     try {
         _policy.validate_reset_request(current_state, is_field_inspected, is_manager_approved);
     } catch (const std::invalid_argument& e) {
-        EDGE_LOG_WARN("E-Stop reset validation rejected: {}", e.what());
-        throw EdgeSystemException("ERR_COMMON_FORBIDDEN", e.what());
+        GLOBAL_LOG_WARN("E-Stop reset validation rejected: {}", e.what());
+        throw GlobalExceptionHandler("ERR_COMMON_FORBIDDEN", e.what());
     } catch (const std::logic_error& e) {
-        EDGE_LOG_WARN("E-Stop reset invalid state transition: {}", e.what());
-        throw EdgeSystemException("ERR_COMMON_INVALID_INPUT", e.what());
+        GLOBAL_LOG_WARN("E-Stop reset invalid state transition: {}", e.what());
+        throw GlobalExceptionHandler("ERR_COMMON_INVALID_INPUT", e.what());
     }
 
     if (_failsafe_pub) {
@@ -29,7 +30,7 @@ domain::EdgeEngineState ResetEstopInterlockUseCase::execute(domain::EdgeEngineSt
             FailsafeCommandDto(_edge_device_id, "RESUME", "MANUAL_2STEP_RESET_SUCCESS"));
     }
 
-    EDGE_LOG_INFO("E-Stop Interlock successfully released. State -> ACTIVE_MONITORING");
+    GLOBAL_LOG_INFO("E-Stop Interlock successfully released. State -> ACTIVE_MONITORING");
     return domain::EdgeEngineState::ACTIVE_MONITORING;
 }
 

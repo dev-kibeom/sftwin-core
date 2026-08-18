@@ -8,9 +8,9 @@
 #include "edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
 #include "edge_control/anomaly_failsafe/domain/enums/interlock_state_enum.hpp"
 #include "edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
-#include "edge_control/common/exceptions/edge_system_exception.hpp"
-#include "edge_control/common/logging/edge_logger.hpp"
-#include "edge_control/common/utils/time_provider.hpp"
+#include "shared/exceptions/global_exception_handler.hpp"
+#include "shared/logger/global_system_logger.hpp"
+#include "shared/utils/time_provider.hpp"
 #include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
 #include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
 #include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
@@ -22,6 +22,7 @@ using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
 
+using namespace sftwin::shared;
 using namespace sftwin::edge_control;
 using namespace sftwin::edge_control::anomaly_failsafe;
 
@@ -52,7 +53,7 @@ class TriggerFailsafeUseCaseTest : public ::testing::Test {
     domain::FailsafeRule default_rule;
 
     void SetUp() override {
-        EdgeLogger::init();
+        GlobalSystemLogger::init();
 
         mock_hw = std::make_shared<NiceMock<MockHardwareInterlock>>();
         mock_dds = std::make_shared<NiceMock<MockFailsafePublisher>>();
@@ -70,7 +71,7 @@ class TriggerFailsafeUseCaseTest : public ::testing::Test {
 };
 
 TEST_F(TriggerFailsafeUseCaseTest, HappyPath_NoViolations) {
-    const uint64_t now = TimeProvider::get_steady_time_ns();
+    const uint64_t now = GlobalTimeProvider::get_steady_time_ns();
     const TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {100.0f});
     const std::vector<VisionDetectionDto> detections;
 
@@ -81,7 +82,7 @@ TEST_F(TriggerFailsafeUseCaseTest, HappyPath_NoViolations) {
 }
 
 TEST_F(TriggerFailsafeUseCaseTest, EdgeCase_WarningIntrusion_TriggersBypass) {
-    const uint64_t now = TimeProvider::get_steady_time_ns();
+    const uint64_t now = GlobalTimeProvider::get_steady_time_ns();
     const TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {50.0f});
 
     const VisionDetectionDto warning_obj{"WORKER", 0.9f, {0.0f, 0.0f, 1.2f, 0.0f}, now};
@@ -94,7 +95,7 @@ TEST_F(TriggerFailsafeUseCaseTest, EdgeCase_WarningIntrusion_TriggersBypass) {
 }
 
 TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_TorqueExceeded_TriggersEStop) {
-    const uint64_t now = TimeProvider::get_steady_time_ns();
+    const uint64_t now = GlobalTimeProvider::get_steady_time_ns();
     const TelemetryPacketDto telemetry("DOOSAN_M1013_002", now, {0.0f}, {160.0f});
     const std::vector<VisionDetectionDto> detections;
 
@@ -103,21 +104,21 @@ TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_TorqueExceeded_TriggersEStop) {
 
     try {
         usecase->evaluate_and_trigger(telemetry, detections);
-        FAIL() << "Expected EdgeSystemException to be thrown";
-    } catch (const EdgeSystemException& e) {
+        FAIL() << "Expected GlobalExceptionHandler to be thrown";
+    } catch (const GlobalExceptionHandler& e) {
         EXPECT_EQ(e.get_error_code(), "ERR_EDGE_FAILSAFE_TRIGGERED");
     } catch (...) {
-        FAIL() << "Expected EdgeSystemException, but a different exception was thrown";
+        FAIL() << "Expected GlobalExceptionHandler, but a different exception was thrown";
     }
 }
 
 TEST_F(TriggerFailsafeUseCaseTest, ErrorCase_HeartbeatTimeout_TriggersEStop) {
-    const uint64_t past_150ms = TimeProvider::get_steady_time_ns() - 150'000'000ULL;
+    const uint64_t past_150ms = GlobalTimeProvider::get_steady_time_ns() - 150'000'000ULL;
     const TelemetryPacketDto telemetry("DOOSAN_M1013_002", past_150ms);
     const std::vector<VisionDetectionDto> detections;
 
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(1);
     EXPECT_CALL(*mock_dds, publish("failsafe/estop", _)).WillOnce(Return(true));
 
-    EXPECT_THROW({ usecase->evaluate_and_trigger(telemetry, detections); }, EdgeSystemException);
+    EXPECT_THROW({ usecase->evaluate_and_trigger(telemetry, detections); }, GlobalExceptionHandler);
 }

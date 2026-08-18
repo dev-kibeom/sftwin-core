@@ -1,11 +1,12 @@
-#include "../domain/failsafe_controller.hpp"
+#include "failsafe_controller.hpp"
 
-#include "edge_control/common/utils/time_provider.hpp"
+#include "shared/utils/time_provider.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::domain {
+using namespace sftwin::shared;
 
 uint64_t FailsafeController::_get_current_time_ns() const {
-    return TimeProvider::get_steady_time_ns();
+    return GlobalTimeProvider::get_steady_time_ns();
 }
 
 EvaluationResult FailsafeController::check_violations(const TelemetrySnapshot& snapshot) const {
