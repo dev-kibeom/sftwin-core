@@ -38,21 +38,18 @@ class DeploySim2RealUseCase:
                 "format": request_dto.format_type,
             },
         )
-        self._system_logger.info("Sim-to-Real deploy requested", log_ctx)
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
-        # 1. 시뮬레이션 결과 검증 Guard Clause
         if not self._verify_simulation_result(request_dto.package_id):
             self._system_logger.warn(
                 f"Unverified or invalid scenario for package {request_dto.package_id}",
                 log_ctx,
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                message="FMS scenario is unverified or missing required configurations.",
-                status_code=400,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message="FMS scenario is unverified or missing required configurations.",
             )
 
-        # 2. 도메인 엔티티 생성
         try:
             target_format = DeployPackageFormat(request_dto.format_type)
             pkg = DeployPackage(
@@ -62,13 +59,14 @@ class DeploySim2RealUseCase:
                 vda5050_config=request_dto.config,
             )
         except ValueError as ve:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                message=str(ve),
-                status_code=400,
+            self._system_logger.warn(
+                f"DeployPackage validation failed: {str(ve)}", log_ctx
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message=str(ve),
             ) from ve
 
-        # 3. 어댑터 호출 및 I/O 예외 마스킹
         try:
             is_success = self._fleet_deploy_port.export_package(pkg)
             if is_success:
@@ -79,10 +77,8 @@ class DeploySim2RealUseCase:
         except OSError as exc:
             log_ctx.exc = exc
             self._system_logger.error("I/O Error during package export", log_ctx)
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
-                message="Failed to write package to file system due to I/O or permission error.",
-                status_code=500,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
             ) from exc
 
     def _verify_simulation_result(self, package_id: str) -> bool:

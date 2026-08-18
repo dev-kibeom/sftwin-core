@@ -41,6 +41,7 @@ class RunFmsSimulationUseCase:
                 "baseline_id": request_dto.baseline_id,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
             scenario = FmsScenario.create(
@@ -51,20 +52,17 @@ class RunFmsSimulationUseCase:
             )
         except ValueError as e:
             self._system_logger.warn(f"Invalid scenario parameters: {str(e)}", log_ctx)
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_INVALID_SCENARIO,
-                message=str(e),
-                status_code=400,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_INVALID_SCENARIO,
+                custom_message=str(e),
             ) from e
 
         if not self._check_vram_resource_limit():
             self._system_logger.error(
                 "VRAM Resource exhausted over 4.2GB limit", log_ctx
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_RESOURCE_EXHAUSTED,
-                message="GPU VRAM cache exceeds the 4.2GB limit. Request rejected to prevent OOM.",
-                status_code=503,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_RESOURCE_EXHAUSTED
             )
 
         try:
@@ -72,10 +70,8 @@ class RunFmsSimulationUseCase:
         except TimeoutError as exc:
             log_ctx.exc = exc
             self._system_logger.error("IPC Sync timeout (>1ms)", log_ctx)
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_IPC_TIMEOUT,
-                message="POSIX Shared Memory IPC synchronization timeout exceeded 1ms.",
-                status_code=500,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_IPC_TIMEOUT
             ) from exc
 
         detector = CollisionDetector()
@@ -84,10 +80,9 @@ class RunFmsSimulationUseCase:
                 f"Collision/Deadlock detected. Count: {detector.collision_count}",
                 log_ctx,
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_COLLISION_DETECTED,
-                message="Physical collision or Fleet deadlock detected during computation.",
-                status_code=409,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_COLLISION_DETECTED,
+                details={"collision_count": detector.collision_count},
             )
 
         self._system_logger.info("FMS Simulation completed successfully", log_ctx)

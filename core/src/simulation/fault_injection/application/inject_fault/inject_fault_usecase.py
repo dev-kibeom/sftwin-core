@@ -47,15 +47,14 @@ class InjectFaultUseCase:
                 "target": request_dto.target,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         if not self._script_parser.validate_syntax(request_dto.sequence_script):
             self._system_logger.warn(
                 "Sequence script syntax validation failed", log_ctx
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED,
-                message="Invalid recovery sequence script syntax or structure.",
-                status_code=422,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED
             )
 
         try:
@@ -65,10 +64,12 @@ class InjectFaultUseCase:
                 trigger_time_sec=request_dto.trigger_time_sec,
             )
         except ValueError as e:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                message=str(e),
-                status_code=400,
+            self._system_logger.warn(
+                f"FaultScenario validation failed: {str(e)}", log_ctx
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message=str(e),
             ) from e
 
         return self._evaluate_fault_strategy(scenario, log_ctx)
@@ -92,20 +93,16 @@ class InjectFaultUseCase:
         except TimeoutError as exc:
             log_ctx.exc = exc
             self._system_logger.error("IPC Sync timeout (>1ms)", log_ctx)
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_IPC_TIMEOUT,
-                message="Shared Memory synchronization timed out.",
-                status_code=500,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_IPC_TIMEOUT
             ) from exc
 
         if not waypoints:
             self._system_logger.warn(
                 "AI Planner could not find bypass trajectory", log_ctx
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED,
-                message="Unsolvable bypass trajectory due to spatial constraints.",
-                status_code=422,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED
             )
 
         self._physics_engine.evaluate_trajectory(waypoints)

@@ -35,7 +35,6 @@ class ScenarioAsset:
                 f"Asset '{asset_id}' must have valid kinematics_metadata dict."
             )
 
-        # dof, payload 또는 velocity/acceleration 등 기본값/키 매핑 지원
         vel = float(
             kinematics_data.get(
                 "max_velocity_rad_per_sec", kinematics_data.get("dof", 1.0)
@@ -72,11 +71,20 @@ class FmsScenario:
         self.validate()
 
     def validate(self) -> None:
+        if not self.scenario_id or not self.scenario_id.strip():
+            raise ValueError("Valid scenario_id is required for FMS scenario.")
+
         if not self.baseline_id or not self.baseline_id.strip():
             raise ValueError("Valid baseline_id is required for FMS scenario.")
 
         if not self.assets:
             raise ValueError("Assets list cannot be empty.")
+
+        if self.dt_sec <= 0:
+            raise ValueError("dt_sec must be positive.")
+
+        if self.max_duration_sec <= 0:
+            raise ValueError("max_duration_sec must be positive.")
 
     @classmethod
     def create(

@@ -4,11 +4,17 @@ from typing import Any
 
 @dataclass(frozen=True)
 class OptimizedAssetPlacement:
+    """최적화된 개별 설비 3D 공간 배치 좌표 (불변 값 객체)"""
+
     asset_id: str
     pos_x: float
     pos_y: float
     pos_z: float
     rotation_yaw: float
+
+    def __post_init__(self) -> None:
+        if not self.asset_id or not self.asset_id.strip():
+            raise ValueError("asset_id is required.")
 
 
 class LayoutOptimizer:
@@ -17,12 +23,15 @@ class LayoutOptimizer:
     def optimize_placement(
         self, assets: list[dict[str, Any]], canvas_bounds: dict[str, float]
     ) -> list[OptimizedAssetPlacement]:
+        max_x = float(canvas_bounds.get("max_x", 50.0))
+        if max_x <= 0:
+            raise ValueError("Canvas bound 'max_x' must be positive.")
+
         placements: list[OptimizedAssetPlacement] = []
-        max_x = canvas_bounds.get("max_x", 50.0)
         spacing = max_x / (len(assets) + 1) if assets else 10.0
 
         for i, asset in enumerate(assets):
-            asset_id = asset.get("asset_id", f"ASSET-{i}")
+            asset_id = str(asset.get("asset_id", f"ASSET-{i}"))
             pos_x = round((i + 1) * spacing, 2)
 
             placements.append(

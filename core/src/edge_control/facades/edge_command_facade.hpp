@@ -7,7 +7,7 @@
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 class TriggerFailsafeUseCase;
-class ResetEstopInterlockUseCase;
+class ResetInterlockUseCase;
 }
 
 namespace sftwin::edge_control {
@@ -16,7 +16,7 @@ class EdgeCommandFacade : public IEdgeCommandFacade {
    public:
     explicit EdgeCommandFacade(
         std::shared_ptr<anomaly_failsafe::application::TriggerFailsafeUseCase> failsafe_uc,
-        std::shared_ptr<anomaly_failsafe::application::ResetEstopInterlockUseCase> reset_uc);
+        std::shared_ptr<anomaly_failsafe::application::ResetInterlockUseCase> reset_uc);
 
     ~EdgeCommandFacade() override = default;
 
@@ -26,7 +26,7 @@ class EdgeCommandFacade : public IEdgeCommandFacade {
 
    private:
     std::shared_ptr<anomaly_failsafe::application::TriggerFailsafeUseCase> _failsafe_uc;
-    std::shared_ptr<anomaly_failsafe::application::ResetEstopInterlockUseCase> _reset_uc;
+    std::shared_ptr<anomaly_failsafe::application::ResetInterlockUseCase> _reset_uc;
 };
 
 }  // namespace sftwin::edge_control

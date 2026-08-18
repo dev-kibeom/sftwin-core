@@ -5,15 +5,14 @@
 #include <string>
 
 #include "edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
-#include "edge_control/anomaly_failsafe/domain/enums/edge_engine_state_enum.hpp"
-#include "edge_control/anomaly_failsafe/domain/enums/interlock_state_enum.hpp"
-#include "edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
-#include "shared/exceptions/global_exception_handler.hpp"
-#include "shared/logger/global_system_logger.hpp"
+#include "edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_rule.hpp"
+#include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
 #include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
 #include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
 #include "edge_control/ports/outbound/i_hardware_interlock.hpp"
 #include "edge_control/ports/outbound/i_recovery_sequence.hpp"
+#include "shared/exceptions/global_exception_handler.hpp"
+#include "shared/logger/global_system_logger.hpp"
 
 using ::testing::_;
 using ::testing::NiceMock;
@@ -62,18 +61,18 @@ class FailsafeRecoveryTest : public ::testing::Test {
 };
 
 TEST_F(FailsafeRecoveryTest, HappyPath_ManualEStop_Success) {
-    EXPECT_EQ(usecase->get_current_state(), domain::EdgeEngineState::ACTIVE_MONITORING);
+    EXPECT_EQ(usecase->get_current_state(), domain::InterlockState::RELEASED);
     EXPECT_CALL(*mock_hw, trigger_physical_relay()).Times(1);
     EXPECT_CALL(*mock_dds, publish("failsafe/estop", _)).WillOnce(Return(true));
 
     EXPECT_NO_THROW({ usecase->trigger_manual_estop("MANUAL_EMERGENCY"); });
 
-    EXPECT_EQ(usecase->get_current_state(), domain::EdgeEngineState::INTERLOCK_ENGAGED);
+    EXPECT_EQ(usecase->get_current_state(), domain::InterlockState::ENGAGED);
 }
 
 TEST_F(FailsafeRecoveryTest, HappyPath_ResumeProcess_Success) {
     usecase->trigger_manual_estop("MANUAL_EMERGENCY");
-    EXPECT_EQ(usecase->get_current_state(), domain::EdgeEngineState::INTERLOCK_ENGAGED);
+    EXPECT_EQ(usecase->get_current_state(), domain::InterlockState::ENGAGED);
 
     EXPECT_CALL(*mock_recovery, execute_recovery_sequence("<root>valid_xml</root>")).WillOnce(Return(true));
     EXPECT_CALL(*mock_dds, publish("failsafe/resume", _)).WillOnce(Return(true));
@@ -82,11 +81,11 @@ TEST_F(FailsafeRecoveryTest, HappyPath_ResumeProcess_Success) {
     EXPECT_NO_THROW({ result = usecase->execute_recovery_sequence("<root>valid_xml</root>"); });
 
     EXPECT_TRUE(result);
-    EXPECT_EQ(usecase->get_current_state(), domain::EdgeEngineState::ACTIVE_MONITORING);
+    EXPECT_EQ(usecase->get_current_state(), domain::InterlockState::RELEASED);
 }
 
 TEST_F(FailsafeRecoveryTest, EdgeCase_InvalidStateTransition_Blocked) {
-    EXPECT_EQ(usecase->get_current_state(), domain::EdgeEngineState::ACTIVE_MONITORING);
+    EXPECT_EQ(usecase->get_current_state(), domain::InterlockState::RELEASED);
 
     EXPECT_CALL(*mock_recovery, execute_recovery_sequence(_)).Times(0);
     EXPECT_CALL(*mock_dds, publish(_, _)).Times(0);

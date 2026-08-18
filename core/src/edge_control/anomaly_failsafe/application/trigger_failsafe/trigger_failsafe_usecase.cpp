@@ -2,9 +2,10 @@
 
 #include <utility>
 
+#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
 #include "shared/exceptions/global_exception_handler.hpp"
 #include "shared/logger/global_system_logger.hpp"
-#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
+#include "shared/utils/time_provider.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 using namespace sftwin::shared;
@@ -17,13 +18,14 @@ TriggerFailsafeUseCase::TriggerFailsafeUseCase(
     : _hw_interlock(std::move(hw_interlock)),
       _failsafe_pub(std::move(failsafe_pub)),
       _recovery(std::move(recovery)),
-      _controller(rule) {}
+      _evaluator(rule) {}
 
 void TriggerFailsafeUseCase::evaluate_and_trigger(
     const TelemetryPacketDto& telemetry,
     const std::vector<VisionDetectionDto>& vision_detections) {
+    GLOBAL_LOG_DEBUG("Executing TriggerFailsafeUseCase::evaluate_and_trigger");
 
-    if (_current_state != domain::EdgeEngineState::ACTIVE_MONITORING) {
+    if (_current_state != domain::InterlockState::RELEASED) {
         return;
     }
 
@@ -35,32 +37,35 @@ void TriggerFailsafeUseCase::evaluate_and_trigger(
         0.0f
     };
 
-    const auto result = _controller.check_violations(snapshot);
+    const uint64_t current_time_ns = GlobalTimeProvider::get_steady_time_ns();
+    const auto result = _evaluator.evaluate_violations(snapshot, current_time_ns);
 
-    if (result.action == domain::FailsafeActionEnum::ESTOP) {
+    if (result.action == domain::FailsafeAction::ESTOP) {
         if (_hw_interlock) _hw_interlock->trigger_physical_relay();
         if (_failsafe_pub) {
             _failsafe_pub->publish("failsafe/estop",
                                    FailsafeCommandDto(telemetry.device_id(), "ESTOP", result.reason));
         }
 
-        _current_state = domain::EdgeEngineState::INTERLOCK_ENGAGED;
+        _current_state = domain::InterlockState::ENGAGED;
         GLOBAL_LOG_ERROR("Failsafe Auto E-STOP Triggered! Reason: {}", result.reason);
 
         throw GlobalExceptionHandler("ERR_EDGE_FAILSAFE_TRIGGERED",
-                                  "Critical safety breach: " + result.reason);
+                                     "Critical safety breach: " + result.reason);
     }
 
-    if (result.action == domain::FailsafeActionEnum::BYPASS) {
+    if (result.action == domain::FailsafeAction::BYPASS) {
         GLOBAL_LOG_WARN("Bypass triggered due to warning intrusion. Reason: {}", result.reason);
     }
 }
 
 void TriggerFailsafeUseCase::trigger_manual_estop(const std::string& reason) {
-    if (_current_state != domain::EdgeEngineState::ACTIVE_MONITORING) {
-        GLOBAL_LOG_WARN("Invalid state transition: E-Stop requested but state is not ACTIVE_MONITORING.");
+    GLOBAL_LOG_DEBUG("Executing TriggerFailsafeUseCase::trigger_manual_estop");
+
+    if (_current_state != domain::InterlockState::RELEASED) {
+        GLOBAL_LOG_WARN("Invalid state transition: E-Stop requested but interlock is not RELEASED.");
         throw GlobalExceptionHandler("ERR_COMMON_INVALID_INPUT",
-                                  "Engine is already interlocked or in recovery.");
+                                     "Engine is already interlocked or in recovery.");
     }
 
     if (_hw_interlock) _hw_interlock->trigger_physical_relay();
@@ -69,33 +74,35 @@ void TriggerFailsafeUseCase::trigger_manual_estop(const std::string& reason) {
                                FailsafeCommandDto(_edge_device_id, "ESTOP", reason));
     }
 
-    _current_state = domain::EdgeEngineState::INTERLOCK_ENGAGED;
-    GLOBAL_LOG_INFO("Manual E-Stop successfully triggered. State -> INTERLOCK_ENGAGED (Reason: {})", reason);
+    _current_state = domain::InterlockState::ENGAGED;
+    GLOBAL_LOG_INFO("Manual E-Stop successfully triggered. State -> ENGAGED (Reason: {})", reason);
 }
 
 bool TriggerFailsafeUseCase::execute_recovery_sequence(const std::string& script) {
-    if (_current_state != domain::EdgeEngineState::INTERLOCK_ENGAGED) {
-        GLOBAL_LOG_WARN("Invalid state transition: Resume requested but engine is not interlocked.");
+    GLOBAL_LOG_DEBUG("Executing TriggerFailsafeUseCase::execute_recovery_sequence");
+
+    if (_current_state != domain::InterlockState::ENGAGED) {
+        GLOBAL_LOG_WARN("Invalid state transition: Resume requested but engine is not ENGAGED.");
         throw GlobalExceptionHandler("ERR_COMMON_INVALID_INPUT",
-                                  "Engine is not in an interlocked state.");
+                                     "Engine is not in an interlocked state.");
     }
 
-    _current_state = domain::EdgeEngineState::RECOVERY_PENDING;
-    GLOBAL_LOG_INFO("Recovery script received. State -> RECOVERY_PENDING");
+    _current_state = domain::InterlockState::PENDING_RESET_APPROVAL;
+    GLOBAL_LOG_INFO("Recovery script received. State -> PENDING_RESET_APPROVAL");
 
     if (!_recovery || !_recovery->execute_recovery_sequence(script)) {
         GLOBAL_LOG_ERROR("Recovery sequence execution failed!");
-        _current_state = domain::EdgeEngineState::INTERLOCK_ENGAGED;
+        _current_state = domain::InterlockState::ENGAGED;
         return false;
     }
 
-    _current_state = domain::EdgeEngineState::ACTIVE_MONITORING;
+    _current_state = domain::InterlockState::RELEASED;
     if (_failsafe_pub) {
         _failsafe_pub->publish("failsafe/resume",
                                FailsafeCommandDto(_edge_device_id, "RESUME", "RECOVERY_SUCCESS"));
     }
 
-    GLOBAL_LOG_INFO("Recovery successful. State -> ACTIVE_MONITORING");
+    GLOBAL_LOG_INFO("Recovery successful. State -> RELEASED");
     return true;
 }
 

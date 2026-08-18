@@ -2,7 +2,7 @@
 
 namespace sftwin::edge_control::anomaly_failsafe::domain {
 
-enum class FailsafeActionEnum {
+enum class FailsafeAction {
     NONE = 0,
     ESTOP = 1,
     PAUSE = 2,

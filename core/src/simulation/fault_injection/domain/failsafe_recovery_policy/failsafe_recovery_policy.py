@@ -16,9 +16,18 @@ class PolicyEvaluationResult:
 class FailsafeRecoveryPolicy:
     """결함 유형 및 계측 거리 기반 Pure Domain Policy"""
 
+    CRITICAL_OBSTACLE_DISTANCE_M: float = 0.5
+
     def evaluate_fault_scenario(
         self, fault_type: FaultType, obstacle_distance_m: float = 999.0
     ) -> PolicyEvaluationResult:
+        if not isinstance(fault_type, FaultType):
+            raise ValueError(
+                f"fault_type must be a valid FaultType enum (got {type(fault_type)})."
+            )
+        if obstacle_distance_m < 0:
+            raise ValueError("obstacle_distance_m cannot be negative.")
+
         if fault_type in (FaultType.NETWORK_DELAY, FaultType.TORQUE_EXCEEDED):
             return PolicyEvaluationResult(
                 action=SafetyAction.MAINTAIN_ESTOP,
@@ -26,10 +35,10 @@ class FailsafeRecoveryPolicy:
                 requires_bypass_planning=False,
             )
 
-        if obstacle_distance_m < 0.5:
+        if obstacle_distance_m < self.CRITICAL_OBSTACLE_DISTANCE_M:
             return PolicyEvaluationResult(
                 action=SafetyAction.MAINTAIN_ESTOP,
-                reason="Critical spatial intrusion within 0.5m. Recovery blocked.",
+                reason=f"Critical spatial intrusion within {self.CRITICAL_OBSTACLE_DISTANCE_M}m. Recovery blocked.",
                 requires_bypass_planning=False,
             )
 

@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
-#include "edge_control/anomaly_failsafe/domain/enums/edge_engine_state_enum.hpp"
-#include "edge_control/anomaly_failsafe/domain/failsafe_controller.hpp"
-#include "edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
+#include "edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_evaluator.hpp"
+#include "edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_rule.hpp"
+#include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
 #include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
 #include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
 #include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
@@ -29,7 +29,7 @@ class TriggerFailsafeUseCase {
 
     [[nodiscard]] bool execute_recovery_sequence(const std::string& script);
 
-    [[nodiscard]] domain::EdgeEngineState get_current_state() const noexcept {
+    [[nodiscard]] domain::InterlockState get_current_state() const noexcept {
         return _current_state;
     }
 
@@ -41,8 +41,8 @@ class TriggerFailsafeUseCase {
     std::shared_ptr<IFailsafePublisher> _failsafe_pub;
     std::shared_ptr<IRecoverySequence> _recovery;
 
-    domain::FailsafeController _controller;
-    domain::EdgeEngineState _current_state{domain::EdgeEngineState::ACTIVE_MONITORING};
+    domain::FailsafeEvaluator _evaluator;
+    domain::InterlockState _current_state{domain::InterlockState::RELEASED};
     std::string _edge_device_id{"EDGE_NODE_001"};
 };
 

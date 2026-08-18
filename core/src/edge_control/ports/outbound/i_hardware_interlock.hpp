@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "edge_control/anomaly_failsafe/domain/enums/interlock_state_enum.hpp"
+#include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
 
 namespace sftwin::edge_control {
 

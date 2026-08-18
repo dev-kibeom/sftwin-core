@@ -22,5 +22,7 @@ class GlobalSystemLogger {
     SPDLOG_LOGGER_INFO(sftwin::shared::GlobalSystemLogger::get_logger(), __VA_ARGS__)
 #define GLOBAL_LOG_WARN(...) \
     SPDLOG_LOGGER_WARN(sftwin::shared::GlobalSystemLogger::get_logger(), __VA_ARGS__)
+#define GLOBAL_LOG_DEBUG(...) \
+    SPDLOG_LOGGER_DEBUG(sftwin::shared::GlobalSystemLogger::get_logger(), __VA_ARGS__)
 #define GLOBAL_LOG_ERROR(...) \
     SPDLOG_LOGGER_ERROR(sftwin::shared::GlobalSystemLogger::get_logger(), __VA_ARGS__)

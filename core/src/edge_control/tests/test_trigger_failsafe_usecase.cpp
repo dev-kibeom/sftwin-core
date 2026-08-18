@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
-#include "edge_control/anomaly_failsafe/domain/enums/interlock_state_enum.hpp"
-#include "edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
+#include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
+#include "edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_rule.hpp"
 #include "shared/exceptions/global_exception_handler.hpp"
 #include "shared/logger/global_system_logger.hpp"
 #include "shared/utils/time_provider.hpp"

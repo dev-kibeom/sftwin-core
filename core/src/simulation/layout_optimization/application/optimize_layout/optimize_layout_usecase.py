@@ -1,5 +1,7 @@
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
 from simulation.layout_optimization.application.optimize_layout.optimize_layout_dto import (
@@ -28,11 +30,20 @@ class OptimizeLayoutUseCase:
             trace_id=getattr(ctx, "trace_id", f"TRC-LAYOUT-{ctx.user_id}"),
             context={"user_id": ctx.user_id, "company_id": ctx.company_id},
         )
-        self._system_logger.info("Layout optimization requested", log_ctx)
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
-        placements = self._optimizer.optimize_placement(
-            request_dto.assets, request_dto.canvas_bounds
-        )
+        try:
+            placements = self._optimizer.optimize_placement(
+                request_dto.assets, request_dto.canvas_bounds
+            )
+        except ValueError as e:
+            self._system_logger.warn(
+                f"Layout optimization failed validation: {str(e)}", log_ctx
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message=str(e),
+            ) from e
 
         self._system_logger.info(
             f"Successfully calculated {len(placements)} asset placements", log_ctx
