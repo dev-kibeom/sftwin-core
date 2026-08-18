@@ -1,0 +1,7 @@
+from enum import Enum
+
+
+class FaultType(str, Enum):
+    OBSTACLE_APPEARANCE = "OBSTACLE_APPEARANCE"
+    NETWORK_DELAY = "NETWORK_DELAY"
+    TORQUE_EXCEEDED = "TORQUE_EXCEEDED"

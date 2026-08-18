@@ -1,20 +1,19 @@
-"""
-[File Summary]
-DeploySim2RealUseCase Unit Tests
-FDS 4절에 명시된 TC-정상, TC-예외(미검증), TC-에러(I/O 오류) 케이스를 격리된 환경에서 검증합니다.
-"""
-
 from unittest.mock import Mock
 
 import pytest
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.enums.user_role_enum import UserRoleEnum
 from shared.exceptions.base_exception import BaseSystemException
-from shared.context.user_context import UserContext
+from simulation.ports.outbound.i_fleet_deploy import IFleetDeploy
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_dto import (
+    DeploySim2RealRequestDto,
+)
 from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_usecase import (
     DeploySim2RealUseCase,
 )
-from simulation.sim_to_real_deploy.domain.deploy_format_enums import (
-    DeployPackageFormatEnum,
+from simulation.sim_to_real_deploy.domain.deploy_package.deploy_package_format_enum import (
+    DeployPackageFormat,
 )
 
 
@@ -25,7 +24,7 @@ def mock_logger():
 
 @pytest.fixture
 def mock_adapter():
-    return Mock()
+    return Mock(spec=IFleetDeploy)
 
 
 @pytest.fixture
@@ -44,50 +43,58 @@ class TestDeploySim2RealUseCase:
         # Given
         package_id = "pkg-valid-001"
         mock_adapter.export_package.return_value = True
-        uc = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        usecase = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        request_dto = DeploySim2RealRequestDto(
+            package_id=package_id,
+            format_type="ROS2_WS",
+            config={"robot_ip": "192.168.1.100"},
+        )
 
         # When
-        result = uc.execute(
-            package_id, "ROS2_WS", {"robot_ip": "192.168.1.100"}, valid_ctx
-        )
+        result = usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         # Then
         assert result is True
         mock_adapter.export_package.assert_called_once()
-        # 어댑터 호출 시 전달된 인자(DeployPackage) 검증
         called_pkg = mock_adapter.export_package.call_args[0][0]
         assert called_pkg.package_id == package_id
-        assert called_pkg.format == DeployPackageFormatEnum.ROS2_WS
-        assert len(called_pkg.package_hash) > 0  # 해시가 정상적으로 생성되었는지 확인
+        assert called_pkg.format == DeployPackageFormat.ROS2_WS
+        assert len(called_pkg.package_hash) > 0
 
     def test_edge_case_unverified_scenario(self, mock_adapter, mock_logger, valid_ctx):
         """TC-예외: 미검증 시나리오 추출 시도 차단 (400 Bad Request)"""
         # Given
-        package_id = (
-            "pkg-invalid-002"  # 'invalid'가 포함되어 Guard Clause에서 필터링 됨
+        usecase = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        request_dto = DeploySim2RealRequestDto(
+            package_id="pkg-invalid-002",
+            format_type="ROS2_WS",
         )
-        uc = DeploySim2RealUseCase(mock_adapter, mock_logger)
 
         # When & Then
         with pytest.raises(BaseSystemException) as exc_info:
-            uc.execute(package_id, "ROS2_WS", {}, valid_ctx)
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 400
-        assert exc_info.value.error_code == "ERR_COMMON_INVALID_INPUT"
-        mock_adapter.export_package.assert_not_called()  # 어댑터 호출 안 됨
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
+        mock_adapter.export_package.assert_not_called()
 
     def test_error_io_exception_masking(self, mock_adapter, mock_logger, valid_ctx):
         """TC-에러: 어댑터 I/O 오류 발생 시 500 예외 마스킹 처리"""
         # Given
-        package_id = "pkg-valid-003"
         mock_adapter.export_package.side_effect = OSError(
             "Permission denied to /opt/sftwin/deploy"
         )
-        uc = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        usecase = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        request_dto = DeploySim2RealRequestDto(
+            package_id="pkg-valid-003",
+            format_type="VDA_5050",
+        )
 
         # When & Then
         with pytest.raises(BaseSystemException) as exc_info:
-            uc.execute(package_id, "VDA_5050", {}, valid_ctx)
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 500
-        assert exc_info.value.error_code == "ERR_COMMON_INTERNAL_ERROR"
+        assert (
+            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
+        )

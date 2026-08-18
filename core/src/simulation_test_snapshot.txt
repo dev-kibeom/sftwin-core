@@ -1,0 +1,760 @@
+==========================================================================
+ PROJECT SNAPSHOT [test] - simulation
+==========================================================================
+
+## Directory Tree
+```text
+simulation
+├── facades
+│   ├── __init__.py
+│   ├── simulation_command_facade.py
+│   └── simulation_query_facade.py
+├── fault_injection
+│   ├── application
+│   │   └── inject_fault
+│   │       ├── __init__.py
+│   │       ├── inject_fault_dto.py
+│   │       └── inject_fault_usecase.py
+│   └── domain
+│       ├── failsafe_recovery_policy
+│       │   ├── failsafe_recovery_policy.py
+│       │   ├── __init__.py
+│       │   └── safety_action_enum.py
+│       ├── fault_scenario
+│       │   ├── fault_scenario.py
+│       │   └── __init__.py
+│       ├── fault_type_enum.py
+│       ├── __init__.py
+│       └── recovery_sequence
+│           ├── __init__.py
+│           └── recovery_sequence.py
+├── fms_execution
+│   ├── application
+│   │   └── run_fms_simulation
+│   │       ├── __init__.py
+│   │       ├── run_fms_simulation_dto.py
+│   │       └── run_fms_simulation_usecase.py
+│   └── domain
+│       ├── collision_detector.py
+│       ├── fms_scenario
+│       │   ├── fms_scenario.py
+│       │   └── __init__.py
+│       └── __init__.py
+├── layout_optimization
+│   ├── application
+│   │   └── optimize_layout
+│   │       ├── __init__.py
+│   │       ├── optimize_layout_dto.py
+│   │       └── optimize_layout_usecase.py
+│   └── domain
+│       └── layout_optimizer
+│           ├── __init__.py
+│           └── layout_optimizer.py
+├── ports
+│   ├── inbound
+│   │   ├── dtos
+│   │   │   ├── optimized_asset_placement_dto.py
+│   │   │   └── sim_result_dto.py
+│   │   ├── __init__.py
+│   │   ├── i_simulation_command_facade.py
+│   │   └── i_simulation_query_facade.py
+│   └── outbound
+│       ├── i_ai_bypass_planner.py
+│       ├── i_fleet_deploy.py
+│       ├── __init__.py
+│       ├── i_physics_engine.py
+│       └── i_recovery_script_parser.py
+├── sim_to_real_deploy
+│   ├── application
+│   │   └── deploy_sim2real
+│   │       ├── deploy_sim2real_dto.py
+│   │       ├── deploy_sim2real_usecase.py
+│   │       └── __init__.py
+│   └── domain
+│       └── deploy_package
+│           ├── deploy_package_format_enum.py
+│           ├── deploy_package.py
+│           └── __init__.py
+└── tests
+    ├── facades
+    │   └── test_simulation_facades.py
+    ├── fault_injection
+    │   ├── application
+    │   │   └── test_inject_fault_usecase.py
+    │   └── domain
+    │       └── test_failsafe_recovery_policy.py
+    ├── fms_execution
+    │   └── application
+    │       └── test_run_fms_simulation_usecase.py
+    ├── layout_optimization
+    │   └── application
+    │       └── test_optimize_layout_usecase.py
+    └── sim_to_real_deploy
+        └── application
+            └── test_deploy_sim2real_usecase.py
+
+38 directories, 49 files
+```
+
+
+
+
+=== File: simulation/tests/facades/test_simulation_facades.py ===
+
+from unittest.mock import Mock
+
+import pytest
+from shared.context.user_context import UserContext
+from shared.enums.user_role_enum import UserRoleEnum
+from simulation.facades.simulation_command_facade import SimulationCommandFacade
+from simulation.facades.simulation_query_facade import SimulationQueryFacade
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_dto import (
+    RunFmsSimulationRequestDto,
+)
+from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_dto import (
+    DeploySim2RealRequestDto,
+)
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="usr-facade-01",
+        username="facade_tester",
+        company_id="cmp-facade",
+        role=UserRoleEnum.SYSTEM_ADMIN,
+    )
+
+
+def test_command_facade_delegation(valid_ctx):
+    """Command Facade가 각 유스케이스로 올바르게 위임하는지 검증"""
+    mock_run_fms = Mock()
+    mock_inject_fault = Mock()
+    mock_deploy = Mock()
+    mock_optimize = Mock()
+
+    expected_sim_result = SimResultDto("scn-1", True, 0, 10.0, "2026-08-18T00:00:00Z")
+    mock_run_fms.execute.return_value = expected_sim_result
+    mock_deploy.execute.return_value = True
+
+    facade = SimulationCommandFacade(
+        run_fms_uc=mock_run_fms,
+        inject_fault_uc=mock_inject_fault,
+        deploy_uc=mock_deploy,
+        optimize_layout_uc=mock_optimize,
+    )
+
+    # 1. run_fms_simulation 위임
+    req_fms = RunFmsSimulationRequestDto("scn-1", "base-1", [])
+    result = facade.run_fms_simulation(req_fms, valid_ctx)
+    assert result == expected_sim_result
+    mock_run_fms.execute.assert_called_once_with(request_dto=req_fms, ctx=valid_ctx)
+
+    # 2. deploy_sim2real_package 위임
+    req_deploy = DeploySim2RealRequestDto("pkg-1", "ROS2_WS")
+    deploy_result = facade.deploy_sim2real_package(req_deploy, valid_ctx)
+    assert deploy_result is True
+    mock_deploy.execute.assert_called_once_with(request_dto=req_deploy, ctx=valid_ctx)
+
+
+def test_query_facade_get_status(valid_ctx):
+    """Query Facade의 읽기 쿼리 응답 검증"""
+    facade = SimulationQueryFacade()
+    status = facade.get_simulation_status("scn-query-999", valid_ctx)
+
+    assert status["scenario_id"] == "scn-query-999"
+    assert status["company_id"] == "cmp-facade"
+    assert status["status"] == "COMPLETED"
+    assert status["progress_percentage"] == 100.0
+
+=== File: simulation/tests/sim_to_real_deploy/application/test_deploy_sim2real_usecase.py ===
+
+from unittest.mock import Mock
+
+import pytest
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from simulation.ports.outbound.i_fleet_deploy import IFleetDeploy
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_dto import (
+    DeploySim2RealRequestDto,
+)
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_usecase import (
+    DeploySim2RealUseCase,
+)
+from simulation.sim_to_real_deploy.domain.deploy_package.deploy_package_format_enum import (
+    DeployPackageFormat,
+)
+
+
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
+
+@pytest.fixture
+def mock_adapter():
+    return Mock(spec=IFleetDeploy)
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="usr-123",
+        username="test",
+        company_id="cmp-1",
+        role=UserRoleEnum.SI_PARTNER,
+    )
+
+
+class TestDeploySim2RealUseCase:
+    def test_happy_path_deploy_success(self, mock_adapter, mock_logger, valid_ctx):
+        """TC-정상: Sim-to-Real 배포 패키지 추출 성공"""
+        # Given
+        package_id = "pkg-valid-001"
+        mock_adapter.export_package.return_value = True
+        usecase = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        request_dto = DeploySim2RealRequestDto(
+            package_id=package_id,
+            format_type="ROS2_WS",
+            config={"robot_ip": "192.168.1.100"},
+        )
+
+        # When
+        result = usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        # Then
+        assert result is True
+        mock_adapter.export_package.assert_called_once()
+        called_pkg = mock_adapter.export_package.call_args[0][0]
+        assert called_pkg.package_id == package_id
+        assert called_pkg.format == DeployPackageFormat.ROS2_WS
+        assert len(called_pkg.package_hash) > 0
+
+    def test_edge_case_unverified_scenario(self, mock_adapter, mock_logger, valid_ctx):
+        """TC-예외: 미검증 시나리오 추출 시도 차단 (400 Bad Request)"""
+        # Given
+        usecase = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        request_dto = DeploySim2RealRequestDto(
+            package_id="pkg-invalid-002",
+            format_type="ROS2_WS",
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
+        mock_adapter.export_package.assert_not_called()
+
+    def test_error_io_exception_masking(self, mock_adapter, mock_logger, valid_ctx):
+        """TC-에러: 어댑터 I/O 오류 발생 시 500 예외 마스킹 처리"""
+        # Given
+        mock_adapter.export_package.side_effect = OSError(
+            "Permission denied to /opt/sftwin/deploy"
+        )
+        usecase = DeploySim2RealUseCase(mock_adapter, mock_logger)
+        request_dto = DeploySim2RealRequestDto(
+            package_id="pkg-valid-003",
+            format_type="VDA_5050",
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        assert exc_info.value.status_code == 500
+        assert (
+            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
+        )
+
+=== File: simulation/tests/fault_injection/domain/test_failsafe_recovery_policy.py ===
+
+import pytest
+from simulation.fault_injection.domain.failsafe_recovery_policy import (
+    FailsafeRecoveryPolicy,
+    SafetyActionEnum,
+)
+
+
+@pytest.fixture
+def policy():
+    return FailsafeRecoveryPolicy()
+
+
+def test_network_delay_enforces_estop(policy):
+    result = policy.evaluate_fault_scenario("NETWORK_DELAY")
+    assert result.action == SafetyActionEnum.MAINTAIN_ESTOP
+    assert result.requires_rl_planning is False
+
+
+def test_torque_exceeded_enforces_estop(policy):
+    result = policy.evaluate_fault_scenario("TORQUE_EXCEEDED")
+    assert result.action == SafetyActionEnum.MAINTAIN_ESTOP
+    assert result.requires_rl_planning is False
+
+
+def test_critical_spatial_intrusion_enforces_estop(policy):
+    result = policy.evaluate_fault_scenario(
+        "OBSTACLE_APPEARANCE", obstacle_distance_m=0.3
+    )
+    assert result.action == SafetyActionEnum.MAINTAIN_ESTOP
+    assert result.requires_rl_planning is False
+
+
+def test_obstacle_appearance_triggers_bypass(policy):
+    result = policy.evaluate_fault_scenario(
+        "OBSTACLE_APPEARANCE", obstacle_distance_m=1.2
+    )
+    assert result.action == SafetyActionEnum.EXECUTE_BYPASS_RECOVERY
+    assert result.requires_rl_planning is True
+
+=== File: simulation/tests/fault_injection/application/test_inject_fault_usecase.py ===
+
+from unittest.mock import Mock
+
+import pytest
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from simulation.fault_injection.application.inject_fault.inject_fault_dto import (
+    InjectFaultRequestDto,
+)
+from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
+    InjectFaultUseCase,
+)
+from simulation.ports.outbound.i_ai_bypass_planner import IAiBypassPlanner
+from simulation.ports.outbound.i_physics_engine import IPhysicsEngine
+from simulation.ports.outbound.i_recovery_script_parser import IRecoveryScriptParser
+
+
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
+
+@pytest.fixture
+def mock_rl_adapter():
+    return Mock(spec=IAiBypassPlanner)
+
+
+@pytest.fixture
+def mock_physics_adapter():
+    return Mock(spec=IPhysicsEngine)
+
+
+@pytest.fixture
+def mock_script_parser():
+    parser = Mock(spec=IRecoveryScriptParser)
+    parser.validate_syntax.return_value = True
+    return parser
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="usr-123",
+        username="test",
+        company_id="cmp-1",
+        role=UserRoleEnum.SI_PARTNER,
+    )
+
+
+@pytest.fixture
+def valid_bt_xml():
+    return '<root><Fallback name="Recovery"><Action name="Bypass"/></Fallback></root>'
+
+
+class TestInjectFaultUseCase:
+    def test_happy_path_obstacle_bypass_success(
+        self,
+        mock_rl_adapter,
+        mock_physics_adapter,
+        mock_script_parser,
+        mock_logger,
+        valid_ctx,
+        valid_bt_xml,
+    ):
+        """TC-정상: 돌발 장애물 우회 성공 (is_success=True)"""
+        # Given
+        mock_rl_adapter.plan_bypass_trajectory.return_value = [{"x": 1.0, "y": 1.0}]
+        usecase = InjectFaultUseCase(
+            mock_rl_adapter, mock_physics_adapter, mock_script_parser, mock_logger
+        )
+        request_dto = InjectFaultRequestDto(
+            fault_type="OBSTACLE_APPEARANCE",
+            target="scn-01",
+            sequence_script=valid_bt_xml,
+            trigger_time_sec=5.0,
+        )
+
+        # When
+        result = usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        # Then
+        assert result.is_success is True
+        assert result.scenario_id == "scn-01"
+        mock_script_parser.validate_syntax.assert_called_once_with(valid_bt_xml)
+        mock_rl_adapter.plan_bypass_trajectory.assert_called_once()
+        mock_physics_adapter.evaluate_trajectory.assert_called_once()
+
+    def test_edge_case_network_delay_estop(
+        self,
+        mock_rl_adapter,
+        mock_physics_adapter,
+        mock_script_parser,
+        mock_logger,
+        valid_ctx,
+        valid_bt_xml,
+    ):
+        """TC-예외: 통신 지연에 따른 E-Stop 강건성 검증 (is_success=False)"""
+        # Given
+        usecase = InjectFaultUseCase(
+            mock_rl_adapter, mock_physics_adapter, mock_script_parser, mock_logger
+        )
+        request_dto = InjectFaultRequestDto(
+            fault_type="NETWORK_DELAY",
+            target="scn-01",
+            sequence_script=valid_bt_xml,
+            trigger_time_sec=5.0,
+        )
+
+        # When
+        result = usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        # Then
+        assert result.is_success is False
+        mock_physics_adapter.trigger_failsafe_stop.assert_called_once()
+        mock_rl_adapter.plan_bypass_trajectory.assert_not_called()
+
+    def test_error_invalid_script_syntax(
+        self,
+        mock_rl_adapter,
+        mock_physics_adapter,
+        mock_script_parser,
+        mock_logger,
+        valid_ctx,
+    ):
+        """TC-에러 1: 스크립트 파서 검증 실패 (422 Unprocessable)"""
+        # Given
+        mock_script_parser.validate_syntax.return_value = False
+        usecase = InjectFaultUseCase(
+            mock_rl_adapter, mock_physics_adapter, mock_script_parser, mock_logger
+        )
+        request_dto = InjectFaultRequestDto(
+            fault_type="OBSTACLE_APPEARANCE",
+            target="scn-01",
+            sequence_script="<invalid_xml>",
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        assert exc_info.value.status_code == 422
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED
+
+    def test_error_rl_unsolvable(
+        self,
+        mock_rl_adapter,
+        mock_physics_adapter,
+        mock_script_parser,
+        mock_logger,
+        valid_ctx,
+        valid_bt_xml,
+    ):
+        """TC-에러 2: RL 우회 경로 산출 실패 (422 Unprocessable)"""
+        # Given
+        mock_rl_adapter.plan_bypass_trajectory.return_value = []
+        usecase = InjectFaultUseCase(
+            mock_rl_adapter, mock_physics_adapter, mock_script_parser, mock_logger
+        )
+        request_dto = InjectFaultRequestDto(
+            fault_type="OBSTACLE_APPEARANCE",
+            target="scn-01",
+            sequence_script=valid_bt_xml,
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        assert exc_info.value.status_code == 422
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED
+
+    def test_error_ipc_timeout(
+        self,
+        mock_rl_adapter,
+        mock_physics_adapter,
+        mock_script_parser,
+        mock_logger,
+        valid_ctx,
+        valid_bt_xml,
+    ):
+        """TC-에러 3: JAX RL IPC 타임아웃 (500 Internal Error)"""
+        # Given
+        mock_rl_adapter.plan_bypass_trajectory.side_effect = TimeoutError(
+            "IPC 1ms timeout"
+        )
+        usecase = InjectFaultUseCase(
+            mock_rl_adapter, mock_physics_adapter, mock_script_parser, mock_logger
+        )
+        request_dto = InjectFaultRequestDto(
+            fault_type="OBSTACLE_APPEARANCE",
+            target="scn-01",
+            sequence_script=valid_bt_xml,
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+        assert exc_info.value.status_code == 500
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT
+
+=== File: simulation/tests/fms_execution/application/test_run_fms_simulation_usecase.py ===
+
+from unittest.mock import Mock, patch
+
+import pytest
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.user_role_enum import UserRoleEnum
+from shared.exceptions.base_exception import BaseSystemException
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_dto import (
+    RunFmsSimulationRequestDto,
+)
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase import (
+    RunFmsSimulationUseCase,
+)
+from simulation.fms_execution.domain.fms_scenario.fms_scenario import FmsScenario
+from simulation.ports.outbound.i_physics_engine import IPhysicsEngine
+
+
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
+
+@pytest.fixture
+def mock_physics_engine():
+    mock = Mock(spec=IPhysicsEngine)
+    mock.calculate_kinematics.return_value = [
+        {"point": "A", "collision_detected": False},
+        {"point": "B", "collision_detected": False},
+    ]
+    return mock
+
+
+@pytest.fixture
+def valid_user_context():
+    return UserContext(
+        user_id="usr-123",
+        username="si_engineer",
+        company_id="cmp-456",
+        role=UserRoleEnum.SI_PARTNER,
+        accessible_factory_ids=["factory-1"],
+    )
+
+
+@pytest.fixture
+def valid_assets():
+    return [
+        {
+            "asset_id": "robot-1",
+            "kinematics_metadata": {
+                "max_velocity_rad_per_sec": 2.5,
+                "max_acceleration_rad_per_sec2": 5.0,
+            },
+        },
+        {
+            "asset_id": "amr-1",
+            "kinematics_metadata": {
+                "max_velocity_rad_per_sec": 1.2,
+                "max_acceleration_rad_per_sec2": 2.0,
+            },
+        },
+    ]
+
+
+class TestRunFmsSimulationUseCase:
+    def test_happy_path_simulation_success(
+        self, mock_physics_engine, mock_logger, valid_user_context, valid_assets
+    ):
+        """TC-정상: 시뮬레이션 성공 및 FmsScenario 객체 전달, 충돌 0건 반환"""
+        # Given
+        usecase = RunFmsSimulationUseCase(mock_physics_engine, mock_logger)
+        request_dto = RunFmsSimulationRequestDto(
+            scenario_id="scn-001",
+            baseline_id="base-001",
+            assets=valid_assets,
+        )
+
+        # When
+        result = usecase.execute(request_dto=request_dto, ctx=valid_user_context)
+
+        # Then
+        assert result.is_success is True
+        assert result.collision_count == 0
+        assert result.scenario_id == "scn-001"
+
+        mock_physics_engine.calculate_kinematics.assert_called_once()
+        passed_scenario = mock_physics_engine.calculate_kinematics.call_args[0][0]
+        assert isinstance(passed_scenario, FmsScenario)
+        assert passed_scenario.scenario_id == "scn-001"
+        assert len(passed_scenario.assets) == 2
+
+    def test_edge_case_collision_detected(
+        self, mock_physics_engine, mock_logger, valid_user_context, valid_assets
+    ):
+        """TC-예외: 이종 로봇 물리 충돌 감지 (409 Conflict)"""
+        # Given
+        mock_physics_engine.calculate_kinematics.return_value = [
+            {"point": "A", "collision_detected": False},
+            {"point": "B", "collision_detected": True},
+        ]
+        usecase = RunFmsSimulationUseCase(mock_physics_engine, mock_logger)
+        request_dto = RunFmsSimulationRequestDto(
+            scenario_id="scn-001",
+            baseline_id="base-001",
+            assets=valid_assets,
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_user_context)
+
+        assert exc_info.value.status_code == 409
+        assert (
+            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_COLLISION_DETECTED
+        )
+
+    def test_error_invalid_scenario_metadata(
+        self, mock_physics_engine, mock_logger, valid_user_context
+    ):
+        """TC-에러 1: 필수 값(baseline_id) 누락 또는 자산 메타데이터 규칙 위반 (400 Bad Request)"""
+        # Given
+        invalid_assets = [{"asset_id": "robot-1"}]
+        usecase = RunFmsSimulationUseCase(mock_physics_engine, mock_logger)
+        request_dto = RunFmsSimulationRequestDto(
+            scenario_id="scn-001",
+            baseline_id="",
+            assets=invalid_assets,
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_user_context)
+
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_INVALID_SCENARIO
+        mock_physics_engine.calculate_kinematics.assert_not_called()
+
+    def test_error_ipc_timeout(
+        self, mock_physics_engine, mock_logger, valid_user_context, valid_assets
+    ):
+        """TC-에러 2: IPC 통신 지연 임계치 초과 (500 Internal Error)"""
+        # Given
+        mock_physics_engine.calculate_kinematics.side_effect = TimeoutError(
+            "IPC 1ms timeout"
+        )
+        usecase = RunFmsSimulationUseCase(mock_physics_engine, mock_logger)
+        request_dto = RunFmsSimulationRequestDto(
+            scenario_id="scn-001",
+            baseline_id="base-001",
+            assets=valid_assets,
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_user_context)
+
+        assert exc_info.value.status_code == 500
+        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT
+
+    @patch(
+        "simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase.RunFmsSimulationUseCase._check_vram_resource_limit"
+    )
+    def test_error_resource_exhausted(
+        self,
+        mock_vram_check,
+        mock_physics_engine,
+        mock_logger,
+        valid_user_context,
+        valid_assets,
+    ):
+        """TC-에러 3: VRAM 자원 할당량 초과 시 (503 Service Unavailable)"""
+        # Given
+        mock_vram_check.return_value = False
+        usecase = RunFmsSimulationUseCase(mock_physics_engine, mock_logger)
+        request_dto = RunFmsSimulationRequestDto(
+            scenario_id="scn-001",
+            baseline_id="base-001",
+            assets=valid_assets,
+        )
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            usecase.execute(request_dto=request_dto, ctx=valid_user_context)
+
+        assert exc_info.value.status_code == 503
+        assert (
+            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_RESOURCE_EXHAUSTED
+        )
+
+=== File: simulation/tests/layout_optimization/application/test_optimize_layout_usecase.py ===
+
+from unittest.mock import Mock
+
+import pytest
+from shared.context.user_context import UserContext
+from shared.enums.user_role_enum import UserRoleEnum
+from simulation.layout_optimization.application.optimize_layout.optimize_layout_dto import (
+    OptimizeLayoutRequestDto,
+)
+from simulation.layout_optimization.application.optimize_layout.optimize_layout_usecase import (
+    OptimizeLayoutUseCase,
+)
+
+
+@pytest.fixture
+def mock_logger():
+    return Mock()
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="usr-123",
+        username="layout_planner",
+        company_id="cmp-1",
+        role=UserRoleEnum.FACTORY_MANAGER,
+    )
+
+
+def test_happy_path_optimize_layout_success(mock_logger, valid_ctx):
+    """TC-정상: 설비 목록 좌표 배치 성공 및 DTO 변환 검증"""
+    # Given
+    usecase = OptimizeLayoutUseCase(mock_logger)
+    assets = [
+        {"asset_id": "ROBOT-ARM-1"},
+        {"asset_id": "CONVEYOR-BELT-2"},
+    ]
+    request_dto = OptimizeLayoutRequestDto(
+        assets=assets,
+        canvas_bounds={"max_x": 60.0},
+    )
+
+    # When
+    placements = usecase.execute(request_dto=request_dto, ctx=valid_ctx)
+
+    # Then
+    assert len(placements) == 2
+    assert placements[0].asset_id == "ROBOT-ARM-1"
+    assert placements[0].pos_x == 20.0
+    assert placements[1].asset_id == "CONVEYOR-BELT-2"
+    assert placements[1].pos_x == 40.0

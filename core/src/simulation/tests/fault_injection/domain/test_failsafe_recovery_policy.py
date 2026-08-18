@@ -1,27 +1,41 @@
-import unittest
-
-from simulation.fault_injection.domain.failsafe_recovery_policy import (
+import pytest
+from simulation.fault_injection.domain.failsafe_recovery_policy.failsafe_recovery_policy import (
     FailsafeRecoveryPolicy,
-    SafetyActionEnum,
 )
+from simulation.fault_injection.domain.failsafe_recovery_policy.safety_action_enum import (
+    SafetyAction,
+)
+from simulation.fault_injection.domain.fault_type_enum import FaultType
 
 
-class TestFailsafeRecoveryPolicy(unittest.TestCase):
-    def setUp(self):
-        self.policy = FailsafeRecoveryPolicy()
-
-    def test_network_delay_enforces_estop(self):
-        result = self.policy.evaluate_fault_scenario("NETWORK_DELAY")
-        self.assertEqual(result.action, SafetyActionEnum.MAINTAIN_ESTOP)
-        self.assertFalse(result.requires_rl_planning)
-
-    def test_obstacle_appearance_triggers_bypass(self):
-        result = self.policy.evaluate_fault_scenario(
-            "OBSTACLE_APPEARANCE", obstacle_distance_m=1.2
-        )
-        self.assertEqual(result.action, SafetyActionEnum.EXECUTE_BYPASS_RECOVERY)
-        self.assertTrue(result.requires_rl_planning)
+@pytest.fixture
+def policy():
+    return FailsafeRecoveryPolicy()
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_network_delay_enforces_estop(policy):
+    result = policy.evaluate_fault_scenario(FaultType.NETWORK_DELAY)
+    assert result.action == SafetyAction.MAINTAIN_ESTOP
+    assert result.requires_bypass_planning is False
+
+
+def test_torque_exceeded_enforces_estop(policy):
+    result = policy.evaluate_fault_scenario(FaultType.TORQUE_EXCEEDED)
+    assert result.action == SafetyAction.MAINTAIN_ESTOP
+    assert result.requires_bypass_planning is False
+
+
+def test_critical_spatial_intrusion_enforces_estop(policy):
+    result = policy.evaluate_fault_scenario(
+        FaultType.OBSTACLE_APPEARANCE, obstacle_distance_m=0.3
+    )
+    assert result.action == SafetyAction.MAINTAIN_ESTOP
+    assert result.requires_bypass_planning is False
+
+
+def test_obstacle_appearance_triggers_bypass(policy):
+    result = policy.evaluate_fault_scenario(
+        FaultType.OBSTACLE_APPEARANCE, obstacle_distance_m=1.2
+    )
+    assert result.action == SafetyAction.EXECUTE_BYPASS_RECOVERY
+    assert result.requires_bypass_planning is True

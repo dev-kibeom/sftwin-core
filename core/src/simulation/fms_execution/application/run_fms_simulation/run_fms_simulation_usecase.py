@@ -1,20 +1,17 @@
-"""
-[File Summary]
-RunFmsSimulationUseCase (Stateless Singleton)
-FMS 시뮬레이션 가동 흐름을 오케스트레이션합니다.
-"""
-
 from datetime import datetime, timezone
-from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_dto import (
+    RunFmsSimulationRequestDto,
+)
 from simulation.fms_execution.domain.collision_detector import CollisionDetector
-from simulation.fms_execution.domain.fms_scenario import FmsScenario
+from simulation.fms_execution.domain.fms_scenario.fms_scenario import FmsScenario
+from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from simulation.ports.outbound.i_physics_engine import IPhysicsEngine
 
 
@@ -22,38 +19,48 @@ class RunFmsSimulationUseCase:
     MAX_VRAM_CACHE_LIMIT_MB = 4200.0
 
     def __init__(
-        self, physics_engine: IPhysicsEngine, logger: GlobalSystemLogger | None = None
+        self,
+        physics_engine: IPhysicsEngine,
+        system_logger: GlobalSystemLogger | None = None,
     ):
         self._physics_engine = physics_engine
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="RunFmsSimulationUseCase"
         )
 
+    @require_user_context
     def execute(
-        self,
-        scenario_id: str,
-        baseline_id: str,
-        assets: list[dict[str, Any]],
-        ctx: UserContext,
+        self, request_dto: RunFmsSimulationRequestDto, ctx: UserContext
     ) -> SimResultDto:
-        log_ctx = LogContext(trace_id=f"TRC-{scenario_id}")
-        self._logger.info(
-            f"FMS Simulation execution requested by {ctx.user_id}", log_ctx
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", f"TRC-SIM-{request_dto.scenario_id}"),
+            context={
+                "user_id": ctx.user_id,
+                "company_id": ctx.company_id,
+                "scenario_id": request_dto.scenario_id,
+                "baseline_id": request_dto.baseline_id,
+            },
         )
 
-        scenario = FmsScenario(
-            scenario_id=scenario_id, baseline_id=baseline_id, assets=assets
-        )
-        if not scenario.validate_scenario():
-            self._logger.warn("Invalid scenario metadata", log_ctx)
+        try:
+            scenario = FmsScenario.create(
+                scenario_id=request_dto.scenario_id,
+                baseline_id=request_dto.baseline_id,
+                raw_assets=request_dto.assets,
+                task_waypoints=request_dto.task_waypoints,
+            )
+        except ValueError as e:
+            self._system_logger.warn(f"Invalid scenario parameters: {str(e)}", log_ctx)
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_SIM_INVALID_SCENARIO,
-                message="AAS or Kinematics metadata schema violation or missing baseline_id.",
+                message=str(e),
                 status_code=400,
-            )
+            ) from e
 
         if not self._check_vram_resource_limit():
-            self._logger.error("VRAM Resource exhausted over 4.2GB limit", log_ctx)
+            self._system_logger.error(
+                "VRAM Resource exhausted over 4.2GB limit", log_ctx
+            )
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_SIM_RESOURCE_EXHAUSTED,
                 message="GPU VRAM cache exceeds the 4.2GB limit. Request rejected to prevent OOM.",
@@ -64,7 +71,7 @@ class RunFmsSimulationUseCase:
             trajectory_results = self._physics_engine.calculate_kinematics(scenario)
         except TimeoutError as exc:
             log_ctx.exc = exc
-            self._logger.error("IPC Sync timeout (>1ms)", log_ctx)
+            self._system_logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT,
                 message="POSIX Shared Memory IPC synchronization timeout exceeded 1ms.",
@@ -73,7 +80,7 @@ class RunFmsSimulationUseCase:
 
         detector = CollisionDetector()
         if detector.detect(trajectory_results):
-            self._logger.warn(
+            self._system_logger.warn(
                 f"Collision/Deadlock detected. Count: {detector.collision_count}",
                 log_ctx,
             )
@@ -83,9 +90,9 @@ class RunFmsSimulationUseCase:
                 status_code=409,
             )
 
-        self._logger.info("FMS Simulation completed successfully", log_ctx)
+        self._system_logger.info("FMS Simulation completed successfully", log_ctx)
         return SimResultDto(
-            scenario_id=scenario_id,
+            scenario_id=scenario.scenario_id,
             is_success=True,
             collision_count=detector.collision_count,
             estimated_cycle_time_sec=14.5,
@@ -102,5 +109,4 @@ class RunFmsSimulationUseCase:
                 return allocated_mb <= self.MAX_VRAM_CACHE_LIMIT_MB
         except Exception:
             pass
-
         return True

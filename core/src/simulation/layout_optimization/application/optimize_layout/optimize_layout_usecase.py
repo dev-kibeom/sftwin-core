@@ -1,32 +1,50 @@
-from typing import Any
-
 from shared.context.log_context import LogContext
-from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.context.user_context import UserContext
-from simulation.layout_optimization.domain.layout_optimizer import (
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.context_guard import require_user_context
+from simulation.layout_optimization.application.optimize_layout.optimize_layout_dto import (
+    OptimizeLayoutRequestDto,
+)
+from simulation.layout_optimization.domain.layout_optimizer.layout_optimizer import (
     LayoutOptimizer,
-    OptimizedAssetPlacement,
+)
+from simulation.ports.inbound.dtos.optimized_asset_placement_dto import (
+    OptimizedAssetPlacementDto,
 )
 
 
 class OptimizeLayoutUseCase:
-    def __init__(self, logger: GlobalSystemLogger | None = None):
+    def __init__(self, system_logger: GlobalSystemLogger | None = None):
         self._optimizer = LayoutOptimizer()
-        self._logger = logger or GlobalSystemLogger(
+        self._system_logger = system_logger or GlobalSystemLogger(
             component_name="OptimizeLayoutUseCase"
         )
 
+    @require_user_context
     def execute(
-        self,
-        assets: list[dict[str, Any]],
-        canvas_bounds: dict[str, float],
-        ctx: UserContext,
-    ) -> list[OptimizedAssetPlacement]:
-        log_ctx = LogContext(trace_id=f"TRC-LAYOUT-{ctx.user_id}")
-        self._logger.info(f"Layout optimization requested by {ctx.user_id}", log_ctx)
+        self, request_dto: OptimizeLayoutRequestDto, ctx: UserContext
+    ) -> list[OptimizedAssetPlacementDto]:
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", f"TRC-LAYOUT-{ctx.user_id}"),
+            context={"user_id": ctx.user_id, "company_id": ctx.company_id},
+        )
+        self._system_logger.info("Layout optimization requested", log_ctx)
 
-        placements = self._optimizer.optimize_placement(assets, canvas_bounds)
-        self._logger.info(
+        placements = self._optimizer.optimize_placement(
+            request_dto.assets, request_dto.canvas_bounds
+        )
+
+        self._system_logger.info(
             f"Successfully calculated {len(placements)} asset placements", log_ctx
         )
-        return placements
+
+        return [
+            OptimizedAssetPlacementDto(
+                asset_id=p.asset_id,
+                pos_x=p.pos_x,
+                pos_y=p.pos_y,
+                pos_z=p.pos_z,
+                rotation_yaw=p.rotation_yaw,
+            )
+            for p in placements
+        ]

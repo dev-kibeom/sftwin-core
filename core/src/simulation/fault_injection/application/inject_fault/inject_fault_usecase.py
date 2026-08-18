@@ -1,27 +1,22 @@
-"""
-[File Summary]
-InjectFaultUseCase (Stateless Singleton)
-결함 시나리오 평가 및 조율하는 유즈케이스입니다.
-전략 평가 후 우회 경로를 산출하거나, 강건성 실패(E-Stop) 결과를 도출합니다.
-"""
-
 from datetime import datetime, timezone
 
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
-from simulation.fault_injection.domain.fault_scenario import (
+from shared.security.context_guard import require_user_context
+from simulation.fault_injection.application.inject_fault.inject_fault_dto import (
+    InjectFaultRequestDto,
+)
+from simulation.fault_injection.domain.fault_scenario.fault_scenario import (
     FaultScenario,
-    FaultTypeEnum,
 )
-from simulation.fault_injection.domain.recovery_sequence_model import (
-    RecoverySequenceModel,
-)
+from simulation.fault_injection.domain.fault_type_enum import FaultType
+from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from simulation.ports.outbound.i_ai_bypass_planner import IAiBypassPlanner
 from simulation.ports.outbound.i_physics_engine import IPhysicsEngine
+from simulation.ports.outbound.i_recovery_script_parser import IRecoveryScriptParser
 
 
 class InjectFaultUseCase:
@@ -29,64 +24,74 @@ class InjectFaultUseCase:
         self,
         ai_bypass_planner: IAiBypassPlanner,
         physics_engine: IPhysicsEngine,
-        logger: GlobalSystemLogger | None = None,
+        script_parser: IRecoveryScriptParser,
+        system_logger: GlobalSystemLogger | None = None,
     ):
         self._ai_bypass_planner = ai_bypass_planner
         self._physics_engine = physics_engine
-        self._logger = logger or GlobalSystemLogger(
-            component_name="InjectFault_UseCase"
+        self._script_parser = script_parser
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="InjectFaultUseCase"
         )
 
+    @require_user_context
     def execute(
-        self, scenario: FaultScenario, sequence_script: str, ctx: UserContext
+        self, request_dto: InjectFaultRequestDto, ctx: UserContext
     ) -> SimResultDto:
-        log_ctx = LogContext(trace_id=f"TRC-FAULT-{scenario.scenario_id}")
-        self._logger.info(f"Inject fault execution requested by {ctx.user_id}", log_ctx)
-
-        # 1. Guard Clause: 복구 시퀀스 스크립트 검증
-        model = RecoverySequenceModel(
-            sequence_id=scenario.scenario_id, sequence_script=sequence_script
+        log_ctx = LogContext(
+            trace_id=getattr(ctx, "trace_id", f"TRC-FAULT-{request_dto.target}"),
+            context={
+                "user_id": ctx.user_id,
+                "company_id": ctx.company_id,
+                "fault_type": request_dto.fault_type,
+                "target": request_dto.target,
+            },
         )
-        if not model.parse_and_validate():
-            self._logger.warn("Sequence script validation failed", log_ctx)
+
+        if not self._script_parser.validate_syntax(request_dto.sequence_script):
+            self._system_logger.warn(
+                "Sequence script syntax validation failed", log_ctx
+            )
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED,
-                message="Invalid recovery sequence script structure or missing Recovery node.",
+                message="Invalid recovery sequence script syntax or structure.",
                 status_code=422,
             )
 
-        # 2. 결함 주입 전략(Strategy) 분기 처리
-        return self._evaluate_bt_strategy(scenario, log_ctx)
+        try:
+            scenario = FaultScenario(
+                scenario_id=request_dto.target,
+                fault_type=FaultType(request_dto.fault_type),
+                trigger_time_sec=request_dto.trigger_time_sec,
+            )
+        except ValueError as e:
+            raise BaseSystemException(
+                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                message=str(e),
+                status_code=400,
+            ) from e
 
-    def _evaluate_bt_strategy(
+        return self._evaluate_fault_strategy(scenario, log_ctx)
+
+    def _evaluate_fault_strategy(
         self, scenario: FaultScenario, log_ctx: LogContext
     ) -> SimResultDto:
-        """
-        주입된 결함 유형에 따라 E-Stop 강건성 검증 또는 JAX RL 기반 우회 궤적 산출을 수행합니다.
-        """
-        # [Strategy 1] 네트워크 지연 시 복구 불가 (E-Stop 강건성 검증)
-        if scenario.fault_type == FaultTypeEnum.NETWORK_DELAY:
-            self._logger.info("Simulating NETWORK_DELAY -> Triggering E-Stop", log_ctx)
-            self._physics_engine.trigger_failsafe_stop()  # E-Stop 시뮬레이션
+        if scenario.fault_type == FaultType.NETWORK_DELAY:
+            self._physics_engine.trigger_failsafe_stop()
             return SimResultDto(
                 scenario_id=scenario.scenario_id,
-                is_success=False,  # 우회 불가
+                is_success=False,
                 collision_count=0,
                 estimated_cycle_time_sec=0.0,
                 evaluated_at=datetime.now(timezone.utc).isoformat(),
             )
-
-        # [Strategy 2] 돌발 장애물 발생 시 JAX RL 에이전트 우회 경로 산출
-        self._logger.info(
-            "Simulating OBSTACLE_APPEARANCE -> RL bypass planning", log_ctx
-        )
 
         try:
             obstacle_data = {"trigger_time": scenario.trigger_time_sec}
             waypoints = self._ai_bypass_planner.plan_bypass_trajectory(obstacle_data)
         except TimeoutError as exc:
             log_ctx.exc = exc
-            self._logger.error("IPC Sync timeout (>1ms)", log_ctx)
+            self._system_logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT,
                 message="Shared Memory synchronization timed out.",
@@ -94,16 +99,18 @@ class InjectFaultUseCase:
             ) from exc
 
         if not waypoints:
-            self._logger.warn("AI Planner could not find bypass trajectory", log_ctx)
+            self._system_logger.warn(
+                "AI Planner could not find bypass trajectory", log_ctx
+            )
             raise BaseSystemException(
                 error_code=GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED,
                 message="Unsolvable bypass trajectory due to spatial constraints.",
                 status_code=422,
             )
 
-        # 물리 엔진 궤적 평가
         self._physics_engine.evaluate_trajectory(waypoints)
 
+        self._system_logger.info("Inject fault completed successfully", log_ctx)
         return SimResultDto(
             scenario_id=scenario.scenario_id,
             is_success=True,
