@@ -3,7 +3,7 @@ from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -63,7 +63,7 @@ class GlobalExceptionHandler:
         )
 
         dto = GlobalResponseDto.error_response(
-            code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
+            code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
             message="An unexpected internal server error occurred.",
             data=None,
         )
@@ -90,7 +90,7 @@ class GlobalExceptionHandler:
                 log_ctx=mask_ctx,
             )
             return GlobalResponseDto.error_response(
-                code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
+                code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
                 message="An unexpected internal server error occurred.",
                 data=None,
             )

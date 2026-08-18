@@ -5,7 +5,7 @@ from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverityEnum
+from shared.enums.audit_severity_enum import AuditSeverity
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.ports.outbound.i_audit_command_repository import IAuditCommandRepository
 
@@ -14,7 +14,7 @@ from shared.ports.outbound.i_audit_command_repository import IAuditCommandReposi
 class SecurityAuditEvent:
     action: str
     target: str
-    severity: AuditSeverityEnum
+    severity: AuditSeverity
     user_ctx: UserContext | None = None
     trace_id: str = "TRC-AUDIT"
 
@@ -74,9 +74,9 @@ class GlobalAuditLogger:
         log_ctx = LogContext(trace_id=event.trace_id, context=context_data)
 
         # 공개 API를 통해 레벨별 로깅 디스패치
-        if event.severity == AuditSeverityEnum.CRITICAL:
+        if event.severity == AuditSeverity.CRITICAL:
             self._system_logger.error(message, log_ctx)
-        elif event.severity == AuditSeverityEnum.WARNING:
+        elif event.severity == AuditSeverity.WARNING:
             self._system_logger.warn(message, log_ctx)
         else:
             self._system_logger.info(message, log_ctx)
@@ -95,7 +95,7 @@ class GlobalAuditLogger:
             "component_name": "EDGE_CONTROL",
             "action_type": event.action,
             "target_resource": event.device_id,
-            "severity": AuditSeverityEnum.CRITICAL.value,
+            "severity": AuditSeverity.CRITICAL.value,
             "details": json.dumps({"reason": event.reason}),
             "ip_address": (
                 getattr(event.user_ctx, "ip_address", "UNKNOWN")

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class UserRoleEnum(str, Enum):
+class UserRole(str, Enum):
     """RBAC 사용자 및 접근 권한 역할 열거형"""
 
     SYSTEM_ADMIN = "SYSTEM_ADMIN"

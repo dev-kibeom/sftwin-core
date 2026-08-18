@@ -16,8 +16,8 @@ from digital_twin.twin_reconstruction.domain.twin_baseline import (
     TwinSyncStatusEnum,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -48,7 +48,7 @@ def valid_ctx():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
         accessible_factory_ids=[],
     )
 
@@ -110,7 +110,7 @@ def test_tc_edge_case_tolerance_exceeded(
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute(raw_data, valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_SYNC_OVER_LIMIT
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_SYNC_OVER_LIMIT
     assert exc_info.value.status_code == 422
 
     # 저장소에 TOLERANCE_EXCEEDED 상태로 기록되었는지 검증
@@ -126,7 +126,7 @@ def test_tc_error_handling_kamp_parse_fail(
     """
     # Given
     mock_sensor_parser.parse.side_effect = BaseSystemException(
-        error_code=GlobalErrorCodeEnum.ERR_TWIN_KAMP_PARSE_FAIL,
+        error_code=GlobalErrorCode.ERR_TWIN_KAMP_PARSE_FAIL,
         message="Sensor log file not found.",
         status_code=500,
     )
@@ -140,6 +140,6 @@ def test_tc_error_handling_kamp_parse_fail(
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute(raw_data, valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_KAMP_PARSE_FAIL
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_KAMP_PARSE_FAIL
     assert exc_info.value.status_code == 500
     mock_command_repo.save.assert_not_called()

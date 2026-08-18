@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import pytest
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.events.domain_event_mapper import DomainEventMapper
 from shared.exceptions.base_exception import BaseSystemException
 
@@ -50,13 +50,13 @@ def test_tc_dto_02_domain_to_integration_event_mapping():
 
 # TC-DTO-03: Edge Case - Null Payload 시 표준 에러 응답 Wrapper 생성 검증
 def test_tc_dto_03_global_response_error_null_payload():
-    code = GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
+    code = GlobalErrorCode.ERR_TWIN_NOT_FOUND
     message = "Requested AAS asset does not exist."
 
     response = GlobalResponseDto.error_response(code=code, message=message, data=None)
 
     assert response.success is False, "success flag should be False."
-    assert response.code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
+    assert response.code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
     assert response.message == message
     assert (
         response.data is None
@@ -71,5 +71,5 @@ def test_tc_dto_04_trace_id_missing_guard_clause():
     with pytest.raises(BaseSystemException) as exc_info:
         DomainEventMapper.to_integration_event(domain_event, trace_id="")
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
     assert exc_info.value.status_code == 400

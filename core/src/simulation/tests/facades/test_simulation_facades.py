@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.user_role_enum import UserRole
 from simulation.facades.simulation_command_facade import SimulationCommandFacade
 from simulation.facades.simulation_query_facade import SimulationQueryFacade
 from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_dto import (
@@ -20,7 +20,7 @@ def valid_ctx():
         user_id="usr-facade-01",
         username="facade_tester",
         company_id="cmp-facade",
-        role=UserRoleEnum.SYSTEM_ADMIN,
+        role=UserRole.SYSTEM_ADMIN,
     )
 
 

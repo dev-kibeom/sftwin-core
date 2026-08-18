@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 
 from .enums.asset_type_enum import AssetTypeEnum
@@ -37,7 +37,7 @@ class Asset:
         """
         if not self.asset_name or not isinstance(self.asset_name, str):
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
+                error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                 message="Asset name must be a non-empty string.",
                 status_code=400,
                 details={"asset_name": self.asset_name},
@@ -45,7 +45,7 @@ class Asset:
 
         if not isinstance(self.asset_type, AssetTypeEnum):
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
+                error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                 message="Asset type must be a valid AssetTypeEnum.",
                 status_code=400,
                 details={"asset_type": str(self.asset_type)},
@@ -53,7 +53,7 @@ class Asset:
 
         if not self.company_id or not isinstance(self.company_id, str):
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
+                error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                 message="Company ID must be provided for domain isolation.",
                 status_code=400,
                 details={"company_id": self.company_id},
@@ -61,7 +61,7 @@ class Asset:
 
         if not isinstance(self.kinematics_metadata, dict):
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
+                error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                 message="Kinematics metadata must be a JSON object (dict).",
                 status_code=400,
                 details={"kinematics_metadata": self.kinematics_metadata},
@@ -72,7 +72,7 @@ class Asset:
         for key in required_keys:
             if key not in self.kinematics_metadata:
                 raise BaseSystemException(
-                    error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
+                    error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                     message=f"Missing required key in kinematics_metadata: '{key}'",
                     status_code=400,
                     details={"missing_key": key, "metadata": self.kinematics_metadata},

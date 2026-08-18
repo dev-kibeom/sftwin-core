@@ -5,7 +5,7 @@ TC-ERR-01 ~ TC-ERR-03 단위 테스트 구현 (pytest)
 """
 
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.exceptions.global_exception_handler import GlobalExceptionHandler
 
@@ -20,7 +20,7 @@ def test_tc_err_01_custom_domain_exception_handling(exception_handler):
     class TwinNotFoundException(BaseSystemException):
         def __init__(self):
             super().__init__(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND,
+                error_code=GlobalErrorCode.ERR_TWIN_NOT_FOUND,
                 message="Requested AAS asset does not exist.",
                 status_code=404,
                 details={"asset_id": "AAS-999"},
@@ -32,7 +32,7 @@ def test_tc_err_01_custom_domain_exception_handling(exception_handler):
     assert status_code == 404, "HTTP status code should be 404."
     assert dto.success is False, "success flag should be False."
     assert (
-        dto.code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
+        dto.code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
     ), "Error code should match ERR_TWIN_NOT_FOUND."
     assert dto.message == "Requested AAS asset does not exist."
     assert dto.data == {
@@ -48,7 +48,7 @@ def test_tc_err_02_unexpected_runtime_exception_handling(exception_handler):
 
     assert status_code == 500, "HTTP status code should be 500."
     assert dto.success is False
-    assert dto.code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
+    assert dto.code == GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
     assert dto.message == "An unexpected internal server error occurred."
     assert dto.data is None, "Raw error details must be masked (None)."
 
@@ -60,7 +60,7 @@ def test_tc_err_03_sensitive_pattern_safe_fallback(exception_handler):
         "stack_trace": 'Traceback (most recent call last):\n  File "/main.py", line 42, in <module>'
     }
     exc = BaseSystemException(
-        error_code=GlobalErrorCodeEnum.ERR_TWIN_SYNC_OVER_LIMIT,
+        error_code=GlobalErrorCode.ERR_TWIN_SYNC_OVER_LIMIT,
         message="Sync precision failed.",
         status_code=422,
         details=sensitive_details,
@@ -70,7 +70,7 @@ def test_tc_err_03_sensitive_pattern_safe_fallback(exception_handler):
 
     # 민감 패턴 감지로 인해 Fallback 500 DTO로 교체되었는지 검증
     assert (
-        dto.code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
+        dto.code == GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
     ), "Detected sensitive pattern should fall back to ERR_COMMON_INTERNAL_ERROR."
     assert dto.message == "An unexpected internal server error occurred."
     assert dto.data is None, "Sensitive payload should be dropped completely."

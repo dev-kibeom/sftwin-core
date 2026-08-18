@@ -16,8 +16,8 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     GetLayoutUseCase,
     LayoutRenderDto,
 )
-from shared.enums.user_role_enum import UserRoleEnum
 from shared.context.user_context import UserContext
+from shared.enums.user_role_enum import UserRole
 
 
 def test_facade_get_layout_data_delegation():
@@ -43,7 +43,7 @@ def test_facade_get_layout_data_delegation():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role=UserRoleEnum.CREATOR,
+        role=UserRole.CREATOR,
         accessible_factory_ids=["BASE-TWIN-001"],
     )
 

@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from simulation.fault_injection.application.inject_fault.inject_fault_dto import (
     InjectFaultRequestDto,
@@ -44,7 +44,7 @@ def valid_ctx():
         user_id="usr-123",
         username="test",
         company_id="cmp-1",
-        role=UserRoleEnum.SI_PARTNER,
+        role=UserRole.SI_PARTNER,
     )
 
 
@@ -140,7 +140,7 @@ class TestInjectFaultUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 422
-        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED
 
     def test_error_rl_unsolvable(
         self,
@@ -168,7 +168,7 @@ class TestInjectFaultUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 422
-        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED
 
     def test_error_ipc_timeout(
         self,
@@ -198,4 +198,4 @@ class TestInjectFaultUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 500
-        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_IPC_TIMEOUT

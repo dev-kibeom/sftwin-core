@@ -4,7 +4,6 @@ from functools import wraps
 from typing import Any
 
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -28,7 +27,7 @@ def require_user_context(func: Callable[..., Any]) -> Callable[..., Any]:
 
         if not ctx or not getattr(ctx, "company_id", None):
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
                 message="UserContext with valid company_id is required.",
                 status_code=400,
             )

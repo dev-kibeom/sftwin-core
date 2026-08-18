@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverityEnum
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.audit_severity_enum import AuditSeverity
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_audit_logger import GlobalAuditLogger, SecurityAuditEvent
 from shared.security.jwt_auth_interceptor import JwtAuthInterceptor
@@ -47,7 +47,7 @@ def test_valid_jwt_user_context_injection(jwt_interceptor):
 
     assert user_ctx.user_id == "usr-100"
     assert user_ctx.company_id == "COMP-A"
-    assert user_ctx.role == UserRoleEnum.FIELD_ENGINEER
+    assert user_ctx.role == UserRole.FIELD_ENGINEER
 
 
 # TC-SEC-02: Happy Path - 동일 기업 리소스 접근 권한 정상 통과 검증
@@ -56,7 +56,7 @@ def test_company_isolation_pass(rbac_manager, mock_audit_logger):
         user_id="usr-100",
         username="kibeom",
         company_id="COMP-A",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
     )
 
     result = rbac_manager.validate_company_isolation(
@@ -81,7 +81,7 @@ def test_expired_or_invalid_jwt(jwt_interceptor):
     with pytest.raises(BaseSystemException) as exc_info:
         jwt_interceptor.intercept(headers)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_UNAUTHORIZED
     assert exc_info.value.status_code == 401
 
 
@@ -91,22 +91,20 @@ def test_insufficient_rbac_role(rbac_manager, mock_audit_logger):
         user_id="usr-200",
         username="creator_user",
         company_id="COMP-A",
-        role=UserRoleEnum.CREATOR,
+        role=UserRole.CREATOR,
     )
 
     with pytest.raises(BaseSystemException) as exc_info:
-        rbac_manager.check_permission(
-            user_ctx, required_role=UserRoleEnum.FIELD_ENGINEER
-        )
+        rbac_manager.check_permission(user_ctx, required_role=UserRole.FIELD_ENGINEER)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_FORBIDDEN
     assert exc_info.value.status_code == 403
 
     mock_audit_logger.log_security_event.assert_called_once_with(
         SecurityAuditEvent(
             action="ACCESS_DENIED",
             target="API_ENDPOINT",
-            severity=AuditSeverityEnum.WARNING,
+            severity=AuditSeverity.WARNING,
             user_ctx=user_ctx,
             trace_id="TRC-RBAC",
         )
@@ -119,7 +117,7 @@ def test_cross_company_access_violation(rbac_manager, mock_audit_logger):
         user_id="usr-100",
         username="kibeom",
         company_id="COMP-A",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
     )
 
     with pytest.raises(BaseSystemException) as exc_info:
@@ -127,14 +125,14 @@ def test_cross_company_access_violation(rbac_manager, mock_audit_logger):
             user_ctx, target_company_id="COMP-B", target_resource="CAD_AAS_ASSET"
         )
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_FORBIDDEN
     assert exc_info.value.status_code == 403
 
     mock_audit_logger.log_security_event.assert_called_once_with(
         SecurityAuditEvent(
             action="ISOLATION_VIOLATION",
             target="CAD_AAS_ASSET:COMP-B",
-            severity=AuditSeverityEnum.CRITICAL,
+            severity=AuditSeverity.CRITICAL,
             user_ctx=user_ctx,
             trace_id="TRC-ISOLATION",
         )

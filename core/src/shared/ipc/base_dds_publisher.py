@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from shared.context.log_context import LogContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -37,7 +37,7 @@ class BaseDdsPublisher(ABC, Generic[T]):
                 log_ctx=log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_EDGE_COMM_TIMEOUT,
+                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
                 message=f"DDS connection session invalid or timed out while publishing to topic '{topic}'.",
                 status_code=504,
                 details={"topic": topic},

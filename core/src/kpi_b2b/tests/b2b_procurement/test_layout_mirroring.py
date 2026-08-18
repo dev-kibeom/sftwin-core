@@ -15,8 +15,8 @@ from kpi_b2b.ports.outbound.i_procurement_query_repository import (
     IProcurementQueryRepository,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 
@@ -52,7 +52,7 @@ def valid_ctx():
         user_id="USR-200",
         username="factory_manager_b",
         company_id="TENANT_B",
-        role=UserRoleEnum.FACTORY_MANAGER,
+        role=UserRole.FACTORY_MANAGER,
     )
 
 
@@ -120,13 +120,13 @@ def test_create_expert_session_isolation_violation(target_system):
         user_id="USR-HACKER",
         username="unauthorized_user",
         company_id="UNAUTHORIZED_TENANT",
-        role=UserRoleEnum.CREATOR,
+        role=UserRole.CREATOR,
     )
     baseline_id = "BASELINE-SECRET-001"
 
     mock_qry_repo.get_baseline_owner.return_value = "ORIGINAL_OWNER_TENANT"
     mock_rbac.validate_company_isolation.side_effect = BaseSystemException(
-        error_code=GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN,
+        error_code=GlobalErrorCode.ERR_COMMON_FORBIDDEN,
         message="Multitenancy isolation policy violation.",
         status_code=403,
     )
@@ -134,7 +134,7 @@ def test_create_expert_session_isolation_violation(target_system):
     with pytest.raises(BaseSystemException) as exc_info:
         facade.create_expert_session(baseline_id=baseline_id, ctx=invalid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_FORBIDDEN
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_FORBIDDEN
     assert exc_info.value.status_code == 403
     mock_cmd_repo.save_expert_session.assert_not_called()
 
@@ -152,6 +152,6 @@ def test_create_expert_session_db_failure(target_system, valid_ctx):
     with pytest.raises(BaseSystemException) as exc_info:
         facade.create_expert_session(baseline_id=baseline_id, ctx=valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
     assert exc_info.value.status_code == 500
     assert "시스템 내부 장애가 발생했습니다" in exc_info.value.message

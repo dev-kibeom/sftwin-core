@@ -1,7 +1,7 @@
 from typing import Any
 
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.enums.global_error_code_enum import ERROR_CODE_METADATA, GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import ERROR_CODE_METADATA, GlobalErrorCode
 
 
 class BaseSystemException(Exception):
@@ -9,7 +9,7 @@ class BaseSystemException(Exception):
 
     def __init__(
         self,
-        error_code: GlobalErrorCodeEnum = GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
+        error_code: GlobalErrorCode = GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
         message: str | None = None,
         status_code: int | None = None,
         details: dict[str, Any] | None = None,

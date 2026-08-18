@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.persistence.base_repository import BaseRepository
 
@@ -52,7 +52,7 @@ def test_repository_driver_timeout_exception_translation(repository, mock_db_ses
     with pytest.raises(BaseSystemException) as exc_info:
         repository.find_by_id("AAS-001")
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
     assert exc_info.value.status_code == 500
     assert "Database driver failure encountered" in exc_info.value.message
     assert exc_info.value.details.get("original_exception") == "TimeoutError"

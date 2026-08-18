@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class PackMLStateEnum(str, Enum):
+class PackMLState(str, Enum):
     OFFLINE = "OFFLINE"
     STOPPED = "STOPPED"
     IDLE = "IDLE"

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -53,7 +53,7 @@ class InjectFaultUseCase:
                 "Sequence script syntax validation failed", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED,
+                error_code=GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED,
                 message="Invalid recovery sequence script syntax or structure.",
                 status_code=422,
             )
@@ -66,7 +66,7 @@ class InjectFaultUseCase:
             )
         except ValueError as e:
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
                 message=str(e),
                 status_code=400,
             ) from e
@@ -93,7 +93,7 @@ class InjectFaultUseCase:
             log_ctx.exc = exc
             self._system_logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT,
+                error_code=GlobalErrorCode.ERR_SIM_IPC_TIMEOUT,
                 message="Shared Memory synchronization timed out.",
                 status_code=500,
             ) from exc
@@ -103,7 +103,7 @@ class InjectFaultUseCase:
                 "AI Planner could not find bypass trajectory", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_BT_EVAL_FAILED,
+                error_code=GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED,
                 message="Unsolvable bypass trajectory due to spatial constraints.",
                 status_code=422,
             )

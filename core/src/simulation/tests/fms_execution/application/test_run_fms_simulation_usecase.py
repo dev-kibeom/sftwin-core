@@ -2,8 +2,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_dto import (
     RunFmsSimulationRequestDto,
@@ -36,7 +36,7 @@ def valid_user_context():
         user_id="usr-123",
         username="si_engineer",
         company_id="cmp-456",
-        role=UserRoleEnum.SI_PARTNER,
+        role=UserRole.SI_PARTNER,
         accessible_factory_ids=["factory-1"],
     )
 
@@ -109,9 +109,7 @@ class TestRunFmsSimulationUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_user_context)
 
         assert exc_info.value.status_code == 409
-        assert (
-            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_COLLISION_DETECTED
-        )
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_COLLISION_DETECTED
 
     def test_error_invalid_scenario_metadata(
         self, mock_physics_engine, mock_logger, valid_user_context
@@ -131,7 +129,7 @@ class TestRunFmsSimulationUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_user_context)
 
         assert exc_info.value.status_code == 400
-        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_INVALID_SCENARIO
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_INVALID_SCENARIO
         mock_physics_engine.calculate_kinematics.assert_not_called()
 
     def test_error_ipc_timeout(
@@ -154,7 +152,7 @@ class TestRunFmsSimulationUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_user_context)
 
         assert exc_info.value.status_code == 500
-        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_IPC_TIMEOUT
 
     @patch(
         "simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase.RunFmsSimulationUseCase._check_vram_resource_limit"
@@ -182,6 +180,4 @@ class TestRunFmsSimulationUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_user_context)
 
         assert exc_info.value.status_code == 503
-        assert (
-            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_SIM_RESOURCE_EXHAUSTED
-        )
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_RESOURCE_EXHAUSTED

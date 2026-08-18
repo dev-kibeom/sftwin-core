@@ -6,7 +6,7 @@ from digital_twin.ports.outbound.i_asset_command_repository import (
 )
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -47,7 +47,7 @@ class RegisterAssetUseCase:
                 ),
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA,
+                error_code=GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                 message=f"Invalid asset type '{asset_dto.asset_type}'.",
                 status_code=400,
                 details={"asset_type": asset_dto.asset_type},

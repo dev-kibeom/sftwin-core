@@ -2,7 +2,7 @@ from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.dtos.integration_event_dto import IntegrationEventDto
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -68,7 +68,7 @@ class DomainEventMapper:
                 log_ctx=log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
                 message="trace_id is required and cannot be empty when mapping domain events.",
                 status_code=400,
                 details={"provided_trace_id": trace_id},

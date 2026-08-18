@@ -6,13 +6,13 @@ from digital_twin.asset_library.application.register_asset.register_asset_usecas
     RegisterAssetUseCase,
 )
 from digital_twin.asset_library.domain.asset import Asset
+from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
 from shared.context.user_context import UserContext
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -46,7 +46,7 @@ def test_tc_happy_path_register_asset():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
         accessible_factory_ids=["FACTORY-01"],
     )
 
@@ -87,7 +87,7 @@ def test_tc_error_handling_invalid_domain_schema():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
         accessible_factory_ids=[],
     )
 
@@ -95,7 +95,7 @@ def test_tc_error_handling_invalid_domain_schema():
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute(invalid_dto, ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA
     assert exc_info.value.status_code == 400
     # Mock 저장소의 save() 메서드가 단 한 번도 호출되지 않았음을 단언
     mock_repo.save.assert_not_called()

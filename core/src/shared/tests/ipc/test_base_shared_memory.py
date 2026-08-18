@@ -1,5 +1,5 @@
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.ipc.base_shared_memory_driver import BaseSharedMemoryDriver
 
@@ -44,6 +44,6 @@ def test_shm_pointer_fault_guard_clause():
     with pytest.raises(BaseSystemException) as exc_info:
         corrupted_driver.write_to_shm(b"CORRUPTED_PAYLOAD")
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_IPC_SHARED_MEMORY_ERROR
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_IPC_SHARED_MEMORY_ERROR
     assert exc_info.value.status_code == 500
     assert "POSIX Shared Memory descriptor or pointer invalid" in exc_info.value.message

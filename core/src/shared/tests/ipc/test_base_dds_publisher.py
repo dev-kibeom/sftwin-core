@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.ipc.base_dds_publisher import BaseDdsPublisher
 
@@ -52,5 +52,5 @@ def test_publish_session_disconnected_raises_exception():
             trace_id="TRC-DISCONNECTED",
         )
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_EDGE_COMM_TIMEOUT
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT
     assert exc_info.value.status_code == 504

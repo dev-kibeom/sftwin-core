@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -52,7 +52,7 @@ class RunFmsSimulationUseCase:
         except ValueError as e:
             self._system_logger.warn(f"Invalid scenario parameters: {str(e)}", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_INVALID_SCENARIO,
+                error_code=GlobalErrorCode.ERR_SIM_INVALID_SCENARIO,
                 message=str(e),
                 status_code=400,
             ) from e
@@ -62,7 +62,7 @@ class RunFmsSimulationUseCase:
                 "VRAM Resource exhausted over 4.2GB limit", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_RESOURCE_EXHAUSTED,
+                error_code=GlobalErrorCode.ERR_SIM_RESOURCE_EXHAUSTED,
                 message="GPU VRAM cache exceeds the 4.2GB limit. Request rejected to prevent OOM.",
                 status_code=503,
             )
@@ -73,7 +73,7 @@ class RunFmsSimulationUseCase:
             log_ctx.exc = exc
             self._system_logger.error("IPC Sync timeout (>1ms)", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_IPC_TIMEOUT,
+                error_code=GlobalErrorCode.ERR_SIM_IPC_TIMEOUT,
                 message="POSIX Shared Memory IPC synchronization timeout exceeded 1ms.",
                 status_code=500,
             ) from exc
@@ -85,7 +85,7 @@ class RunFmsSimulationUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_SIM_COLLISION_DETECTED,
+                error_code=GlobalErrorCode.ERR_SIM_COLLISION_DETECTED,
                 message="Physical collision or Fleet deadlock detected during computation.",
                 status_code=409,
             )

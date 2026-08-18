@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from simulation.ports.outbound.i_fleet_deploy import IFleetDeploy
 from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_dto import (
@@ -33,7 +33,7 @@ def valid_ctx():
         user_id="usr-123",
         username="test",
         company_id="cmp-1",
-        role=UserRoleEnum.SI_PARTNER,
+        role=UserRole.SI_PARTNER,
     )
 
 
@@ -75,7 +75,7 @@ class TestDeploySim2RealUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 400
-        assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
         mock_adapter.export_package.assert_not_called()
 
     def test_error_io_exception_masking(self, mock_adapter, mock_logger, valid_ctx):
@@ -95,6 +95,4 @@ class TestDeploySim2RealUseCase:
             usecase.execute(request_dto=request_dto, ctx=valid_ctx)
 
         assert exc_info.value.status_code == 500
-        assert (
-            exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR
-        )
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR

@@ -6,7 +6,7 @@ from kpi_b2b.kpi_dashboard.domain.roi_analysis import RoiAnalysis
 from kpi_b2b.ports.inbound.dtos.dual_kpi_report_dto import DualKpiReportDto
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -54,7 +54,7 @@ class GenerateDualKpiReportUseCase:
                 f"Dual KPI calculation failed validation: {str(e)}", log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
                 message=str(e),
                 status_code=400,
             ) from e

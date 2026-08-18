@@ -10,7 +10,7 @@ from digital_twin.twin_reconstruction.domain.enums.twin_sync_status_enum import 
 from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -75,7 +75,7 @@ class ReconstructTwinUseCase:
                 self._command_repo.save(baseline)
 
                 raise BaseSystemException(
-                    error_code=GlobalErrorCodeEnum.ERR_TWIN_SYNC_OVER_LIMIT,
+                    error_code=GlobalErrorCode.ERR_TWIN_SYNC_OVER_LIMIT,
                     message=(
                         f"Real-to-Sim precision error rate ({error_rate}%) "
                         f"exceeds tolerance limit ({self._default_tolerance}%)."

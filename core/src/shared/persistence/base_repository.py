@@ -1,7 +1,7 @@
 from typing import Any, Generic, TypeVar
 
 from shared.context.log_context import LogContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -37,7 +37,7 @@ class BaseRepository(Generic[T]):
         )
 
         raise BaseSystemException(
-            error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
+            error_code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
             message=f"Database driver failure encountered during '{action_context}': {str(exc)}",
             status_code=500,
             details={

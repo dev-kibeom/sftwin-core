@@ -9,8 +9,8 @@ from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kp
     GenerateDualKpiReportUseCase,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -20,7 +20,7 @@ def valid_ctx():
         user_id="USR-100",
         username="manager",
         company_id="TENANT_A",
-        role=UserRoleEnum.FACTORY_MANAGER,
+        role=UserRole.FACTORY_MANAGER,
     )
 
 
@@ -72,5 +72,5 @@ def test_generate_dual_kpi_report_invalid_oee_value(kpi_facade, valid_ctx):
     with pytest.raises(BaseSystemException) as exc_info:
         kpi_facade.generate_dual_kpi_report(request_dto=req_dto, ctx=valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
     assert exc_info.value.status_code == 400

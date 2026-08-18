@@ -1,15 +1,7 @@
-"""
-===============================================================================
-[File Name] test_aas_asset.py
-[Location ] /tests/digital_twin/asset_library/domain/test_aas_asset.py
-[Description] 도메인 엔티티 Asset 및 validate_schema() 단위 테스트
-===============================================================================
-"""
-
 import pytest
 from digital_twin.asset_library.domain.asset import Asset
 from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -42,6 +34,6 @@ def test_aas_asset_invalid_schema_missing_kinematics_keys():
     with pytest.raises(BaseSystemException) as exc_info:
         asset.validate_schema()
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_INVALID_SCHEMA
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA
     assert exc_info.value.status_code == 400
     assert "Missing required key" in exc_info.value.message

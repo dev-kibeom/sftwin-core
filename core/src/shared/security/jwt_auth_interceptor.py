@@ -2,8 +2,8 @@ from typing import Any
 
 import jwt
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -30,7 +30,7 @@ class JwtAuthInterceptor:
                 "Authentication failed: Missing or invalid Authorization header format."
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
                 message="Authorization header with Bearer token is missing or invalid.",
                 status_code=401,
             )
@@ -46,7 +46,7 @@ class JwtAuthInterceptor:
                 user_id=payload["user_id"],
                 username=payload.get("username", ""),
                 company_id=payload["company_id"],
-                role=UserRoleEnum(payload["role"]),
+                role=UserRole(payload["role"]),
                 accessible_factory_ids=payload.get("accessible_factory_ids", []),
                 is_edge_authenticated=payload.get("is_edge_authenticated", False),
             )
@@ -57,7 +57,7 @@ class JwtAuthInterceptor:
         except (KeyError, ValueError) as e:
             self._system_logger.error(f"JWT payload claim parsing error: {str(e)}")
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
                 message="JWT payload claims are invalid or incomplete.",
                 status_code=401,
             ) from e
@@ -68,7 +68,7 @@ class JwtAuthInterceptor:
         except jwt.ExpiredSignatureError as e:
             self._system_logger.warn("Authentication failed: JWT token has expired.")
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
                 message="JWT token has expired.",
                 status_code=401,
             ) from e
@@ -77,7 +77,7 @@ class JwtAuthInterceptor:
                 f"Authentication failed: Invalid JWT token signature/structure ({str(e)})."
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_UNAUTHORIZED,
+                error_code=GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
                 message="Invalid JWT token signature or payload format.",
                 status_code=401,
             ) from e

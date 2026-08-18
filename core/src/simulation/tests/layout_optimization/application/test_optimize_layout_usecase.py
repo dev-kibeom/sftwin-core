@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.user_role_enum import UserRole
 from simulation.layout_optimization.application.optimize_layout.optimize_layout_dto import (
     OptimizeLayoutRequestDto,
 )
@@ -22,7 +22,7 @@ def valid_ctx():
         user_id="usr-123",
         username="layout_planner",
         company_id="cmp-1",
-        role=UserRoleEnum.FACTORY_MANAGER,
+        role=UserRole.FACTORY_MANAGER,
     )
 
 

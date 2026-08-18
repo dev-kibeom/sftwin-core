@@ -2,7 +2,7 @@ from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -41,7 +41,7 @@ class GetAssetUseCase:
             )
 
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND,
+                error_code=GlobalErrorCode.ERR_TWIN_NOT_FOUND,
                 message=f"Requested asset '{asset_id}' does not exist.",
                 status_code=404,
             )

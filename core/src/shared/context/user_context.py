@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.user_role_enum import UserRole
 
 
 @dataclass(frozen=True)
@@ -10,7 +10,7 @@ class UserContext:
     user_id: str
     username: str
     company_id: str
-    role: UserRoleEnum
+    role: UserRole
     accessible_factory_ids: list[str] = field(default_factory=list)
     is_edge_authenticated: bool = False
 
@@ -22,7 +22,7 @@ class UserContext:
             user_id="SYSTEM",
             username="system",
             company_id=company_id,
-            role=UserRoleEnum.SYSTEM_ADMIN,
+            role=UserRole.SYSTEM_ADMIN,
             accessible_factory_ids=[],
             is_edge_authenticated=True,
         )

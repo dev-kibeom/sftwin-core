@@ -11,8 +11,8 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
 )
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -66,7 +66,7 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
                 "GetLayoutUseCase dependency missing in facade", log_ctx=log_ctx
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
+                error_code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
                 message="GetLayoutUseCase is not injected into DigitalTwinQueryFacade.",
                 status_code=500,
             )
@@ -79,7 +79,7 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
                 user_id="SYSTEM",
                 username="system",
                 company_id="SYSTEM_PUBLIC",
-                role=UserRoleEnum.SYSTEM_ADMIN,
+                role=UserRole.SYSTEM_ADMIN,
                 accessible_factory_ids=[],
             )
         return ctx

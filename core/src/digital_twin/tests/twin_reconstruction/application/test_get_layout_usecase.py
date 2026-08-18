@@ -8,8 +8,8 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     GetLayoutUseCase,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -29,7 +29,7 @@ def valid_ctx():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role=UserRoleEnum.CREATOR,
+        role=UserRole.CREATOR,
         accessible_factory_ids=["BASE-TWIN-001"],
     )
 
@@ -40,7 +40,7 @@ def unauthorized_ctx():
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",  # 타사 공장 접근 시도용
-        role=UserRoleEnum.CREATOR,
+        role=UserRole.CREATOR,
         accessible_factory_ids=["OTHER-FACTORY-01"],
     )
 
@@ -100,7 +100,7 @@ def test_tc_edge_case_unauthorized_isolation_violation(
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute("PRIVATE-TWIN-999", unauthorized_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404
 
 
@@ -115,5 +115,5 @@ def test_tc_error_handling_baseline_not_found(usecase, mock_query_repo, valid_ct
     with pytest.raises(BaseSystemException) as exc_info:
         usecase.execute("INVALID-TWIN-000", valid_ctx)
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404

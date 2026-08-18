@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverityEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.audit_severity_enum import AuditSeverity
+from shared.enums.user_role_enum import UserRole
 from shared.logger.global_audit_logger import (
     FailsafeAuditEvent,
     GlobalAuditLogger,
@@ -32,13 +32,13 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
         user_id="usr-123",
         username="test_user",
         company_id="COMP-A",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
     )
 
     event = SecurityAuditEvent(
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
-        severity=AuditSeverityEnum.WARNING,
+        severity=AuditSeverity.WARNING,
         user_ctx=user_ctx,
         trace_id="TRC-99081234a",
     )
@@ -86,13 +86,13 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
         user_id="usr-123",
         username="test_user",
         company_id="COMP-A",
-        role=UserRoleEnum.FIELD_ENGINEER,
+        role=UserRole.FIELD_ENGINEER,
     )
 
     event = SecurityAuditEvent(
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
-        severity=AuditSeverityEnum.WARNING,
+        severity=AuditSeverity.WARNING,
         user_ctx=user_ctx,
         trace_id="TRC-TIMEOUT-TEST",
     )

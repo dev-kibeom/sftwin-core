@@ -1,6 +1,6 @@
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
@@ -47,7 +47,7 @@ class DeploySim2RealUseCase:
                 log_ctx,
             )
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
                 message="FMS scenario is unverified or missing required configurations.",
                 status_code=400,
             )
@@ -63,7 +63,7 @@ class DeploySim2RealUseCase:
             )
         except ValueError as ve:
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INVALID_INPUT,
+                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
                 message=str(ve),
                 status_code=400,
             ) from ve
@@ -80,7 +80,7 @@ class DeploySim2RealUseCase:
             log_ctx.exc = exc
             self._system_logger.error("I/O Error during package export", log_ctx)
             raise BaseSystemException(
-                error_code=GlobalErrorCodeEnum.ERR_COMMON_INTERNAL_ERROR,
+                error_code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
                 message="Failed to write package to file system due to I/O or permission error.",
                 status_code=500,
             ) from exc

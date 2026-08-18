@@ -15,8 +15,8 @@ from kpi_b2b.ports.outbound.i_procurement_query_repository import (
     IProcurementQueryRepository,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCodeEnum
-from shared.enums.user_role_enum import UserRoleEnum
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_exception import BaseSystemException
 
 
@@ -52,7 +52,7 @@ def valid_ctx():
         user_id="USR-100",
         username="factory_manager_a",
         company_id="TENANT_A",
-        role=UserRoleEnum.FACTORY_MANAGER,
+        role=UserRole.FACTORY_MANAGER,
     )
 
 
@@ -114,7 +114,7 @@ def test_generate_quote_invalid_schema(target_system, valid_ctx):
             asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
         )
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_B2B_INVALID_QUOTE
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_B2B_INVALID_QUOTE
     assert exc_info.value.status_code == 422
     mock_cmd_repo.save_quote.assert_not_called()
 
@@ -132,6 +132,6 @@ def test_generate_quote_api_failure(target_system, valid_ctx):
             asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
         )
 
-    assert exc_info.value.error_code == GlobalErrorCodeEnum.ERR_B2B_API_FAILURE
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_B2B_API_FAILURE
     assert exc_info.value.status_code == 502
     mock_cmd_repo.save_quote.assert_not_called()
