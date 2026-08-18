@@ -1,49 +1,51 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from kpi_b2b.b2b_procurement.domain.enums.b2b_quote_status_enum import (
-    B2bQuoteStatusEnum,
+from kpi_b2b.b2b_procurement.domain.b2b_quote.b2b_quote_status_enum import (
+    B2bQuoteStatus,
 )
 from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
 from kpi_b2b.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
 )
-from kpi_b2b.ports.outbound.i_procurement_query_repository import (
-    IProcurementQueryRepository,
+from kpi_b2b.ports.outbound.i_quote_idempotency_store import (
+    IQuoteIdempotencyStore,
+)
+from kpi_b2b.ports.outbound.i_turnkey_quote_gateway import (
+    ITurnkeyQuoteGateway,
 )
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.enums.user_role_enum import UserRole
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 
 
 @pytest.fixture
 def target_system():
+    mock_gateway = MagicMock(spec=ITurnkeyQuoteGateway)
+    mock_cache_store = MagicMock(spec=IQuoteIdempotencyStore)
     mock_command_repo = MagicMock(spec=IProcurementCommandRepository)
-    mock_query_repo = MagicMock(spec=IProcurementQueryRepository)
-    mock_mirroring_uc = MagicMock()
+    mock_session_uc = MagicMock()
     mock_prod_order_uc = MagicMock()
     mock_rbac = MagicMock()
+    mock_logger = MagicMock()
 
-    with (
-        patch(
-            "kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase.GlobalSystemLogger"
-        ),
-        patch("kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
-    ):
-        usecase = GenerateQuoteUseCase(command_repo=mock_command_repo)
-        facade = ProcurementCommandFacade(
-            generate_quote_uc=usecase,
-            mirroring_uc=mock_mirroring_uc,
-            process_production_order_uc=mock_prod_order_uc,
-            command_repo=mock_command_repo,
-            query_repo=mock_query_repo,
-            rbac_manager=mock_rbac,
-        )
-        yield facade, mock_command_repo, mock_query_repo
+    usecase = GenerateQuoteUseCase(
+        gateway=mock_gateway,
+        cache_store=mock_cache_store,
+        command_repo=mock_command_repo,
+        system_logger=mock_logger,
+    )
+    facade = ProcurementCommandFacade(
+        generate_quote_uc=usecase,
+        create_expert_session_uc=mock_session_uc,
+        process_production_order_uc=mock_prod_order_uc,
+        rbac_manager=mock_rbac,
+    )
+    return facade, mock_gateway, mock_cache_store, mock_command_repo
 
 
 @pytest.fixture
@@ -57,12 +59,12 @@ def valid_ctx():
 
 
 def test_generate_quote_happy_path_cache_miss(target_system, valid_ctx):
-    facade, mock_cmd_repo, mock_qry_repo = target_system
+    facade, mock_gateway, mock_cache, mock_cmd_repo = target_system
     asset_ids = ["ASSET-001", "ASSET-002"]
     idempotency_key = "IDEMP-KEY-12345"
 
-    mock_qry_repo.find_cached_quote.return_value = None
-    mock_cmd_repo.request_turnkey_quote.return_value = {
+    mock_cache.find_cached_quote.return_value = None
+    mock_gateway.request_turnkey_quote.return_value = {
         "total_estimated_price": 150000.0,
         "delivery_days_estimated": 14,
     }
@@ -71,14 +73,15 @@ def test_generate_quote_happy_path_cache_miss(target_system, valid_ctx):
         asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
     )
 
-    mock_cmd_repo.request_turnkey_quote.assert_called_once_with(asset_ids)
+    mock_gateway.request_turnkey_quote.assert_called_once_with(asset_ids)
     mock_cmd_repo.save_quote.assert_called_once()
-    mock_cmd_repo.save_cached_quote.assert_called_once()
-    assert result_dto.status == B2bQuoteStatusEnum.REQUESTED.value
+    mock_cache.save_cached_quote.assert_called_once()
+    assert result_dto.status == B2bQuoteStatus.REQUESTED.value
+    assert result_dto.total_estimated_price == 150000.0
 
 
 def test_generate_quote_happy_path_cache_hit(target_system, valid_ctx):
-    facade, mock_cmd_repo, mock_qry_repo = target_system
+    facade, mock_gateway, mock_cache, mock_cmd_repo = target_system
     asset_ids = ["ASSET-001"]
     idempotency_key = "IDEMP-KEY-DUPLICATE"
 
@@ -88,26 +91,24 @@ def test_generate_quote_happy_path_cache_hit(target_system, valid_ctx):
         "status": "REQUESTED",
         "delivery_days_estimated": 7,
     }
-    mock_qry_repo.find_cached_quote.return_value = cached_response
+    mock_cache.find_cached_quote.return_value = cached_response
 
     result_dto = facade.generate_quote(
         asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
     )
 
-    mock_cmd_repo.request_turnkey_quote.assert_not_called()
+    mock_gateway.request_turnkey_quote.assert_not_called()
     mock_cmd_repo.save_quote.assert_not_called()
     assert result_dto.quote_id == "QT-CACHED-001"
 
 
 def test_generate_quote_invalid_schema(target_system, valid_ctx):
-    facade, mock_cmd_repo, mock_qry_repo = target_system
+    facade, mock_gateway, mock_cache, mock_cmd_repo = target_system
     asset_ids = ["ASSET-003"]
     idempotency_key = "IDEMP-KEY-INVALID"
 
-    mock_qry_repo.find_cached_quote.return_value = None
-    mock_cmd_repo.request_turnkey_quote.return_value = {
-        "total_estimated_price": 10000.0
-    }
+    mock_cache.find_cached_quote.return_value = None
+    mock_gateway.request_turnkey_quote.return_value = {"total_estimated_price": 10000.0}
 
     with pytest.raises(BaseSystemException) as exc_info:
         facade.generate_quote(
@@ -120,12 +121,12 @@ def test_generate_quote_invalid_schema(target_system, valid_ctx):
 
 
 def test_generate_quote_api_failure(target_system, valid_ctx):
-    facade, mock_cmd_repo, mock_qry_repo = target_system
+    facade, mock_gateway, mock_cache, mock_cmd_repo = target_system
     asset_ids = ["ASSET-004"]
     idempotency_key = "IDEMP-KEY-TIMEOUT"
 
-    mock_qry_repo.find_cached_quote.return_value = None
-    mock_cmd_repo.request_turnkey_quote.side_effect = Exception("Timeout")
+    mock_cache.find_cached_quote.return_value = None
+    mock_gateway.request_turnkey_quote.side_effect = Exception("Timeout")
 
     with pytest.raises(BaseSystemException) as exc_info:
         facade.generate_quote(

@@ -11,7 +11,7 @@ from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kp
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.enums.user_role_enum import UserRole
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 
 
 @pytest.fixture
@@ -40,7 +40,6 @@ def kpi_facade(dual_kpi_usecase):
     )
 
 
-# TC-KPI-01: Happy Path - DTO를 통한 듀얼 KPI 및 ROI 리포트 생성 검증
 def test_generate_dual_kpi_report_happy_path(kpi_facade, valid_ctx):
     req_dto = GenerateDualKpiReportRequestDto(
         baseline_oee=0.70,
@@ -59,10 +58,9 @@ def test_generate_dual_kpi_report_happy_path(kpi_facade, valid_ctx):
     assert report.investment_cost_krw == 300000000.0
 
 
-# TC-KPI-02: Edge Case - OEE 입력값이 1.0 초과 시 ERR_COMMON_INVALID_INPUT 예외 변환 검증
 def test_generate_dual_kpi_report_invalid_oee_value(kpi_facade, valid_ctx):
     req_dto = GenerateDualKpiReportRequestDto(
-        baseline_oee=1.5,  # Invalid (1.0 초과)
+        baseline_oee=1.5,
         improved_oee=0.84,
         baseline_fpy=0.90,
         improved_fpy=0.95,

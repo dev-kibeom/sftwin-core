@@ -8,7 +8,7 @@ from kpi_b2b.b2b_procurement.application.process_production_order.production_ord
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.enums.user_role_enum import UserRole
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 
 
 @pytest.fixture
@@ -63,4 +63,4 @@ def test_production_order_insufficient_stock_error(usecase, valid_ctx):
         usecase.execute(req, valid_ctx)
 
     assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
-    assert exc_info.value.status_code == 422
+    assert exc_info.value.status_code == 400

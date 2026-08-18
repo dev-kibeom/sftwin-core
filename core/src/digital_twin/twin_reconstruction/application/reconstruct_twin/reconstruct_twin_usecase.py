@@ -11,7 +11,7 @@ from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
 

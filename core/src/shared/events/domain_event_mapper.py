@@ -3,7 +3,7 @@ from typing import Any
 from shared.context.log_context import LogContext
 from shared.dtos.integration_event_dto import IntegrationEventDto
 from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 _system_logger = GlobalSystemLogger(component_name="DomainEventMapper")

@@ -2,7 +2,7 @@ import pytest
 from digital_twin.asset_library.domain.asset import Asset
 from digital_twin.asset_library.domain.enums.asset_type_enum import AssetTypeEnum
 from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 
 
 def test_aas_asset_valid_schema():

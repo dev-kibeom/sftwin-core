@@ -24,7 +24,7 @@ from core.src.digital_twin.twin_reconstruction.application.reconstruct_twin.reco
 from core.src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
 )
-from core.src.kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase import (
+from kpi_b2b.b2b_procurement.application.create_expert_session.create_expert_session_usecase import (
     LayoutMirroringUseCase,
 )
 from core.src.kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (

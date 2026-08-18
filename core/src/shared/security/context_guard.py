@@ -4,7 +4,7 @@ from functools import wraps
 from typing import Any
 
 from shared.context.user_context import UserContext
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 
 
 def require_user_context(func: Callable[..., Any]) -> Callable[..., Any]:

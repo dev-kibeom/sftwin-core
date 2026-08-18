@@ -4,7 +4,7 @@ import jwt
 from shared.context.user_context import UserContext
 from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.enums.user_role_enum import UserRole
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 

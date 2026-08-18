@@ -15,7 +15,7 @@ from digital_twin.twin_reconstruction.domain.twin_baseline import TwinBaseline
 from digital_twin.twin_reconstruction.ports.outbound.i_sensor_log_parser import (
     ISensorLogParserPort,
 )
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 

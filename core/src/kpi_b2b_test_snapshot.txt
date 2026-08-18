@@ -1,0 +1,620 @@
+==========================================================================
+ PROJECT SNAPSHOT [test] - kpi_b2b
+==========================================================================
+
+## Directory Tree
+```text
+kpi_b2b
+├── b2b_procurement
+│   ├── application
+│   │   ├── create_expert_session
+│   │   │   ├── create_expert_session_usecase.py
+│   │   │   └── __init__.py
+│   │   ├── generate_quote
+│   │   │   ├── generate_quote_usecase.py
+│   │   │   └── __init__.py
+│   │   └── process_production_order
+│   │       ├── __init__.py
+│   │       ├── process_production_order_usecase.py
+│   │       └── production_order_request_dto.py
+│   └── domain
+│       ├── b2b_quote
+│       │   ├── b2b_quote.py
+│       │   ├── b2b_quote_status_enum.py
+│       │   └── __init__.py
+│       ├── expert_session
+│       │   ├── expert_session.py
+│       │   ├── expert_session_status_enum.py
+│       │   └── __init__.py
+│       ├── factory_phase_enum.py
+│       ├── __init__.py
+│       └── production_order
+│           ├── __init__.py
+│           ├── material_inventory.py
+│           └── production_order.py
+├── facades
+│   ├── __init__.py
+│   ├── kpi_query_facade.py
+│   └── procurement_command_facade.py
+├── kpi_dashboard
+│   ├── application
+│   │   ├── calculate_kpi
+│   │   │   ├── calculate_kpi_usecase.py
+│   │   │   └── __init__.py
+│   │   └── generate_dual_kpi_report
+│   │       ├── generate_dual_kpi_report_dto.py
+│   │       ├── generate_dual_kpi_report_usecase.py
+│   │       └── __init__.py
+│   └── domain
+│       ├── __init__.py
+│       ├── oee_metric.py
+│       └── roi_analysis.py
+├── ports
+│   ├── inbound
+│   │   ├── dtos
+│   │   │   ├── b2b_quote_dto.py
+│   │   │   ├── dual_kpi_report_dto.py
+│   │   │   ├── kpi_report_dto.py
+│   │   │   ├── production_order_result_dto.py
+│   │   │   └── session_data_dto.py
+│   │   ├── i_kpi_query_facade.py
+│   │   ├── __init__.py
+│   │   └── i_procurement_command_facade.py
+│   └── outbound
+│       ├── i_kpi_query_repository.py
+│       ├── i_material_inventory_command_repository.py
+│       ├── i_material_inventory_query_repository.py
+│       ├── __init__.py
+│       ├── i_procurement_command_repository.py
+│       ├── i_procurement_query_repository.py
+│       ├── i_quote_idempotency_store.py
+│       └── i_turnkey_quote_gateway.py
+└── tests
+    ├── b2b_procurement
+    │   ├── test_generate_quote.py
+    │   ├── test_layout_mirroring.py
+    │   └── test_process_production_order.py
+    └── kpi_dashboard
+        ├── test_dual_kpi_report.py
+        └── test_oee_and_roi_domain.py
+
+22 directories, 50 files
+```
+
+
+
+
+=== File: kpi_b2b/tests/b2b_procurement/test_layout_mirroring.py ===
+
+from unittest.mock import MagicMock, patch
+
+import pytest
+from kpi_b2b.b2b_procurement.application.create_expert_session.create_expert_session_usecase import (
+    LayoutMirroringUseCase,
+)
+from kpi_b2b.b2b_procurement.domain.expert_session.expert_session_status_enum import (
+    ExpertSessionStatus,
+)
+from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
+from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+    IProcurementCommandRepository,
+)
+from kpi_b2b.ports.outbound.i_procurement_query_repository import (
+    IProcurementQueryRepository,
+)
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
+from shared.exceptions.base_system_exception import BaseSystemException
+from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+
+
+@pytest.fixture
+def mock_command_repo():
+    return MagicMock(spec=IProcurementCommandRepository)
+
+
+@pytest.fixture
+def mock_query_repo():
+    return MagicMock(spec=IProcurementQueryRepository)
+
+
+@pytest.fixture
+def mock_gen_quote_uc():
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_prod_order_uc():
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_rbac_manager():
+    return MagicMock(spec=RbacAuthorizationManager)
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="USR-200",
+        username="factory_manager_b",
+        company_id="TENANT_B",
+        role=UserRole.FACTORY_MANAGER,
+    )
+
+
+@pytest.fixture
+def target_system(
+    mock_query_repo,
+    mock_command_repo,
+    mock_gen_quote_uc,
+    mock_prod_order_uc,
+    mock_rbac_manager,
+):
+    with (
+        patch(
+            "kpi_b2b.b2b_procurement.application.layout_mirroring.layout_mirroring_usecase.GlobalSystemLogger"
+        ),
+        patch("kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
+    ):
+        mirroring_uc = LayoutMirroringUseCase(command_repo=mock_command_repo)
+
+        facade = ProcurementCommandFacade(
+            generate_quote_uc=mock_gen_quote_uc,
+            mirroring_uc=mirroring_uc,
+            process_production_order_uc=mock_prod_order_uc,
+            command_repo=mock_command_repo,
+            query_repo=mock_query_repo,
+            rbac_manager=mock_rbac_manager,
+        )
+
+        yield facade, mock_command_repo, mock_query_repo, mock_rbac_manager
+
+
+def test_create_expert_session_happy_path(target_system, valid_ctx):
+    facade, mock_cmd_repo, mock_qry_repo, mock_rbac = target_system
+    baseline_id = "BASELINE-3D-001"
+
+    mock_qry_repo.get_baseline_owner.return_value = "TENANT_B"
+    mock_rbac.validate_company_isolation.return_value = True
+
+    result_dto = facade.create_expert_session(baseline_id=baseline_id, ctx=valid_ctx)
+
+    mock_rbac.validate_company_isolation.assert_called_once_with(
+        user_ctx=valid_ctx,
+        target_company_id="TENANT_B",
+        target_resource=f"BASELINE:{baseline_id}",
+    )
+
+    mock_cmd_repo.save_expert_session.assert_called_once()
+    saved_session = mock_cmd_repo.save_expert_session.call_args[0][0]
+
+    assert saved_session.baseline_id == baseline_id
+    assert saved_session.expert_id == "UNASSIGNED"
+    assert saved_session.status == ExpertSessionStatus.WAITING
+    assert saved_session.session_token.startswith("TKN-")
+
+    assert result_dto.session_id.startswith("SESS-")
+    assert result_dto.session_token == saved_session.session_token
+    assert result_dto.status == ExpertSessionStatus.WAITING.value
+    assert result_dto.expires_in_seconds == 14400
+
+
+def test_create_expert_session_isolation_violation(target_system):
+    facade, mock_cmd_repo, mock_qry_repo, mock_rbac = target_system
+
+    invalid_ctx = UserContext(
+        user_id="USR-HACKER",
+        username="unauthorized_user",
+        company_id="UNAUTHORIZED_TENANT",
+        role=UserRole.CREATOR,
+    )
+    baseline_id = "BASELINE-SECRET-001"
+
+    mock_qry_repo.get_baseline_owner.return_value = "ORIGINAL_OWNER_TENANT"
+    mock_rbac.validate_company_isolation.side_effect = BaseSystemException(
+        error_code=GlobalErrorCode.ERR_COMMON_FORBIDDEN,
+        message="Multitenancy isolation policy violation.",
+        status_code=403,
+    )
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        facade.create_expert_session(baseline_id=baseline_id, ctx=invalid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_FORBIDDEN
+    assert exc_info.value.status_code == 403
+    mock_cmd_repo.save_expert_session.assert_not_called()
+
+
+def test_create_expert_session_db_failure(target_system, valid_ctx):
+    facade, mock_cmd_repo, mock_qry_repo, mock_rbac = target_system
+    baseline_id = "BASELINE-ERROR-001"
+
+    mock_qry_repo.get_baseline_owner.return_value = "TENANT_B"
+    mock_rbac.validate_company_isolation.return_value = True
+    mock_cmd_repo.save_expert_session.side_effect = Exception(
+        "OperationalError: Connection lost"
+    )
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        facade.create_expert_session(baseline_id=baseline_id, ctx=valid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
+    assert exc_info.value.status_code == 500
+    assert "시스템 내부 장애가 발생했습니다" in exc_info.value.message
+
+=== File: kpi_b2b/tests/b2b_procurement/test_process_production_order.py ===
+
+import pytest
+from kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
+    ProcessProductionOrderUseCase,
+)
+from kpi_b2b.b2b_procurement.application.process_production_order.production_order_request_dto import (
+    ProductionOrderRequestDto,
+)
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
+from shared.exceptions.base_system_exception import BaseSystemException
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="USER_001",
+        username="engineer",
+        company_id="COMPANY_A",
+        role=UserRole.FACTORY_MANAGER,
+    )
+
+
+@pytest.fixture
+def usecase():
+    return ProcessProductionOrderUseCase()
+
+
+def test_production_order_baseline_happy_path(usecase, valid_ctx):
+    req = ProductionOrderRequestDto(
+        order_id="ORD-TEST-001",
+        product_code="PRD-CNC-001",
+        target_quantity=100,
+        factory_phase="BASELINE",
+    )
+    result = usecase.execute(req, valid_ctx)
+
+    assert result.order_id == "ORD-TEST-001"
+    assert result.packml_state == "EXECUTE"
+    assert result.factory_phase == "BASELINE"
+
+
+def test_production_order_fms_optimized_happy_path(usecase, valid_ctx):
+    req = ProductionOrderRequestDto(
+        product_code="PRD-AMR-002",
+        target_quantity=50,
+        factory_phase="FMS_OPTIMIZED",
+    )
+    result = usecase.execute(req, valid_ctx)
+
+    assert result.packml_state == "EXECUTE"
+    assert result.factory_phase == "FMS_OPTIMIZED"
+
+
+def test_production_order_insufficient_stock_error(usecase, valid_ctx):
+    req = ProductionOrderRequestDto(
+        product_code="PRD-HEAVY-003",
+        target_quantity=50000,
+        factory_phase="BASELINE",
+    )
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        usecase.execute(req, valid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
+    assert exc_info.value.status_code == 422
+
+=== File: kpi_b2b/tests/b2b_procurement/test_generate_quote.py ===
+
+from unittest.mock import MagicMock, patch
+
+import pytest
+from kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
+    GenerateQuoteUseCase,
+)
+from kpi_b2b.b2b_procurement.domain.b2b_quote.b2b_quote_status_enum import (
+    B2bQuoteStatus,
+)
+from kpi_b2b.facades.procurement_command_facade import ProcurementCommandFacade
+from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+    IProcurementCommandRepository,
+)
+from kpi_b2b.ports.outbound.i_procurement_query_repository import (
+    IProcurementQueryRepository,
+)
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
+from shared.exceptions.base_system_exception import BaseSystemException
+
+
+@pytest.fixture
+def target_system():
+    mock_command_repo = MagicMock(spec=IProcurementCommandRepository)
+    mock_query_repo = MagicMock(spec=IProcurementQueryRepository)
+    mock_mirroring_uc = MagicMock()
+    mock_prod_order_uc = MagicMock()
+    mock_rbac = MagicMock()
+
+    with (
+        patch(
+            "kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase.GlobalSystemLogger"
+        ),
+        patch("kpi_b2b.facades.procurement_command_facade.GlobalSystemLogger"),
+    ):
+        usecase = GenerateQuoteUseCase(command_repo=mock_command_repo)
+        facade = ProcurementCommandFacade(
+            generate_quote_uc=usecase,
+            mirroring_uc=mock_mirroring_uc,
+            process_production_order_uc=mock_prod_order_uc,
+            command_repo=mock_command_repo,
+            query_repo=mock_query_repo,
+            rbac_manager=mock_rbac,
+        )
+        yield facade, mock_command_repo, mock_query_repo
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="USR-100",
+        username="factory_manager_a",
+        company_id="TENANT_A",
+        role=UserRole.FACTORY_MANAGER,
+    )
+
+
+def test_generate_quote_happy_path_cache_miss(target_system, valid_ctx):
+    facade, mock_cmd_repo, mock_qry_repo = target_system
+    asset_ids = ["ASSET-001", "ASSET-002"]
+    idempotency_key = "IDEMP-KEY-12345"
+
+    mock_qry_repo.find_cached_quote.return_value = None
+    mock_cmd_repo.request_turnkey_quote.return_value = {
+        "total_estimated_price": 150000.0,
+        "delivery_days_estimated": 14,
+    }
+
+    result_dto = facade.generate_quote(
+        asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
+    )
+
+    mock_cmd_repo.request_turnkey_quote.assert_called_once_with(asset_ids)
+    mock_cmd_repo.save_quote.assert_called_once()
+    mock_cmd_repo.save_cached_quote.assert_called_once()
+    assert result_dto.status == B2bQuoteStatus.REQUESTED.value
+
+
+def test_generate_quote_happy_path_cache_hit(target_system, valid_ctx):
+    facade, mock_cmd_repo, mock_qry_repo = target_system
+    asset_ids = ["ASSET-001"]
+    idempotency_key = "IDEMP-KEY-DUPLICATE"
+
+    cached_response = {
+        "quote_id": "QT-CACHED-001",
+        "total_estimated_price": 50000.0,
+        "status": "REQUESTED",
+        "delivery_days_estimated": 7,
+    }
+    mock_qry_repo.find_cached_quote.return_value = cached_response
+
+    result_dto = facade.generate_quote(
+        asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
+    )
+
+    mock_cmd_repo.request_turnkey_quote.assert_not_called()
+    mock_cmd_repo.save_quote.assert_not_called()
+    assert result_dto.quote_id == "QT-CACHED-001"
+
+
+def test_generate_quote_invalid_schema(target_system, valid_ctx):
+    facade, mock_cmd_repo, mock_qry_repo = target_system
+    asset_ids = ["ASSET-003"]
+    idempotency_key = "IDEMP-KEY-INVALID"
+
+    mock_qry_repo.find_cached_quote.return_value = None
+    mock_cmd_repo.request_turnkey_quote.return_value = {
+        "total_estimated_price": 10000.0
+    }
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        facade.generate_quote(
+            asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
+        )
+
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_B2B_INVALID_QUOTE
+    assert exc_info.value.status_code == 422
+    mock_cmd_repo.save_quote.assert_not_called()
+
+
+def test_generate_quote_api_failure(target_system, valid_ctx):
+    facade, mock_cmd_repo, mock_qry_repo = target_system
+    asset_ids = ["ASSET-004"]
+    idempotency_key = "IDEMP-KEY-TIMEOUT"
+
+    mock_qry_repo.find_cached_quote.return_value = None
+    mock_cmd_repo.request_turnkey_quote.side_effect = Exception("Timeout")
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        facade.generate_quote(
+            asset_ids=asset_ids, idempotency_key=idempotency_key, ctx=valid_ctx
+        )
+
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_B2B_API_FAILURE
+    assert exc_info.value.status_code == 502
+    mock_cmd_repo.save_quote.assert_not_called()
+
+=== File: kpi_b2b/tests/kpi_dashboard/test_dual_kpi_report.py ===
+
+from unittest.mock import MagicMock
+
+import pytest
+from kpi_b2b.facades.kpi_query_facade import KpiQueryFacade
+from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_dto import (
+    GenerateDualKpiReportRequestDto,
+)
+from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (
+    GenerateDualKpiReportUseCase,
+)
+from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.enums.user_role_enum import UserRole
+from shared.exceptions.base_system_exception import BaseSystemException
+
+
+@pytest.fixture
+def valid_ctx():
+    return UserContext(
+        user_id="USR-100",
+        username="manager",
+        company_id="TENANT_A",
+        role=UserRole.FACTORY_MANAGER,
+    )
+
+
+@pytest.fixture
+def dual_kpi_usecase():
+    return GenerateDualKpiReportUseCase()
+
+
+@pytest.fixture
+def kpi_facade(dual_kpi_usecase):
+    mock_calc_uc = MagicMock()
+    mock_rbac = MagicMock()
+    return KpiQueryFacade(
+        calculate_kpi_uc=mock_calc_uc,
+        dual_kpi_uc=dual_kpi_usecase,
+        rbac_manager=mock_rbac,
+    )
+
+
+# TC-KPI-01: Happy Path - DTO를 통한 듀얼 KPI 및 ROI 리포트 생성 검증
+def test_generate_dual_kpi_report_happy_path(kpi_facade, valid_ctx):
+    req_dto = GenerateDualKpiReportRequestDto(
+        baseline_oee=0.70,
+        improved_oee=0.84,
+        baseline_fpy=0.90,
+        improved_fpy=0.95,
+        turnkey_quote_cost=300000000.0,
+    )
+
+    report = kpi_facade.generate_dual_kpi_report(request_dto=req_dto, ctx=valid_ctx)
+
+    assert report.baseline_oee == 0.70
+    assert report.improved_oee == 0.84
+    assert report.oee_improvement_rate == 20.0
+    assert report.payback_period_months == 15.0
+    assert report.investment_cost_krw == 300000000.0
+
+
+# TC-KPI-02: Edge Case - OEE 입력값이 1.0 초과 시 ERR_COMMON_INVALID_INPUT 예외 변환 검증
+def test_generate_dual_kpi_report_invalid_oee_value(kpi_facade, valid_ctx):
+    req_dto = GenerateDualKpiReportRequestDto(
+        baseline_oee=1.5,  # Invalid (1.0 초과)
+        improved_oee=0.84,
+        baseline_fpy=0.90,
+        improved_fpy=0.95,
+        turnkey_quote_cost=300000000.0,
+    )
+
+    with pytest.raises(BaseSystemException) as exc_info:
+        kpi_facade.generate_dual_kpi_report(request_dto=req_dto, ctx=valid_ctx)
+
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
+    assert exc_info.value.status_code == 400
+
+=== File: kpi_b2b/tests/kpi_dashboard/test_oee_and_roi_domain.py ===
+
+import pytest
+from kpi_b2b.kpi_dashboard.domain.oee_metric import OeeMetric
+from kpi_b2b.kpi_dashboard.domain.roi_analysis import RoiAnalysis
+
+
+# TC-DOM-01: OeeMetric 정상 연산 및 프로퍼티(overall_oee, teep) 검증
+def test_oee_metric_calculation_success():
+    metric = OeeMetric(availability=0.9, performance=0.85, quality=0.95)
+
+    assert round(metric.overall_oee, 4) == round(0.9 * 0.85 * 0.95, 4)
+    assert round(metric.teep, 4) == round(metric.overall_oee * 0.85, 4)
+
+
+# TC-DOM-02: OeeMetric 범위(0.0 ~ 1.0) 초과 시 ValueError 발생 검증
+def test_oee_metric_validation_out_of_range():
+    with pytest.raises(ValueError) as exc_info:
+        OeeMetric(availability=1.2, performance=0.9, quality=0.95)
+    assert "availability must be between 0.0 and 1.0" in str(exc_info.value)
+
+    with pytest.raises(ValueError) as exc_info:
+        OeeMetric(availability=0.9, performance=-0.1, quality=0.95)
+    assert "performance must be between 0.0 and 1.0" in str(exc_info.value)
+
+
+# TC-DOM-03: from_raw_counts 팩토리 메서드 집계 및 생성 검증
+def test_oee_metric_from_raw_counts():
+    metric = OeeMetric.from_raw_counts(
+        uptime=80.0,
+        total_time=100.0,  # availability = 0.8
+        ideal_cycle_time=8.0,
+        actual_cycle_time=10.0,  # performance = 0.8
+        good_count=90,
+        total_count=100,  # quality = 0.9
+    )
+
+    assert metric.availability == 0.8
+    assert metric.performance == 0.8
+    assert metric.quality == 0.9
+    assert round(metric.overall_oee, 4) == 0.5760
+
+
+# TC-DOM-04: from_oee_and_fpy 팩토리 메서드 및 향상률 계산 검증
+def test_oee_metric_improvement_rates():
+    baseline = OeeMetric.from_oee_and_fpy(overall_oee=0.70, fpy=0.90)
+    improved = OeeMetric.from_oee_and_fpy(overall_oee=0.84, fpy=0.95)
+
+    oee_rate = baseline.calculate_improvement_rate(improved)
+    fpy_rate = baseline.calculate_fpy_improvement_rate(improved)
+
+    assert oee_rate == 20.0  # (0.84 - 0.70) / 0.70 * 100
+    assert fpy_rate == 5.56  # (0.95 - 0.90) / 0.90 * 100
+
+
+# TC-DOM-05: RoiAnalysis 투자 회수 기간 및 ROI 수익률 정상 산출 검증
+def test_roi_analysis_calculate_success():
+    baseline = OeeMetric.from_oee_and_fpy(overall_oee=0.70, fpy=0.90)
+    improved = OeeMetric.from_oee_and_fpy(overall_oee=0.84, fpy=0.95)  # 20% 향상
+
+    result = RoiAnalysis.calculate(
+        turnkey_quote_cost=300000000.0,  # 3억원
+        baseline=baseline,
+        improved=improved,
+        monthly_base_revenue=100000000.0,  # 월 매출 1억원 -> 월 추가 이익 2천만원
+    )
+
+    assert result.investment_cost_krw == 300000000.0
+    assert result.annual_benefit_krw == 240000000.0  # 2천만 * 12
+    assert result.payback_period_months == 15.0  # 3억 / 2천만
+    assert result.roi_percentage == 80.0  # (2.4억 / 3억) * 100
+
+
+# TC-DOM-06: OEE 향상이 없을 때(0% 이하) ROI 디폴트 처리 검증
+def test_roi_analysis_no_improvement():
+    baseline = OeeMetric.from_oee_and_fpy(overall_oee=0.80, fpy=0.90)
+    improved = OeeMetric.from_oee_and_fpy(overall_oee=0.70, fpy=0.85)
+
+    result = RoiAnalysis.calculate(
+        turnkey_quote_cost=100000000.0,
+        baseline=baseline,
+        improved=improved,
+    )
+
+    assert result.payback_period_months == 999.0
+    assert result.roi_percentage == 0.0

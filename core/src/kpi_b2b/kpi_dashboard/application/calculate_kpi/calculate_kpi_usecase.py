@@ -6,7 +6,8 @@ from kpi_b2b.ports.inbound.dtos.kpi_report_dto import KpiReportDto
 from kpi_b2b.ports.outbound.i_kpi_query_repository import IKpiQueryRepository
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.exceptions.base_exception import BaseSystemException
+from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
 
@@ -37,18 +38,14 @@ class CalculateKpiUseCase:
                 "Database query timeout or internal failure while fetching simulation logs.",
                 log_ctx,
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_KPI_DB_TIMEOUT,
-                message="데이터베이스 쿼리 시간 초과 또는 내부 오류 발생.",
-                status_code=500,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_KPI_DB_TIMEOUT
             ) from e
 
         if not logs:
             self._system_logger.warn(f"No simulation logs found for {sim_id}", log_ctx)
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_KPI_SIM_NOT_FOUND,
-                message="종료되거나 유효하지 않은 시뮬레이션입니다.",
-                status_code=404,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_KPI_SIM_NOT_FOUND
             )
 
         log_count = len(logs)
@@ -75,10 +72,9 @@ class CalculateKpiUseCase:
             self._system_logger.warn(
                 f"OEE computation failed validation: {str(e)}", log_ctx
             )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                message=str(e),
-                status_code=422,
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message=str(e),
             ) from e
 
         self._system_logger.info(

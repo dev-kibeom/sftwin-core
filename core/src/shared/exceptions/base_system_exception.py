@@ -26,10 +26,29 @@ class BaseSystemException(Exception):
         super().__init__(self.message)
 
     def get_response_dto(self) -> GlobalResponseDto[Any]:
-        """예외 정보를 GTS 표준 GlobalResponseDto 형태로 변환"""
-
         return GlobalResponseDto.error_response(
             code=self.error_code,
             message=self.message,
             data=self.details if self.details else None,
+        )
+
+    @classmethod
+    def from_error_code(
+        cls,
+        error_code: GlobalErrorCode,
+        custom_message: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> "BaseSystemException":
+        meta = ERROR_CODE_METADATA.get(
+            error_code,
+            {
+                "status": 500,
+                "msg": "An unexpected error occurred.",
+            },
+        )
+        return cls(
+            error_code=error_code,
+            message=custom_message or meta["msg"],
+            status_code=meta["status"],
+            details=details,
         )

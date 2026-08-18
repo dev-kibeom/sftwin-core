@@ -1,6 +1,6 @@
 import pytest
 from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.exceptions.base_exception import BaseSystemException
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.ipc.base_shared_memory_driver import BaseSharedMemoryDriver
 
 
