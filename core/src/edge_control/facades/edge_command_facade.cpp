@@ -1,6 +1,7 @@
 #include "edge_command_facade.hpp"
 
 #include <utility>
+#include <string>
 
 #include "edge_control/anomaly_failsafe/application/reset_interlock/reset_interlock_usecase.hpp"
 #include "edge_control/anomaly_failsafe/application/trigger_failsafe/trigger_failsafe_usecase.hpp"
@@ -18,9 +19,9 @@ EdgeCommandFacade::EdgeCommandFacade(
     : _failsafe_uc(std::move(failsafe_uc)),
       _reset_uc(std::move(reset_uc)) {}
 
-void EdgeCommandFacade::execute_failsafe_estop(const char* reason) {
+void EdgeCommandFacade::execute_failsafe_estop(const std::string& reason) {
     if (_failsafe_uc) {
-        _failsafe_uc->trigger_manual_estop(reason ? reason : "UNKNOWN_REASON");
+        _failsafe_uc->trigger_manual_estop(reason.empty() ? "UNKNOWN_REASON" : reason);
     }
 }
 

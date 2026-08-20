@@ -33,6 +33,7 @@ class GenerateDualKpiReportUseCase:
                 "turnkey_quote_cost": request_dto.turnkey_quote_cost,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
             baseline_metric = OeeMetric.from_oee_and_fpy(

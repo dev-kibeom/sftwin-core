@@ -20,7 +20,7 @@ class EdgeCommandFacade : public IEdgeCommandFacade {
 
     ~EdgeCommandFacade() override = default;
 
-    void execute_failsafe_estop(const char* reason) override;
+    void execute_failsafe_estop(const std::string& reason) override;
     bool resume_process(const std::string& sequence_script) override;
     bool reset_estop_2step(bool is_field_inspected, bool is_manager_approved) override;
 

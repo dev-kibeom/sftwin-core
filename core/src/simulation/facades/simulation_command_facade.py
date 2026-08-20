@@ -1,5 +1,4 @@
 from shared.context.user_context import UserContext
-from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 from simulation.fault_injection.application.inject_fault.inject_fault_dto import (
     InjectFaultRequestDto,
 )
@@ -34,19 +33,19 @@ from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_u
 
 
 class SimulationCommandFacade(ISimulationCommandFacade):
+    """시뮬레이션 실행 및 배포 명령을 해당 유스케이스로 중계하는 Thin Facade"""
+
     def __init__(
         self,
         run_fms_uc: RunFmsSimulationUseCase,
         inject_fault_uc: InjectFaultUseCase,
         deploy_uc: DeploySim2RealUseCase,
-        optimize_layout_uc: OptimizeLayoutUseCase | None = None,
-        rbac_manager: RbacAuthorizationManager | None = None,
-    ):
+        optimize_layout_uc: OptimizeLayoutUseCase,
+    ) -> None:
         self._run_fms_uc = run_fms_uc
         self._inject_fault_uc = inject_fault_uc
         self._deploy_uc = deploy_uc
-        self._optimize_layout_uc = optimize_layout_uc or OptimizeLayoutUseCase()
-        self._rbac_manager = rbac_manager
+        self._optimize_layout_uc = optimize_layout_uc
 
     def run_fms_simulation(
         self, request_dto: RunFmsSimulationRequestDto, ctx: UserContext

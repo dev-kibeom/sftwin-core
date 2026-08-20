@@ -37,6 +37,7 @@ class CreateExpertSessionUseCase:
             trace_id=getattr(ctx, "trace_id", "TRC-MIRRORING"),
             context={"baseline_id": baseline_id, "company_id": ctx.company_id},
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
             owner_id = self._query_repo.get_baseline_owner(baseline_id)

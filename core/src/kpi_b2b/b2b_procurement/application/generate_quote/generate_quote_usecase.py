@@ -49,6 +49,7 @@ class GenerateQuoteUseCase:
                 "idempotency_key": idempotency_key,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         if idempotency_key:
             try:

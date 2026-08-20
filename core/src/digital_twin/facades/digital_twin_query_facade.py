@@ -7,79 +7,26 @@ from digital_twin.ports.inbound.i_digital_twin_query_facade import (
 )
 from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
+)
+from digital_twin.twin_reconstruction.application.get_layout.layout_render_dto import (
     LayoutRenderDto,
 )
-from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.enums.user_role_enum import UserRole
-from shared.exceptions.base_system_exception import BaseSystemException
-from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
-    """3D 렌더링 좌표 및 자산 라이브러리 조회를 통합 제공하는 파사드 구현체."""
+    """3D 렌더링 좌표 및 자산 라이브러리 조회를 중계하는 Thin Facade"""
 
     def __init__(
         self,
         get_asset_uc: GetAssetUseCase,
-        get_layout_uc: GetLayoutUseCase | None = None,
-        system_logger: GlobalSystemLogger | None = None,
+        get_layout_uc: GetLayoutUseCase,
     ) -> None:
         self._get_asset_uc = get_asset_uc
         self._get_layout_uc = get_layout_uc
-        self._system_logger = system_logger or GlobalSystemLogger(
-            component_name="DigitalTwinQueryFacade"
-        )
 
-    def get_asset_info(self, asset_id: str, ctx: UserContext | None = None) -> AssetDto:
-        ctx = self._get_fallback_context_if_none(ctx)
-
-        log_ctx = LogContext(
-            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
-            context={"asset_id": asset_id, "user_id": ctx.user_id},
-        )
-        self._system_logger.debug(
-            f"Facade routing get_asset_info: {asset_id}", log_ctx=log_ctx
-        )
-
+    def get_asset_info(self, asset_id: str, ctx: UserContext) -> AssetDto:
         return self._get_asset_uc.execute(asset_id, ctx)
 
-    def get_layout_data(
-        self, baseline_id: str, ctx: UserContext | None = None
-    ) -> LayoutRenderDto:
-        ctx = self._get_fallback_context_if_none(ctx)
-
-        log_ctx = LogContext(
-            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
-            context={
-                "baseline_id": baseline_id,
-                "user_id": ctx.user_id,
-            },
-        )
-        self._system_logger.debug(
-            f"Facade routing get_layout_data: {baseline_id}", log_ctx=log_ctx
-        )
-
-        if self._get_layout_uc is None:
-            self._system_logger.error(
-                "GetLayoutUseCase dependency missing in facade", log_ctx=log_ctx
-            )
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
-                message="GetLayoutUseCase is not injected into DigitalTwinQueryFacade.",
-                status_code=500,
-            )
-
+    def get_layout_data(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
         return self._get_layout_uc.execute(baseline_id, ctx)
-
-    def _get_fallback_context_if_none(self, ctx: UserContext | None) -> UserContext:
-        if ctx is None:
-            return UserContext(
-                user_id="SYSTEM",
-                username="system",
-                company_id="SYSTEM_PUBLIC",
-                role=UserRole.SYSTEM_ADMIN,
-                accessible_factory_ids=[],
-            )
-        return ctx

@@ -4,7 +4,7 @@
 
 namespace sftwin::edge_control::anomaly_failsafe::domain {
 
-bool EstopResetPolicy::validate_reset_request(InterlockState current_state,
+void EstopResetPolicy::validate_reset_request(InterlockState current_state,
                                               bool is_field_inspected,
                                               bool is_manager_approved) const {
     if (current_state != InterlockState::ENGAGED) {
@@ -17,7 +17,6 @@ bool EstopResetPolicy::validate_reset_request(InterlockState current_state,
             "E-Stop reset rejected. Both field inspection and manager approval are required.");
     }
 
-    return true;
 }
 
 }  // namespace sftwin::edge_control::anomaly_failsafe::domain

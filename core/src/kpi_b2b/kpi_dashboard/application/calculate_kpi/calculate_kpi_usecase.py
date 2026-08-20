@@ -29,6 +29,7 @@ class CalculateKpiUseCase:
             trace_id=getattr(ctx, "trace_id", "TRC-CALC-KPI"),
             context={"sim_id": sim_id, "company_id": ctx.company_id},
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
             logs = self._query_repo.fetch_simulation_telemetry_logs(sim_id)

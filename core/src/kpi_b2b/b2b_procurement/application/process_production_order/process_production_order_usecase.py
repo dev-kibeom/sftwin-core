@@ -47,6 +47,7 @@ class ProcessProductionOrderUseCase:
                 "company_id": ctx.company_id,
             },
         )
+        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
         try:
             order_id = request_dto.order_id or f"ORD-{uuid.uuid4().hex[:8].upper()}"
