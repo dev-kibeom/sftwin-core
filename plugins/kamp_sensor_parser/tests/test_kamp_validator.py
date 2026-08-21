@@ -22,11 +22,11 @@ def kamp_adapter(mock_chunk_reader: MagicMock) -> KampDataAdapter:
 
 @pytest.fixture
 def valid_dataframe_chunk() -> pd.DataFrame:
+    """KAMP 실측 헤더 규격을 준수하는 정상 첫 청크 샘플"""
     return pd.DataFrame(
         [
             {
-                "idx": 1,
-                "time": 0.001,
+                "M_sequence_number": 1,
                 "X_ActualPosition": 12.345,
                 "Y_ActualPosition": 23.456,
                 "Z_ActualPosition": 34.567,
@@ -36,7 +36,7 @@ def valid_dataframe_chunk() -> pd.DataFrame:
                 "Z_CurrentFeedback": 0.8,
                 "S_CurrentFeedback": 2.5,
                 "S_OutputPower": 35.0,
-                "ActualFeedrate": 1500.0,
+                "M_CURRENT_FEEDRATE": 1500.0,
             }
         ]
     )
@@ -99,7 +99,7 @@ def test_tc_kmp_005_schema_column_missing(
     mock_chunk_reader: MagicMock,
     valid_dataframe_chunk: pd.DataFrame,
 ) -> None:
-    corrupted_chunk = valid_dataframe_chunk.drop(columns=["ActualFeedrate"])
+    corrupted_chunk = valid_dataframe_chunk.drop(columns=["M_CURRENT_FEEDRATE"])
     mock_chunk_reader.read_csv_in_chunks.return_value = iter([corrupted_chunk])
 
     with (

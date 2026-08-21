@@ -48,16 +48,10 @@ class KampDataAdapter(ISensorLogParser):
             f"Starting KAMP parsing pipeline: {file_path}", log_ctx
         )
 
-        # 1. 파일 시스템 제약 및 첫 레코드 스키마 검증 (FCN-KMP-001)
         self.validate_file(file_path)
-
-        # 2. 대용량 청크 스트리밍 및 시계열 보정 파이프라인 (FCN-KMP-002)
         parsed_dto = self._parse_series_data(file_path)
-
-        # 3. Core 도메인이 요구하는 순수 Python 딕셔너리로 직렬화 (FCN-KMP-003)
         domain_dict = self._export_to_domain_dict(parsed_dto)
 
-        # 4. 파싱 처리 소요 시간 및 결과 메타데이터 구조화 로깅
         duration_sec = time.perf_counter() - start_time
         self._log_parse_completion(
             file_name=parsed_dto.file_name,
@@ -125,19 +119,39 @@ class KampDataAdapter(ISensorLogParser):
             chunk_iterator = self._chunk_reader.read_csv_in_chunks(
                 file_path, chunk_size=self.CHUNK_STREAM_SIZE
             )
-            col_rename = {
-                "time": "time",
-                "X_ActualPosition": "x_pos",
-                "Y_ActualPosition": "y_pos",
-                "Z_ActualPosition": "z_pos",
-                "X_CurrentFeedback": "x_curr",
-                "S_CurrentFeedback": "s_curr",
-                "S_OutputPower": "s_power",
-                "ActualFeedrate": "feedrate",
-            }
 
             for chunk in chunk_iterator:
+                # 1. Feedrate 컬럼 별칭 해석 (ActualFeedrate vs M_CURRENT_FEEDRATE)
+                feedrate_col = (
+                    "ActualFeedrate"
+                    if "ActualFeedrate" in chunk.columns
+                    else "M_CURRENT_FEEDRATE"
+                )
+
+                # 2. 필수 컬럼 슬라이싱 및 표준 식별자로 이름 변경
+                col_rename = {
+                    "X_ActualPosition": "x_pos",
+                    "Y_ActualPosition": "y_pos",
+                    "Z_ActualPosition": "z_pos",
+                    "X_CurrentFeedback": "x_curr",
+                    "S_CurrentFeedback": "s_curr",
+                    "S_OutputPower": "s_power",
+                    feedrate_col: "feedrate",
+                }
+
                 sub_df = chunk[list(col_rename.keys())].rename(columns=col_rename)
+
+                # 3. Time 컬럼 처리 (CSV에 없을 경우 100Hz 기반 시간축 자동 산출)
+                if "time" in chunk.columns:
+                    sub_df["time"] = chunk["time"]
+                else:
+                    chunk_len = len(sub_df)
+                    dt = 1.0 / self._series_processor.TARGET_SAMPLING_RATE_HZ
+                    start_idx = total_samples
+                    sub_df["time"] = [
+                        round((start_idx + i) * dt, 4) for i in range(chunk_len)
+                    ]
+
                 total_nulls += int(sub_df.isna().sum().sum())
                 total_samples += len(sub_df)
 
@@ -163,7 +177,6 @@ class KampDataAdapter(ISensorLogParser):
         return columns_map, total_samples, total_nulls
 
     def _export_to_domain_dict(self, dto: KampParsedOutputDto) -> dict[str, Any]:
-        """Core 도메인 격리를 위해 서드파티 의존성 없는 순수 Python 딕셔너리로 직렬화"""
         return dto.to_dict()
 
     def _log_parse_completion(
@@ -173,7 +186,6 @@ class KampDataAdapter(ISensorLogParser):
         duration_sec: float,
         log_ctx: LogContext,
     ) -> None:
-        """파싱 완료 메타데이터 구조화 로깅"""
         log_ctx.context.update(
             {
                 "file_name": file_name,
