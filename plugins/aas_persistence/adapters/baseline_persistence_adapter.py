@@ -1,6 +1,9 @@
 from digital_twin.ports.outbound.i_baseline_command_repository import (
     IBaselineCommandRepository,
 )
+from digital_twin.ports.outbound.i_baseline_query_repository import (
+    IBaselineQueryRepository,
+)
 from digital_twin.twin_reconstruction.domain.twin_baseline.twin_baseline import (
     TwinBaseline,
 )
@@ -21,7 +24,7 @@ from plugins.aas_persistence.session.database_session_factory import (
 )
 
 
-class BaselinePersistenceAdapter(IBaselineCommandRepository):
+class BaselinePersistenceAdapter(IBaselineCommandRepository, IBaselineQueryRepository):
     def __init__(
         self,
         session_factory: DatabaseSessionFactory,
@@ -89,6 +92,58 @@ class BaselinePersistenceAdapter(IBaselineCommandRepository):
             )
 
         return is_deleted
+
+    def find_by_id(self, baseline_id: str) -> TwinBaseline | None:
+        log_ctx = LogContext(
+            trace_id=f"TRC-BASE-QRY-{baseline_id}",
+            context={"baseline_id": baseline_id},
+        )
+        self._system_logger.debug(
+            f"Executing find_by_id for TwinBaseline: {baseline_id}", log_ctx
+        )
+
+        orm_model = self._query_baseline_record(baseline_id, log_ctx)
+        if orm_model is None:
+            return None
+
+        return self._map_to_domain_entity(orm_model, log_ctx)
+
+    def _query_baseline_record(
+        self, baseline_id: str, log_ctx: LogContext
+    ) -> BaselineOrmModel | None:
+        session: Session = self._session_factory.get_session()
+        try:
+            return (
+                session.query(BaselineOrmModel)
+                .filter(
+                    BaselineOrmModel.baseline_id == baseline_id,
+                    BaselineOrmModel.is_deleted.is_(False),
+                )
+                .first()
+            )
+        except SQLAlchemyError as e:
+            session.rollback()
+            log_ctx.exc = e
+            self._system_logger.error(
+                f"Failed to query TwinBaseline '{baseline_id}' from RDBMS.", log_ctx
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_DB_CONNECTION_FAILED,
+                custom_message=f"Database error during query of TwinBaseline '{baseline_id}'.",
+                details={"baseline_id": baseline_id, "error": str(e)},
+            ) from e
+        finally:
+            session.close()
+
+    def _map_to_domain_entity(
+        self, orm_model: BaselineOrmModel, log_ctx: LogContext
+    ) -> TwinBaseline:
+        domain_baseline = self._mapper.to_domain_entity(orm_model)
+        self._system_logger.info(
+            f"Successfully resolved TwinBaseline '{orm_model.baseline_id}' to domain entity.",
+            log_ctx,
+        )
+        return domain_baseline
 
     def _validate_sync_error_rate(self, sync_error_rate: float) -> None:
         if (
