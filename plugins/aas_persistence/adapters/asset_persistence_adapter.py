@@ -1,22 +1,20 @@
-import contextlib
 import json
 import os
+from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from digital_twin.asset_library.domain.asset.asset import Asset
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
+from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.enums.audit_severity_enum import AuditSeverity
 from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
-from shared.logger.global_audit_logger import (
-    GlobalAuditLogger,
-    SecurityAuditEvent,
-)
+from shared.logger.global_audit_logger import GlobalAuditLogger, SecurityAuditEvent
 from shared.logger.global_system_logger import GlobalSystemLogger
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -32,9 +30,7 @@ from plugins.aas_persistence.validators.aas_json_schema_validator import (
 )
 
 
-class AssetPersistenceAdapter(IAssetCommandRepository):
-    """Core Outbound IAssetCommandRepository 구현체."""
-
+class AssetPersistenceAdapter(IAssetCommandRepository, IAssetQueryRepository):
     def __init__(
         self,
         session_factory: DatabaseSessionFactory,
@@ -54,7 +50,6 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
         self._audit_logger = audit_logger or GlobalAuditLogger()
 
     def save(self, asset: Asset) -> Asset:
-        """Asset 도메인 엔티티를 검증 후 AAS 파일 및 MySQL에 원자적으로 영속화한다."""
         log_ctx = LogContext(
             trace_id=f"TRC-SAVE-{asset.asset_id}",
             context={"asset_id": asset.asset_id, "company_id": asset.company_id},
@@ -99,7 +94,6 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
         return asset
 
     def delete(self, asset_id: str) -> bool:
-        """대상 Asset을 RDBMS에서 소프트 삭제하고 보안 감사 로그를 발행한다."""
         log_ctx = LogContext(
             trace_id=f"TRC-DEL-{asset_id}",
             context={"asset_id": asset_id},
@@ -129,8 +123,104 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
 
         return is_deleted
 
+    def find_by_id(self, asset_id: str) -> Asset | None:
+        log_ctx = LogContext(
+            trace_id=f"TRC-QRY-{asset_id}",
+            context={"asset_id": asset_id},
+        )
+        self._system_logger.debug(f"Starting query for Asset: {asset_id}", log_ctx)
+
+        orm_model = self._query_asset_record(asset_id, log_ctx)
+        if orm_model is None:
+            return None
+
+        aas_file_path = cast(str | None, orm_model.aas_file_path)
+        aas_payload = self._read_aas_submodel_payload(
+            aas_file_path=aas_file_path,
+            orm_model=orm_model,
+            log_ctx=log_ctx,
+        )
+
+        return self._map_to_domain_entity(orm_model, aas_payload, log_ctx)
+
+    def _query_asset_record(
+        self, asset_id: str, log_ctx: LogContext
+    ) -> AssetOrmModel | None:
+        session: Session = self._session_factory.get_session()
+        try:
+            return (
+                session.query(AssetOrmModel)
+                .filter(
+                    AssetOrmModel.asset_id == asset_id,
+                    AssetOrmModel.is_deleted.is_(False),
+                )
+                .first()
+            )
+        except SQLAlchemyError as e:
+            session.rollback()
+            log_ctx.exc = e
+            self._system_logger.error(
+                f"Failed to query Asset '{asset_id}' from RDBMS.", log_ctx
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_DB_CONNECTION_FAILED,
+                custom_message=f"Database error during query of Asset '{asset_id}'.",
+                details={"asset_id": asset_id, "error": str(e)},
+            ) from e
+        finally:
+            session.close()
+
+    def _read_aas_submodel_payload(
+        self,
+        aas_file_path: str | None,
+        orm_model: AssetOrmModel,
+        log_ctx: LogContext,
+    ) -> dict[str, Any]:
+        if not aas_file_path:
+            return self._fallback_to_db_kinematics(
+                orm_model, log_ctx, "AAS file path is missing in DB."
+            )
+
+        path = Path(aas_file_path)
+        if not path.exists():
+            return self._fallback_to_db_kinematics(
+                orm_model, log_ctx, f"AAS file '{aas_file_path}' not found on disk."
+            )
+
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            return self._fallback_to_db_kinematics(
+                orm_model, log_ctx, f"Failed to read AAS file '{aas_file_path}': {e}"
+            )
+
+    def _fallback_to_db_kinematics(
+        self,
+        orm_model: AssetOrmModel,
+        log_ctx: LogContext,
+        warning_reason: str,
+    ) -> dict[str, Any]:
+        self._system_logger.warn(
+            f"Fallback applied for Asset '{orm_model.asset_id}': {warning_reason}",
+            log_ctx,
+        )
+        return {"submodels": {"kinematics": orm_model.kinematics_metadata}}
+
+    def _map_to_domain_entity(
+        self,
+        orm_model: AssetOrmModel,
+        aas_payload: dict[str, Any],
+        log_ctx: LogContext,
+    ) -> Asset:
+        domain_entity = self._mapper.to_domain_entity(orm_model, aas_payload)
+        self._system_logger.info(
+            f"Successfully resolved Asset '{orm_model.asset_id}' to domain entity.",
+            log_ctx,
+        )
+        return domain_entity
+
     def _validate_kinematics_schema(self, kinematics_data: dict[str, Any]) -> None:
-        """관절 운동학 스키마를 검증하고 실패 시 ERR_TWIN_INVALID_SCHEMA 예외를 발생시킨다."""
         try:
             self._validator.validate_kinematics_json(kinematics_data)
         except SchemaValidationError as e:
@@ -147,7 +237,6 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
         payload: dict[str, Any],
         log_ctx: LogContext,
     ) -> str:
-        """임시 파일 작성 후 atomic replace 방식으로 AAS JSON 파일을 기록한다."""
         target_dir = self._aas_storage_dir / company_id
         target_file_path = target_dir / f"{asset_id}.json"
         temp_file_path = target_dir / f"{asset_id}.json.tmp"
@@ -165,7 +254,7 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
                 log_ctx,
             )
             if temp_file_path.exists():
-                with contextlib.suppress(OSError):
+                with suppress(OSError):
                     os.remove(temp_file_path)
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
@@ -174,7 +263,6 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
             ) from e
 
     def _persist_to_rdbms(self, orm_model: AssetOrmModel, log_ctx: LogContext) -> None:
-        """SQLAlchemy 세션을 통해 ORM 모델을 병합하고 커밋한다."""
         session: Session = self._session_factory.get_session()
         try:
             session.merge(orm_model)
@@ -194,7 +282,6 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
             session.close()
 
     def _rollback_physical_file(self, file_path: str, log_ctx: LogContext) -> None:
-        """DB 롤백 시 보상 트랜잭션으로 생성된 물리 AAS 파일을 삭제한다."""
         path = Path(file_path)
         if path.exists():
             try:
@@ -211,7 +298,6 @@ class AssetPersistenceAdapter(IAssetCommandRepository):
                 )
 
     def _mark_deleted_in_rdbms(self, asset_id: str, log_ctx: LogContext) -> bool:
-        """DB 상의 asset 레코드를 is_deleted=1로 소프트 삭제한다."""
         session: Session = self._session_factory.get_session()
         try:
             record = (
