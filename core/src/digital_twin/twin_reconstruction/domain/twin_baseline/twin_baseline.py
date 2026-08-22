@@ -11,8 +11,8 @@ class TwinBaseline:
     """디지털 트윈 베이스라인 도메인 엔티티"""
 
     baseline_name: str
-    source_log_path: str
     company_id: str
+    source_log_path: str | None = None
     baseline_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     sync_error_rate: float = 0.0
     sync_status: TwinSyncStatus = TwinSyncStatus.PENDING
@@ -38,8 +38,8 @@ class TwinBaseline:
         if not self.company_id or not self.company_id.strip():
             raise ValueError("Valid company_id is required for tenant isolation.")
 
-        if self.sync_error_rate < 0.0:
-            raise ValueError("sync_error_rate cannot be negative.")
+        if not (0.0 <= self.sync_error_rate <= 1.0):
+            raise ValueError("sync_error_rate must be between 0.0 and 1.0.")
 
     @classmethod
     def create_from_raw_data(
