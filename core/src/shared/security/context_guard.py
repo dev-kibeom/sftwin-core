@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Any
 
 from shared.context.user_context import UserContext
+from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
 
 

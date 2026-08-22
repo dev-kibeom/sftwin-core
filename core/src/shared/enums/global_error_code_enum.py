@@ -8,6 +8,7 @@ class GlobalErrorCode(str, Enum):
     ERR_COMMON_UNAUTHORIZED = "ERR_COMMON_UNAUTHORIZED"
     ERR_COMMON_FORBIDDEN = "ERR_COMMON_FORBIDDEN"
     ERR_COMMON_INTERNAL_ERROR = "ERR_COMMON_INTERNAL_ERROR"
+    ERR_DB_CONNECTION_FAILED = "ERR_DB_CONNECTION_FAILED"
 
     # Asset Twin Domain
     ERR_TWIN_NOT_FOUND = "ERR_TWIN_NOT_FOUND"
@@ -53,6 +54,10 @@ ERROR_CODE_METADATA: dict[GlobalErrorCode, dict[str, Any]] = {
     GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR: {
         "status": 500,
         "msg": "An unexpected internal server error occurred.",
+    },
+    GlobalErrorCode.ERR_DB_CONNECTION_FAILED: {
+        "status": 500,
+        "msg": "Database connection failed or connection pool exhausted.",
     },
     GlobalErrorCode.ERR_IPC_SHARED_MEMORY_ERROR: {
         "status": 500,
