@@ -25,8 +25,8 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
         self._get_asset_uc = get_asset_uc
         self._get_layout_uc = get_layout_uc
 
-    def get_asset_info(self, asset_id: str, ctx: UserContext) -> AssetDto:
+    def get_asset(self, asset_id: str, ctx: UserContext) -> AssetDto:
         return self._get_asset_uc.execute(asset_id, ctx)
 
-    def get_layout_data(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
+    def get_layout(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
         return self._get_layout_uc.execute(baseline_id, ctx)

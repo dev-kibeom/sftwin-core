@@ -21,8 +21,8 @@ from sqlalchemy.orm import Session
 
 from plugins.aas_persistence.mappers.asset_entity_mapper import AssetEntityMapper
 from plugins.aas_persistence.models.asset_orm_model import AssetOrmModel
-from plugins.aas_persistence.session.database_session_factory import (
-    DatabaseSessionFactory,
+from plugins.aas_persistence.session.mysql_session_factory import (
+    MysqlSessionFactory,
 )
 from plugins.aas_persistence.validators.aas_json_schema_validator import (
     AasJsonSchemaValidator,
@@ -33,7 +33,7 @@ from plugins.aas_persistence.validators.aas_json_schema_validator import (
 class AssetPersistenceAdapter(IAssetCommandRepository, IAssetQueryRepository):
     def __init__(
         self,
-        session_factory: DatabaseSessionFactory,
+        session_factory: MysqlSessionFactory,
         validator: AasJsonSchemaValidator | None = None,
         mapper: AssetEntityMapper | None = None,
         aas_storage_dir: str | Path = "data/assets/aas",

@@ -20,10 +20,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./data/runtime/logs/nginx:/var/log/nginx:rw
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../data/runtime/logs/nginx:/var/log/nginx:rw
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost/healthz || exit 1"]
+      test: [ "CMD-SHELL", "wget --spider -q http://localhost/healthz || exit 1" ]
       interval: 10s
       timeout: 2s
       retries: 3
@@ -35,18 +35,19 @@ services:
   # Cloud Layer: Asset & Digital Twin Service
   asset-svc:
     build:
-      context: ./core
-      dockerfile: src/digital_twin/Dockerfile
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: asset-svc
     container_name: asset-svc
     restart: always
     env_file:
       - .env.shared
       - .env.local
     volumes:
-      - ./data/assets/cad:/app/assets/cad:rw
-      - ./data/assets/aas:/app/assets/aas:rw
+      - ../data/assets/cad:/app/assets/cad:rw
+      - ../data/assets/aas:/app/assets/aas:rw
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/healthz || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/healthz || exit 1" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -57,8 +58,9 @@ services:
   # Cloud Layer: Simulation & Physics Service (IDD v4.1 Update)
   sim-svc:
     build:
-      context: ./core
-      dockerfile: src/simulation/Dockerfile
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: sim-svc
     container_name: sim-svc
     restart: always
     ipc: host # Shared Memory IPC communication (IDD v4.1)
@@ -66,13 +68,13 @@ services:
       - "50051:50051" # gRPC Sim-to-Real Deploy
       - "50000-50100:50000-50100/udp" # WebRTC Streaming (IDD v4.1)
     volumes:
-      - ./data/sim_packages:/app/sim_packages:rw
+      - ../data/sim_packages:/app/sim_packages:rw
       - /dev/shm:/dev/shm:rw # POSIX Shared Memory binding (IDD v4.1)
     env_file:
       - .env.shared
       - .env.local
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8001/healthz || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8001/healthz || exit 1" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -84,15 +86,16 @@ services:
   # Cloud Layer: KPI & B2B Service
   kpi-svc:
     build:
-      context: ./core
-      dockerfile: src/kpi_b2b/Dockerfile
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: kpi-svc
     container_name: kpi-svc
     restart: always
     env_file:
       - .env.shared
       - .env.local
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8002/healthz || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8002/healthz || exit 1" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -108,10 +111,10 @@ services:
     env_file:
       - .env.local
     volumes:
-      - ./data/runtime/storage/mysql:/var/lib/mysql:rw
-      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../data/runtime/storage/mysql:/var/lib/mysql:rw
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pUnexposedSecureRootPassword!2026"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pUnexposedSecureRootPassword!2026" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -125,9 +128,9 @@ services:
     container_name: redis
     restart: always
     volumes:
-      - ./data/runtime/storage/redis:/data:rw
+      - ../data/runtime/storage/redis:/data:rw
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 1s
       retries: 3
@@ -143,9 +146,9 @@ services:
     ports:
       - "127.0.0.1:8086:8086"
     volumes:
-      - ./data/runtime/storage/influxdb:/var/lib/influxdb2:rw
+      - ../data/runtime/storage/influxdb:/var/lib/influxdb2:rw
     healthcheck:
-      test: ["CMD", "influx", "ping"]
+      test: [ "CMD", "influx", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3

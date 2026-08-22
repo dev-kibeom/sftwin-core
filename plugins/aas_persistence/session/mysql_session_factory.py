@@ -1,3 +1,4 @@
+import os
 from collections.abc import Generator
 from contextlib import contextmanager
 
@@ -6,15 +7,24 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 
-class DatabaseSessionFactory:
-    """SQLAlchemy 세션 및 엔진 라이프사이클 관리자."""
-
+class MysqlSessionFactory:
     def __init__(
         self,
-        db_url: str = "mysql+pymysql://root:password@localhost:3306/sftwin_db",
+        db_url: str | None = None,
         **engine_kwargs: object,
     ) -> None:
-        self._engine: Engine = create_engine(db_url, **engine_kwargs)
+        user = os.getenv("MYSQL_USER") or os.getenv("DB_USER", "sftwin_admin")
+        password = os.getenv("MYSQL_PASSWORD") or os.getenv(
+            "DB_PASSWORD", "SecureAdminPassword123!"
+        )
+        host = os.getenv("MYSQL_HOST") or os.getenv("DB_HOST", "localhost")
+        port = os.getenv("MYSQL_PORT") or os.getenv("DB_PORT", "3306")
+        dbname = os.getenv("MYSQL_DATABASE") or os.getenv("DB_NAME", "sftwin_db")
+
+        default_url = f"mysql+pymysql://{user}:{password}@{host}:{port}/{dbname}"
+        resolved_url = db_url or os.getenv("DATABASE_URL") or default_url
+
+        self._engine: Engine = create_engine(resolved_url, **engine_kwargs)
         self._session_maker = sessionmaker(
             bind=self._engine,
             autocommit=False,
@@ -23,12 +33,10 @@ class DatabaseSessionFactory:
         )
 
     def get_session(self) -> Session:
-        """독립적인 SQLAlchemy Session을 생성하여 반환한다."""
         return self._session_maker()
 
     @contextmanager
     def session_scope(self) -> Generator[Session, None, None]:
-        """세션 라이프사이클을 관리하는 컨텍스트 매니저."""
         session: Session = self.get_session()
         try:
             yield session
@@ -39,5 +47,4 @@ class DatabaseSessionFactory:
             session.close()
 
     def dispose(self) -> None:
-        """엔진 커넥션 풀을 해제한다."""
         self._engine.dispose()

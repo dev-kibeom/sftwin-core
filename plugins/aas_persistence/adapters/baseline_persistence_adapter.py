@@ -19,15 +19,15 @@ from sqlalchemy.orm import Session
 
 from plugins.aas_persistence.mappers.baseline_entity_mapper import BaselineEntityMapper
 from plugins.aas_persistence.models.baseline_orm_model import BaselineOrmModel
-from plugins.aas_persistence.session.database_session_factory import (
-    DatabaseSessionFactory,
+from plugins.aas_persistence.session.mysql_session_factory import (
+    MysqlSessionFactory,
 )
 
 
 class BaselinePersistenceAdapter(IBaselineCommandRepository, IBaselineQueryRepository):
     def __init__(
         self,
-        session_factory: DatabaseSessionFactory,
+        session_factory: MysqlSessionFactory,
         mapper: BaselineEntityMapper | None = None,
         system_logger: GlobalSystemLogger | None = None,
         audit_logger: GlobalAuditLogger | None = None,

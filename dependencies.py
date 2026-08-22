@@ -1,75 +1,79 @@
-# sftwin_project/dependencies.py
-"""
-[Global Dependency Container]
-최외곽 plugins/ 컴포넌트 개발 상태에 따라 점진적으로 구현체를 주입(Plug-in)합니다.
-자세한 개발 및 주입 규칙은 GTS 규약을 따릅니다.
-"""
+from pathlib import Path
 
-from typing import Optional
+from dotenv import load_dotenv
 
-from core.src.simulation.facades.simulation_command_facade import (
-    SimulationCommandFacade,
+BASE_DIR = Path(__file__).resolve().parent
+ENV_LOCAL_PATH = BASE_DIR / "infra" / ".env.local"
+if ENV_LOCAL_PATH.exists():
+    load_dotenv(ENV_LOCAL_PATH)
+
+from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
+    GetAssetUseCase,
 )
-from core.src.simulation.fault_injection_bt.application.inject_fault_usecase import (
-    InjectFaultUseCase,
+from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
+    RegisterAssetUseCase,
 )
-from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase import (
-    RunFmsSimulationUseCase,
+from digital_twin.facades.digital_twin_command_facade import DigitalTwinCommandFacade
+from digital_twin.facades.digital_twin_query_facade import DigitalTwinQueryFacade
+from digital_twin.ports.inbound.i_digital_twin_command_facade import (
+    IDigitalTwinCommandFacade,
 )
-from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_usecase import (
-    DeploySim2RealUseCase,
+from digital_twin.ports.inbound.i_digital_twin_query_facade import (
+    IDigitalTwinQueryFacade,
+)
+from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
+    GetLayoutUseCase,
+)
+from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
+    ReconstructTwinUseCase,
 )
 
+from plugins.aas_persistence.adapters.asset_persistence_adapter import (
+    AssetPersistenceAdapter,
+)
+from plugins.aas_persistence.adapters.baseline_persistence_adapter import (
+    BaselinePersistenceAdapter,
+)
+from plugins.aas_persistence.session.mysql_session_factory import (
+    MysqlSessionFactory,
+)
+from plugins.kamp_sensor_parser.adapters.kamp_data_adapter import KampDataAdapter
 
-class GlobalDependencyContainer:
-    _instance: Optional["GlobalDependencyContainer"] = None
 
-    def __init__(self):
-        # ---------------------------------------------------------------------
-        # 1. C++ Native Plugins (.so)
-        # ---------------------------------------------------------------------
-        # TODO(Plugin-MuJoCo): plugins/mujoco_physics 개발 완료 시 주입 활성화
-        self.physics_plugin = None
+class InfraContainer:
+    def __init__(self) -> None:
+        self.session_factory = MysqlSessionFactory()
+        # 공통 Redis, EventBus 등이 있다면 여기에 초기화
 
-        # ---------------------------------------------------------------------
-        # 2. Python AI & External Services
-        # ---------------------------------------------------------------------
-        # TODO(Plugin-TSDB): plugins/influx_timeseries 개발 완료 시 주입 활성화
-        self.tsdb_adapter = None
 
-        # TODO(Plugin-Vision): plugins/ai_analytics 개발 완료 시 주입 활성화
-        self.vision_detector = None
-
-    @classmethod
-    def get_instance(cls) -> "GlobalDependencyContainer":
-        if cls._instance is None:
-            cls._instance = GlobalDependencyContainer()
-        return cls._instance
-
-    def get_simulation_command_facade(self) -> SimulationCommandFacade:
-        """
-        현재는 core의 유즈케이스 인스턴스만 생성하여 제공하며,
-        최외곽 컴포넌트가 완성되는 대로 포트에 매핑합니다.
-        """
-        run_fms_uc = RunFmsSimulationUseCase(
-            physics_adapter=self.physics_plugin,
-            # tsdb_port=self.tsdb_adapter,
+class DigitalTwinContainer:
+    def __init__(self, infra: InfraContainer) -> None:
+        self._asset_adapter = AssetPersistenceAdapter(
+            session_factory=infra.session_factory,
+            aas_storage_dir=str(BASE_DIR / "data" / "assets" / "aas"),
         )
-        inject_fault_uc = InjectFaultUseCase(
-            rl_planner_adapter=None,  # TODO: RL Planner Adapter 주입 필요
-            physics_adapter=self.physics_plugin,
-            # vision_port=self.vision_detector
+        self._baseline_adapter = BaselinePersistenceAdapter(
+            session_factory=infra.session_factory
         )
-        deploy_uc = DeploySim2RealUseCase(
-            deploy_adapter=None
-        )  # TODO: Deploy Adapter 주입 필요
+        self._sensor_parser = KampDataAdapter()
 
-        return SimulationCommandFacade(
-            run_fms_uc=run_fms_uc,
-            inject_fault_uc=inject_fault_uc,
-            deploy_uc=deploy_uc,
+    def get_command_facade(self) -> IDigitalTwinCommandFacade:
+        return DigitalTwinCommandFacade(
+            register_asset_uc=RegisterAssetUseCase(command_repo=self._asset_adapter),
+            reconstruct_uc=ReconstructTwinUseCase(
+                sensor_parser=self._sensor_parser,
+                command_repo=self._baseline_adapter,
+            ),
         )
 
+    def get_query_facade(self) -> IDigitalTwinQueryFacade:
+        return DigitalTwinQueryFacade(
+            get_asset_uc=GetAssetUseCase(query_repo=self._asset_adapter),
+            get_layout_uc=GetLayoutUseCase(query_repo=self._baseline_adapter),
+        )
 
-def get_global_sim_facade() -> SimulationCommandFacade:
-    return GlobalDependencyContainer.get_instance().get_simulation_command_facade()
+
+class SimulationContainer:
+    def __init__(self, infra: InfraContainer) -> None:
+        # 시뮬레이션용 어댑터 초기화 및 파사드 제공
+        pass
