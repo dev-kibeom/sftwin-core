@@ -1,5 +1,5 @@
 from digital_twin.asset_library.domain.asset.asset import Asset
-from shared.enums.asset_type_enum import AssetType
+from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,

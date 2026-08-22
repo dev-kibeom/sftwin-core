@@ -12,7 +12,7 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_d
 from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_twin_usecase import (
     ReconstructTwinUseCase,
 )
-from shared.enums.twin_sync_status_enum import (
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_sync_status_enum import (
     TwinSyncStatus,
 )
 from shared.context.user_context import UserContext

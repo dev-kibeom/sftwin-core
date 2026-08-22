@@ -1,6 +1,6 @@
 import pytest
 from digital_twin.asset_library.domain.asset.asset import Asset
-from shared.enums.asset_type_enum import AssetType
+from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 
 
 def test_aas_asset_valid_schema():
