@@ -3,7 +3,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from .asset_type_enum import AssetType
+from shared.enums.asset_type_enum import AssetType
+
 from .kinematics_schema_key_enum import KinematicsSchemaKey
 
 

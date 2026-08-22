@@ -1,7 +1,7 @@
 from digital_twin.twin_reconstruction.domain.twin_baseline.twin_baseline import (
     TwinBaseline,
 )
-from digital_twin.twin_reconstruction.domain.twin_baseline.twin_sync_status_enum import (
+from shared.enums.twin_sync_status_enum import (
     TwinSyncStatus,
 )
 

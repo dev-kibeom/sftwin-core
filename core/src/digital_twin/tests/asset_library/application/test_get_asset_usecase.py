@@ -5,7 +5,7 @@ from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
     GetAssetUseCase,
 )
 from digital_twin.asset_library.domain.asset.asset import Asset
-from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
+from shared.enums.asset_type_enum import AssetType
 from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
 from shared.context.user_context import UserContext
