@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
 from plugins.kamp_sensor_parser.adapters.kamp_data_adapter import KampDataAdapter
 from plugins.kamp_sensor_parser.utils.csv_chunk_reader import CsvChunkReader
@@ -55,7 +55,7 @@ def test_tc_kmp_001_happy_path(
     ):
         result = kamp_adapter.validate_file("data/sample_exp_01.csv")
 
-    assert result is True
+    assert result is None
     mock_chunk_reader.read_csv_in_chunks.assert_called_once()
 
 

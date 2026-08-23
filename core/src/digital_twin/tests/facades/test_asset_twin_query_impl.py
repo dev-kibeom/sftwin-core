@@ -1,11 +1,3 @@
-"""
-===============================================================================
-[File Name] test_digital_twin_query_impl.py
-[Location ] /tests/digital_twin/facades/test_digital_twin_query_impl.py
-[Description] AssetTwinQueryImpl 파사드 위임 및 기능 단위 테스트
-===============================================================================
-"""
-
 from unittest.mock import MagicMock
 
 from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
@@ -17,7 +9,7 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     LayoutRenderDto,
 )
 from shared.context.user_context import UserContext
-from shared.enums.user_role_enum import UserRole
+from shared.security.user_role_enum import UserRole
 
 
 def test_facade_get_layout_data_delegation():
@@ -48,7 +40,7 @@ def test_facade_get_layout_data_delegation():
     )
 
     # When
-    result = facade.get_layout_data("BASE-TWIN-001", ctx)
+    result = facade.get_layout("BASE-TWIN-001", ctx)
 
     # Then
     assert result.baseline_id == "BASE-TWIN-001"

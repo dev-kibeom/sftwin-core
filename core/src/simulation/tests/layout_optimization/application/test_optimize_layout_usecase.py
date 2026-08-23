@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.user_role_enum import UserRole
+from shared.security.user_role_enum import UserRole
 from simulation.layout_optimization.application.optimize_layout.optimize_layout_dto import (
     OptimizeLayoutRequestDto,
 )

@@ -2,13 +2,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCode
+from digital_twin.ports.outbound.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
 from plugins.kamp_sensor_parser.adapters.kamp_data_adapter import KampDataAdapter
-from plugins.kamp_sensor_parser.schemas.kamp_parsed_output_dto import (
-    KampParsedOutputDto,
-)
 from plugins.kamp_sensor_parser.utils.csv_chunk_reader import CsvChunkReader
 from plugins.kamp_sensor_parser.utils.kamp_file_validator import (
     KampFileValidator,
@@ -26,7 +24,7 @@ def mock_chunk_reader() -> MagicMock:
 @pytest.fixture
 def mock_file_validator() -> MagicMock:
     validator = MagicMock(spec=KampFileValidator)
-    validator.validate.return_value = Path("data/exp_01.csv")
+    validator.validate_and_resolve.return_value = Path("data/exp_01.csv")
     return validator
 
 
@@ -38,8 +36,8 @@ def mock_series_processor() -> MagicMock:
 
 
 @pytest.fixture
-def sample_parsed_dto() -> KampParsedOutputDto:
-    return KampParsedOutputDto(
+def sample_parsed_dto() -> ParsedSensorLogDto:
+    return ParsedSensorLogDto(
         file_name="exp_01.csv",
         total_samples=10,
         sampling_rate_hz=100.0,
@@ -77,24 +75,32 @@ def kamp_adapter(
 # =============================================================================
 # TC-KMP-016: Happy Path (Full Export)
 # =============================================================================
+
+
 def test_tc_kmp_016_happy_path_full_export(
     kamp_adapter: KampDataAdapter,
     mock_file_validator: MagicMock,
-    sample_parsed_dto: KampParsedOutputDto,
+    sample_parsed_dto: ParsedSensorLogDto,
 ) -> None:
+    # Given & When
     with patch.object(
         kamp_adapter, "_parse_series_data", return_value=sample_parsed_dto
     ) as mock_parse_series:
         result = kamp_adapter.parse("data/exp_01.csv")
 
-    mock_file_validator.validate.assert_called_once_with("data/exp_01.csv")
+    # Then
+    mock_file_validator.validate_and_resolve.assert_called_once_with(
+        "data/exp_01.csv", trace_id="TRC-KAMP-PARSE-MAIN"
+    )
     mock_parse_series.assert_called_once_with("data/exp_01.csv")
-    assert isinstance(result, dict)
-    assert result["file_name"] == "exp_01.csv"
-    assert result["total_samples"] == 10
-    assert result["sampling_rate_hz"] == 100.0
-    assert "time_series" in result
-    assert "summary_metrics" in result
+
+    # DTO 인스턴스 및 속성 검증
+    assert isinstance(result, ParsedSensorLogDto)
+    assert result.file_name == "exp_01.csv"
+    assert result.total_samples == 10
+    assert result.sampling_rate_hz == 100.0
+    assert hasattr(result, "time_series")
+    assert hasattr(result, "summary_metrics")
 
 
 # =============================================================================
@@ -104,9 +110,11 @@ def test_tc_kmp_017_validation_delegation_failure(
     kamp_adapter: KampDataAdapter,
     mock_file_validator: MagicMock,
 ) -> None:
-    mock_file_validator.validate.side_effect = BaseSystemException.from_error_code(
-        GlobalErrorCode.ERR_TWIN_NOT_FOUND,
-        custom_message="CSV file not found",
+    mock_file_validator.validate_and_resolve.side_effect = (
+        BaseSystemException.from_error_code(
+            GlobalErrorCode.ERR_TWIN_NOT_FOUND,
+            custom_message="CSV file not found",
+        )
     )
 
     with (
@@ -126,9 +134,11 @@ def test_tc_kmp_018_schema_mismatch_delegation(
     kamp_adapter: KampDataAdapter,
     mock_file_validator: MagicMock,
 ) -> None:
-    mock_file_validator.validate.side_effect = BaseSystemException.from_error_code(
-        GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
-        custom_message="Schema mismatch",
+    mock_file_validator.validate_and_resolve.side_effect = (
+        BaseSystemException.from_error_code(
+            GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
+            custom_message="Schema mismatch",
+        )
     )
 
     with (
@@ -148,7 +158,7 @@ def test_tc_kmp_019_sensor_corruption_delegation(
     kamp_adapter: KampDataAdapter,
     mock_file_validator: MagicMock,
 ) -> None:
-    mock_file_validator.validate.return_value = Path("data/corrupted.csv")
+    mock_file_validator.validate_and_resolve.return_value = Path("data/corrupted.csv")
 
     with (
         patch.object(
@@ -171,25 +181,30 @@ def test_tc_kmp_019_sensor_corruption_delegation(
 # =============================================================================
 def test_tc_kmp_020_pure_dict_normalization_check(
     kamp_adapter: KampDataAdapter,
-    sample_parsed_dto: KampParsedOutputDto,
+    sample_parsed_dto: ParsedSensorLogDto,
 ) -> None:
     with patch.object(
         kamp_adapter, "_parse_series_data", return_value=sample_parsed_dto
     ):
         result = kamp_adapter.parse("data/exp_01.csv")
 
-    assert type(result) is dict
-    assert type(result["file_name"]) is str
-    assert type(result["total_samples"]) is int
-    assert type(result["sampling_rate_hz"]) is float
-    assert type(result["time_series"]) is dict
-    assert type(result["summary_metrics"]) is dict
+    # 1. 반환 타입이 DTO 클래스 인스턴스인지 검증 (dict가 아님)
+    assert isinstance(result, ParsedSensorLogDto)
 
-    for key, val in result["time_series"].items():
+    # 2. 딕셔너리 key 접근이 아닌 객체 attribute (.) 접근으로 변경
+    assert type(result.file_name) is str
+    assert type(result.total_samples) is int
+    assert type(result.sampling_rate_hz) is float
+    assert type(result.time_series) is dict
+    assert type(result.summary_metrics) is dict
+
+    # 3. time_series 내부 데이터 검증
+    for key, val in result.time_series.items():
         assert type(key) is str
         assert type(val) is list
         assert all(type(x) is float for x in val)
 
-    for key, val in result["summary_metrics"].items():
+    # 4. summary_metrics 내부 데이터 검증
+    for key, val in result.summary_metrics.items():
         assert type(key) is str
         assert type(val) is float

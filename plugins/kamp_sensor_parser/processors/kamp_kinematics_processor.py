@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 from shared.context.log_context import LogContext
-from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
 

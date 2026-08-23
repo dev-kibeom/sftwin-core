@@ -2,14 +2,12 @@ from unittest.mock import MagicMock
 
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverity
-from shared.enums.user_role_enum import UserRole
-from shared.logger.global_audit_logger import (
-    FailsafeAuditEvent,
-    GlobalAuditLogger,
-    SecurityAuditEvent,
-)
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.audit.audit_event_type_enum import AuditEventType
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import GlobalAuditLogger
+from shared.security.user_role_enum import UserRole
 
 
 @pytest.fixture
@@ -35,7 +33,8 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
         role=UserRole.FIELD_ENGINEER,
     )
 
-    event = SecurityAuditEvent(
+    event = AuditEvent(
+        event_type=AuditEventType.SECURITY,
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
         severity=AuditSeverity.WARNING,
@@ -43,7 +42,7 @@ def test_tc_log_01_security_event_logging_and_db_persistence(
         trace_id="TRC-99081234a",
     )
 
-    audit_logger.log_security_event(event)
+    audit_logger.log(event)
 
     mock_system_logger.warn.assert_called_once()
     mock_command_repo.save.assert_called_once()
@@ -56,15 +55,17 @@ def test_tc_log_02_system_event_failsafe_user_context_fallback(
         system_logger=mock_system_logger, command_repo=mock_command_repo
     )
 
-    event = FailsafeAuditEvent(
-        device_id="ROBOT-ARM-01",
+    event = AuditEvent(
+        event_type=AuditEventType.FAILSAFE,
         action="ESTOP",
-        reason="TORQUE_LIMIT_EXCEEDED",
+        target="ROBOT-ARM-01",
+        severity=AuditSeverity.CRITICAL,
+        details={"reason": "TORQUE_LIMIT_EXCEEDED"},
         user_ctx=None,
         trace_id="TRC-FAILSAFE-001",
     )
 
-    audit_logger.log_failsafe_event(event)
+    audit_logger.log(event)
 
     mock_system_logger.error.assert_called_once()
     args = mock_system_logger.error.call_args
@@ -72,6 +73,7 @@ def test_tc_log_02_system_event_failsafe_user_context_fallback(
 
     assert log_ctx.context["user_id"] == "SYSTEM"
     assert log_ctx.context["company_id"] == "SYSTEM"
+    assert log_ctx.context["target_resource"] == "ROBOT-ARM-01"
 
 
 def test_tc_log_03_db_timeout_fallback_non_blocking(
@@ -89,7 +91,8 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
         role=UserRole.FIELD_ENGINEER,
     )
 
-    event = SecurityAuditEvent(
+    event = AuditEvent(
+        event_type=AuditEventType.SECURITY,
         action="ACCESS_DENIED",
         target="ROBOT-ARM-01",
         severity=AuditSeverity.WARNING,
@@ -98,8 +101,10 @@ def test_tc_log_03_db_timeout_fallback_non_blocking(
     )
 
     try:
-        audit_logger.log_security_event(event)
+        audit_logger.log(event)
     except TimeoutError:
         pytest.fail("Audit DB failure must NOT raise an exception to the caller.")
 
+    # 경고 로그(warn 1회)와 DB 실패 폴백 로그(error 1회) 검증
+    mock_system_logger.warn.assert_called_once()
     mock_system_logger.error.assert_called_once()

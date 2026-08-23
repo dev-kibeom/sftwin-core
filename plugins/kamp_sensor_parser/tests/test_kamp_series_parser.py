@@ -4,13 +4,11 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 import pytest
-from shared.enums.global_error_code_enum import GlobalErrorCode
+from digital_twin.ports.outbound.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
 from plugins.kamp_sensor_parser.adapters.kamp_data_adapter import KampDataAdapter
-from plugins.kamp_sensor_parser.schemas.kamp_parsed_output_dto import (
-    KampParsedOutputDto,
-)
 from plugins.kamp_sensor_parser.utils.csv_chunk_reader import CsvChunkReader
 from plugins.kamp_sensor_parser.utils.kamp_file_validator import (
     KampFileValidator,
@@ -28,7 +26,7 @@ def mock_chunk_reader() -> MagicMock:
 @pytest.fixture
 def mock_file_validator() -> MagicMock:
     validator = MagicMock(spec=KampFileValidator)
-    validator.validate.return_value = Path("dummy.csv")
+    validator.validate_and_resolve.return_value = Path("dummy.csv")
     return validator
 
 
@@ -77,7 +75,7 @@ def test_tc_kmp_009_happy_path(
 
     result_dto = kamp_adapter._parse_series_data("data/exp_01.csv")
 
-    assert isinstance(result_dto, KampParsedOutputDto)
+    assert isinstance(result_dto, ParsedSensorLogDto)
     assert result_dto.file_name == "exp_01.csv"
     assert result_dto.sampling_rate_hz == 100.0
     assert len(result_dto.time_series["time"]) == 10

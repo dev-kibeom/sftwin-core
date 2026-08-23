@@ -4,13 +4,15 @@ from unittest.mock import MagicMock
 import jwt
 import pytest
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverity
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_system_exception import BaseSystemException
-from shared.logger.global_audit_logger import GlobalAuditLogger, SecurityAuditEvent
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
+from shared.security.audit.audit_event_type_enum import AuditEventType
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import GlobalAuditLogger
 from shared.security.jwt_auth_interceptor import JwtAuthInterceptor
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
+from shared.security.user_role_enum import UserRole
 
 SECRET_KEY = "sftwin_global_security_jwt_secret_key_256bit!"
 
@@ -64,7 +66,7 @@ def test_company_isolation_pass(rbac_manager, mock_audit_logger):
     )
 
     assert result is True
-    mock_audit_logger.log_security_event.assert_not_called()
+    mock_audit_logger.log.assert_not_called()
 
 
 # TC-SEC-03: Error Handling - 만료/위조된 JWT 유입 시 ERR_COMMON_UNAUTHORIZED 차단 검증
@@ -100,8 +102,9 @@ def test_insufficient_rbac_role(rbac_manager, mock_audit_logger):
     assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_FORBIDDEN
     assert exc_info.value.status_code == 403
 
-    mock_audit_logger.log_security_event.assert_called_once_with(
-        SecurityAuditEvent(
+    mock_audit_logger.log.assert_called_once_with(
+        AuditEvent(
+            event_type=AuditEventType.SECURITY,
             action="ACCESS_DENIED",
             target="API_ENDPOINT",
             severity=AuditSeverity.WARNING,
@@ -122,14 +125,17 @@ def test_cross_company_access_violation(rbac_manager, mock_audit_logger):
 
     with pytest.raises(BaseSystemException) as exc_info:
         rbac_manager.validate_company_isolation(
-            user_ctx, target_company_id="COMP-B", target_resource="CAD_AAS_ASSET"
+            user_ctx,
+            target_company_id="COMP-B",
+            target_resource="CAD_AAS_ASSET",
         )
 
     assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_FORBIDDEN
     assert exc_info.value.status_code == 403
 
-    mock_audit_logger.log_security_event.assert_called_once_with(
-        SecurityAuditEvent(
+    mock_audit_logger.log.assert_called_once_with(
+        AuditEvent(
+            event_type=AuditEventType.SECURITY,
             action="ISOLATION_VIOLATION",
             target="CAD_AAS_ASSET:COMP-B",
             severity=AuditSeverity.CRITICAL,

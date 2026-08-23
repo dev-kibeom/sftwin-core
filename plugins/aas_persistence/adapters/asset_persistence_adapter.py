@@ -11,11 +11,15 @@ from digital_twin.ports.outbound.i_asset_command_repository import (
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverity
-from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
-from shared.logger.global_audit_logger import GlobalAuditLogger, SecurityAuditEvent
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_log_dto import AuditEventType
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import (
+    GlobalAuditLogger,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -105,9 +109,10 @@ class AssetPersistenceAdapter(IAssetCommandRepository, IAssetQueryRepository):
         is_deleted = self._mark_deleted_in_rdbms(asset_id, log_ctx)
         if is_deleted:
             self._audit_logger.log_security_event(
-                SecurityAuditEvent(
+                AuditEvent(
                     action="DELETE_ASSET",
                     target=f"ASSET:{asset_id}",
+                    event_type=AuditEventType.DATA_ACCESS,
                     severity=AuditSeverity.INFO,
                     user_ctx=UserContext.create_system_context(),
                     trace_id=log_ctx.trace_id,

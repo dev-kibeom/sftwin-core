@@ -1,7 +1,8 @@
 from typing import Any
 
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.enums.global_error_code_enum import ERROR_CODE_METADATA, GlobalErrorCode
+
+from .global_error_code_enum import ERROR_CODE_METADATA, GlobalErrorCode
 
 
 class BaseSystemException(Exception):

@@ -8,8 +8,8 @@ from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase 
     GetLayoutUseCase,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.enums.user_role_enum import UserRole
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
+from shared.security.user_role_enum import UserRole
 from shared.exceptions.base_system_exception import BaseSystemException
 
 

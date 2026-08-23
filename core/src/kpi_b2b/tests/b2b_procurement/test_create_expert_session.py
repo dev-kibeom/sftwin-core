@@ -15,8 +15,8 @@ from kpi_b2b.ports.outbound.i_procurement_query_repository import (
     IProcurementQueryRepository,
 )
 from shared.context.user_context import UserContext
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.enums.user_role_enum import UserRole
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
+from shared.security.user_role_enum import UserRole
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 

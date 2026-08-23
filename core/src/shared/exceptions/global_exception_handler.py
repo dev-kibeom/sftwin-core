@@ -3,9 +3,10 @@ from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.exceptions.base_system_exception import BaseSystemException
 from shared.logger.global_system_logger import GlobalSystemLogger
+
+from .base_system_exception import BaseSystemException
+from .global_error_code_enum import GlobalErrorCode
 
 
 class GlobalExceptionHandler:

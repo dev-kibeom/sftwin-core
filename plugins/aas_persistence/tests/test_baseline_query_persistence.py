@@ -6,7 +6,7 @@ import pytest
 from digital_twin.twin_reconstruction.domain.twin_baseline.twin_baseline import (
     TwinBaseline,
 )
-from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
 from sqlalchemy.exc import OperationalError
 

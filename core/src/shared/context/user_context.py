@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from shared.enums.user_role_enum import UserRole
+from shared.security.user_role_enum import UserRole
 
 
 @dataclass(frozen=True)

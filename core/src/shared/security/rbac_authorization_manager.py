@@ -1,11 +1,13 @@
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.enums.audit_severity_enum import AuditSeverity
-from shared.enums.global_error_code_enum import GlobalErrorCode
-from shared.enums.user_role_enum import UserRole
 from shared.exceptions.base_system_exception import BaseSystemException
-from shared.logger.global_audit_logger import GlobalAuditLogger, SecurityAuditEvent
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.audit.audit_event_type_enum import AuditEventType
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import GlobalAuditLogger
+from shared.security.user_role_enum import UserRole
 
 
 class RbacAuthorizationManager:
@@ -38,8 +40,9 @@ class RbacAuthorizationManager:
         user_level = self.ROLE_HIERARCHY.get(user_ctx.role, 0)
         required_level = self.ROLE_HIERARCHY.get(required_role, 0)
 
+        trace_id = getattr(user_ctx, "trace_id", "TRC-RBAC")
         log_ctx = LogContext(
-            trace_id=getattr(user_ctx, "trace_id", "TRC-RBAC"),
+            trace_id=trace_id,
             context={
                 "user_id": user_ctx.user_id,
                 "role": user_ctx.role.value,
@@ -49,13 +52,14 @@ class RbacAuthorizationManager:
         )
 
         if user_level < required_level:
-            self._audit_logger.log_security_event(
-                SecurityAuditEvent(
+            self._audit_logger.log(
+                AuditEvent(
+                    event_type=AuditEventType.SECURITY,
                     action="ACCESS_DENIED",
                     target=target_resource,
                     severity=AuditSeverity.WARNING,
                     user_ctx=user_ctx,
-                    trace_id=log_ctx.trace_id,
+                    trace_id=trace_id,
                 )
             )
             raise BaseSystemException(
@@ -76,8 +80,9 @@ class RbacAuthorizationManager:
         target_company_id: str,
         target_resource: str = "ASSET",
     ) -> bool:
+        trace_id = getattr(user_ctx, "trace_id", "TRC-ISOLATION")
         log_ctx = LogContext(
-            trace_id=getattr(user_ctx, "trace_id", "TRC-ISOLATION"),
+            trace_id=trace_id,
             context={
                 "user_id": user_ctx.user_id,
                 "user_company_id": user_ctx.company_id,
@@ -87,13 +92,14 @@ class RbacAuthorizationManager:
         )
 
         if user_ctx.company_id != target_company_id:
-            self._audit_logger.log_security_event(
-                SecurityAuditEvent(
+            self._audit_logger.log(
+                AuditEvent(
+                    event_type=AuditEventType.SECURITY,
                     action="ISOLATION_VIOLATION",
                     target=f"{target_resource}:{target_company_id}",
                     severity=AuditSeverity.CRITICAL,
                     user_ctx=user_ctx,
-                    trace_id=log_ctx.trace_id,
+                    trace_id=trace_id,
                 )
             )
             # Security Masking: 상세 기업 ID는 감사 로그에만 남기고 클라이언트에는 규격 메시지 송출

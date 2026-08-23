@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import pytest
 from shared.dtos.global_response_dto import GlobalResponseDto
-from shared.enums.global_error_code_enum import GlobalErrorCode
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.events.domain_event_mapper import DomainEventMapper
 from shared.exceptions.base_system_exception import BaseSystemException
 

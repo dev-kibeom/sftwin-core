@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 from digital_twin.asset_library.domain.asset.asset import Asset
-from shared.enums.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from sqlalchemy.exc import OperationalError
 
 from plugins.aas_persistence.adapters.asset_persistence_adapter import (

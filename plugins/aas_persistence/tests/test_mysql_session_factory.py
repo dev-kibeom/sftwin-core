@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlalchemy.orm import Session
 
-from plugins.aas_persistence.session.database_session_factory import (
-    DatabaseSessionFactory,
+from plugins.aas_persistence.session.mysql_session_factory import (
+    MysqlSessionFactory,
 )
 
 
@@ -13,10 +13,10 @@ def test_session_factory_uses_default_env_fallback():
     with (
         patch.dict(os.environ, {}, clear=True),
         patch(
-            "plugins.aas_persistence.session.database_session_factory.create_engine"
+            "plugins.aas_persistence.session.mysql_session_factory.create_engine"
         ) as mock_create_engine,
     ):
-        factory = DatabaseSessionFactory()
+        factory = MysqlSessionFactory()
 
         expected_url = "mysql+pymysql://sftwin_admin:SecureAdminPassword123!@localhost:3306/sftwin_db"
         mock_create_engine.assert_called_once_with(expected_url)
@@ -27,10 +27,10 @@ def test_session_factory_prefers_database_url_env():
     with (
         patch.dict(os.environ, {"DATABASE_URL": custom_db_url}, clear=True),
         patch(
-            "plugins.aas_persistence.session.database_session_factory.create_engine"
+            "plugins.aas_persistence.session.mysql_session_factory.create_engine"
         ) as mock_create_engine,
     ):
-        factory = DatabaseSessionFactory()
+        factory = MysqlSessionFactory()
 
         mock_create_engine.assert_called_once_with(custom_db_url)
 
@@ -40,19 +40,17 @@ def test_session_factory_prefers_explicit_argument():
     with (
         patch.dict(os.environ, {"DATABASE_URL": "mysql://env_url"}, clear=True),
         patch(
-            "plugins.aas_persistence.session.database_session_factory.create_engine"
+            "plugins.aas_persistence.session.mysql_session_factory.create_engine"
         ) as mock_create_engine,
     ):
-        factory = DatabaseSessionFactory(db_url=arg_db_url)
+        factory = MysqlSessionFactory(db_url=arg_db_url)
 
         mock_create_engine.assert_called_once_with(arg_db_url)
 
 
 def test_session_scope_lifecycle():
-    with patch(
-        "plugins.aas_persistence.session.database_session_factory.create_engine"
-    ):
-        factory = DatabaseSessionFactory()
+    with patch("plugins.aas_persistence.session.mysql_session_factory.create_engine"):
+        factory = MysqlSessionFactory()
         mock_session = MagicMock(spec=Session)
         factory._session_maker = MagicMock(return_value=mock_session)
 
