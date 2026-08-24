@@ -20,7 +20,7 @@ class GlobalErrorCode(str, Enum):
     ERR_SIM_INVALID_SCENARIO = "ERR_SIM_INVALID_SCENARIO"
     ERR_SIM_COLLISION_DETECTED = "ERR_SIM_COLLISION_DETECTED"
     ERR_SIM_IPC_TIMEOUT = "ERR_SIM_IPC_TIMEOUT"
-    ERR_SIM_BT_EVAL_FAILED = "ERR_SIM_BT_EVAL_FAILED"
+    ERR_SIM_RECOVER_EVAL_FAILED = "ERR_SIM_RECOVER_EVAL_FAILED"
     ERR_SIM_RESOURCE_EXHAUSTED = "ERR_SIM_RESOURCE_EXHAUSTED"
 
     # Edge Control Domain
@@ -93,9 +93,9 @@ ERROR_CODE_METADATA: dict[GlobalErrorCode, dict[str, Any]] = {
         "status": 500,
         "msg": "POSIX SHM synchronization timeout between C++ physics and RL engine (> 1ms).",
     },
-    GlobalErrorCode.ERR_SIM_BT_EVAL_FAILED: {
+    GlobalErrorCode.ERR_SIM_RECOVER_EVAL_FAILED: {
         "status": 422,
-        "msg": "Behavior Tree XML structure error or no alternative path found.",
+        "msg": "No alternative recovery path found.",
     },
     GlobalErrorCode.ERR_SIM_RESOURCE_EXHAUSTED: {
         "status": 503,

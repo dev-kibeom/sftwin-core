@@ -13,6 +13,9 @@
 from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     ManageAssetUseCase,
 )
+from kpi_b2b.b2b_procurement.application.create_expert_session.create_expert_session_usecase import (
+    LayoutMirroringUseCase,
+)
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 
 from core.src.digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
@@ -23,9 +26,6 @@ from core.src.digital_twin.twin_reconstruction.application.reconstruct_twin.reco
 )
 from core.src.kpi_b2b.b2b_procurement.application.generate_quote.generate_quote_usecase import (
     GenerateQuoteUseCase,
-)
-from kpi_b2b.b2b_procurement.application.create_expert_session.create_expert_session_usecase import (
-    LayoutMirroringUseCase,
 )
 from core.src.kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
     ProcessProductionOrderUseCase,
@@ -42,7 +42,7 @@ from core.src.kpi_b2b.kpi_dashboard.application.calculate_kpi.calculate_kpi_usec
 from core.src.kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (
     GenerateDualKpiReportUseCase,
 )
-from core.src.simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
+from core.src.simulation.fault_recovery.application.inject_fault.inject_fault_usecase import (
     InjectFaultUseCase,
 )
 

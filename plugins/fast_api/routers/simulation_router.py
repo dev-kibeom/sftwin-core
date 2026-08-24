@@ -2,13 +2,13 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from shared.dtos.global_response_dto import GlobalResponseDto
-from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
 from shared.context.user_context import UserContext, get_current_user
-from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
+from shared.dtos.global_response_dto import GlobalResponseDto
+from simulation.contracts.dtos.sim_result_dto import SimResultDto
+from simulation.fault_recovery.application.inject_fault.inject_fault_usecase import (
     InjectFaultUseCase,
 )
-from simulation.fault_injection.domain.fault_scenario.fault_scenario import (
+from simulation.fault_recovery.domain.fault_scenario.fault_scenario import (
     FaultScenario,
     FaultTypeEnum,
 )
