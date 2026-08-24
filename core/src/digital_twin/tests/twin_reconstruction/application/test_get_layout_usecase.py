@@ -1,119 +1,134 @@
 from unittest.mock import MagicMock
 
 import pytest
-from digital_twin.ports.outbound.i_baseline_command_repository import (
-    IBaselineCommandRepository,
+from digital_twin.contracts.dtos.twin_baseline_dto import TwinBaselineDto
+from digital_twin.contracts.ports.outbound.i_baseline_query_repository import (
+    IBaselineQueryRepository,
 )
 from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
+    LayoutRenderDto,
+    LayoutRenderMapper,
 )
 from shared.context.user_context import UserContext
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.security.user_role_enum import UserRole
-from shared.exceptions.base_system_exception import BaseSystemException
 
 
 @pytest.fixture
-def mock_command_repo():
-    return MagicMock(spec=IBaselineCommandRepository)
+def mock_query_repo() -> MagicMock:
+    return MagicMock(spec=IBaselineQueryRepository)
 
 
 @pytest.fixture
-def usecase(mock_command_repo):
-    return GetLayoutUseCase(command_repo=mock_command_repo)
+def mock_mapper() -> MagicMock:
+    return MagicMock(spec=LayoutRenderMapper)
 
 
 @pytest.fixture
-def valid_ctx():
+def usecase(
+    mock_query_repo: MagicMock,
+    mock_mapper: MagicMock,
+) -> GetLayoutUseCase:
+    return GetLayoutUseCase(query_repo=mock_query_repo, mapper=mock_mapper)
+
+
+@pytest.fixture
+def standard_context() -> UserContext:
     return UserContext(
         user_id="USER-123",
         username="kibeom_engineer",
         company_id="TEST-COMPANY-01",
-        role=UserRole.CREATOR,
-        accessible_factory_ids=["BASE-TWIN-001"],
+        role=UserRole.FIELD_ENGINEER,
+        accessible_factory_ids=["FACTORY-01"],
     )
 
 
-@pytest.fixture
-def unauthorized_ctx():
-    return UserContext(
-        user_id="USER-123",
-        username="kibeom_engineer",
-        company_id="TEST-COMPANY-01",  # 타사 공장 접근 시도용
-        role=UserRole.CREATOR,
-        accessible_factory_ids=["OTHER-FACTORY-01"],
-    )
-
-
-def test_tc_happy_path_get_layout_data(usecase, mock_command_repo, valid_ctx):
-    """
-    [TC-정상] 3D 렌더링용 레이아웃 데이터 조회 성공
-    """
+def test_tc_happy_path_get_layout(
+    usecase: GetLayoutUseCase,
+    mock_query_repo: MagicMock,
+    mock_mapper: MagicMock,
+    standard_context: UserContext,
+):
+    """[TC-정상] 레포지토리 단건 조회 후 Mapper로 전달되어 Render DTO가 반환되는지 검증"""
     # Given
-    mock_command_repo.find_by_id.return_value = {
-        "baseline_id": "BASE-TWIN-001",
-        "baseline_name": "Smart_Factory_Line_1",
-        "company_id": "TEST-COMPANY-01",
-        "sync_error_rate": 1.25,
-        "sync_status": "COMPLETED",
-        "asset_mappings": [
-            {
-                "asset_id": "AAS-ROBOT-001",
-                "asset_name": "Doosan_M1013",
-                "asset_type": "ROBOT",
-                "cad_file_path": "/models/doosan.gltf",
-                "position_xyz_json": {"x": 10.0, "y": 0.0, "z": 5.0},
-                "rotation_q_json": {"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0},
-            }
-        ],
-    }
+    mock_baseline = MagicMock(spec=TwinBaselineDto)
+    mock_render_dto = LayoutRenderDto(
+        baseline_id="BASE-01",
+        baseline_name="Factory Layout",
+        company_id="TEST-COMPANY-01",
+        sync_error_rate=0.05,
+        sync_status="COMPLETED",
+        asset_mappings=(),
+    )
+    mock_query_repo.find_by_id.return_value = mock_baseline
+    mock_mapper.to_render_dto.return_value = mock_render_dto
 
     # When
-    result = usecase.execute("BASE-TWIN-001", valid_ctx)
+    result = usecase.execute("BASE-01", standard_context)
 
     # Then
-    assert result.baseline_id == "BASE-TWIN-001"
-    assert result.company_id == "TEST-COMPANY-01"
-    assert len(result.asset_mappings) == 1
-    assert result.asset_mappings[0].asset_id == "AAS-ROBOT-001"
-    assert result.asset_mappings[0].position_xyz_json == {"x": 10.0, "y": 0.0, "z": 5.0}
-    assert mock_command_repo.find_by_id.call_count == 1
+    mock_query_repo.find_by_id.assert_called_once_with(
+        baseline_id="BASE-01",
+        company_id="TEST-COMPANY-01",
+    )
+    mock_mapper.to_render_dto.assert_called_once_with(mock_baseline)
+    assert result == mock_render_dto
+
+
+def test_tc_error_handling_baseline_not_found(
+    usecase: GetLayoutUseCase,
+    mock_query_repo: MagicMock,
+    mock_mapper: MagicMock,
+    standard_context: UserContext,
+):
+    """
+    [TC-예외] DB에 해당 baseline_id가 존재하지 않을 때 404 NOT_FOUND 반환 검증
+    """
+    # Given
+    mock_query_repo.find_by_id.return_value = None
+
+    # When & Then
+    with pytest.raises(BaseSystemException) as exc_info:
+        usecase.execute(baseline_id="NON-EXISTENT-BASE", ctx=standard_context)
+
+    # 요청된 ID와 호출자의 company_id로 조회를 시도했는지 검증
+    mock_query_repo.find_by_id.assert_called_once_with(
+        baseline_id="NON-EXISTENT-BASE",
+        company_id="TEST-COMPANY-01",
+    )
+    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
+    assert exc_info.value.status_code == 404
+    mock_mapper.to_render_dto.assert_not_called()
 
 
 def test_tc_edge_case_unauthorized_isolation_violation(
-    usecase, mock_command_repo, unauthorized_ctx
+    usecase: GetLayoutUseCase,
+    mock_query_repo: MagicMock,
+    mock_mapper: MagicMock,
+    standard_context: UserContext,
 ):
     """
-    [TC-예외] 인가되지 않은 타사 가상 공장 접근 시도 시 404로 은닉 차단
+    [TC-예외] 타사 베이스라인 ID를 요청하더라도 컨텍스트의 company_id로 조회하여
+    타사 리소스 접근을 차단하고 404 NOT_FOUND로 은닉하는지 검증 (IDOR 방어)
     """
-    # Given: 타사 보유 공장 데이터 Mocking
-    mock_command_repo.find_by_id.return_value = {
-        "baseline_id": "PRIVATE-TWIN-999",
-        "baseline_name": "Other_Company_Factory",
-        "company_id": "OTHER-COMPANY-99",
-        "sync_error_rate": 0.5,
-        "sync_status": "COMPLETED",
-        "asset_mappings": [],
-    }
+    # Given: 타사 테넌트의 ID를 알더라도 Repository는 사용자 테넌트 필터에 걸려 None 반환
+    target_foreign_baseline_id = "OTHER-COMPANY-BASE-99"
+    mock_query_repo.find_by_id.return_value = None
 
     # When & Then
     with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute("PRIVATE-TWIN-999", unauthorized_ctx)
+        usecase.execute(
+            baseline_id=target_foreign_baseline_id,
+            ctx=standard_context,
+        )
 
+    # Repository 호출 시 공격 대상 ID와 함께 '요청자의 company_id'가 반드시 바인딩되었는지 단언
+    mock_query_repo.find_by_id.assert_called_once_with(
+        baseline_id=target_foreign_baseline_id,
+        company_id=standard_context.company_id,
+    )
     assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
     assert exc_info.value.status_code == 404
-
-
-def test_tc_error_handling_baseline_not_found(usecase, mock_command_repo, valid_ctx):
-    """
-    [TC-에러] 존재하지 않는 베이스라인 데이터 요청 시 차단
-    """
-    # Given
-    mock_command_repo.find_by_id.return_value = None
-
-    # When & Then
-    with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute("INVALID-TWIN-000", valid_ctx)
-
-    assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_NOT_FOUND
-    assert exc_info.value.status_code == 404
+    mock_mapper.to_render_dto.assert_not_called()

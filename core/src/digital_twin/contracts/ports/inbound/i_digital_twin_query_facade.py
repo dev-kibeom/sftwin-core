@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from digital_twin.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 from digital_twin.twin_reconstruction.application.get_layout.layout_render_dto import (
     LayoutRenderDto,
 )

@@ -1,4 +1,4 @@
-from digital_twin.dtos.twin_baseline_dto import TwinBaselineDto
+from digital_twin.contracts.dtos.twin_baseline_dto import TwinBaselineDto
 from digital_twin.twin_reconstruction.domain.hotspot.hotspot_color_calculator import (
     HotspotColorCalculator,
 )

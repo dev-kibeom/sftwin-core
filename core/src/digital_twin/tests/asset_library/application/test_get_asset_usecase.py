@@ -5,8 +5,10 @@ from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
     GetAssetUseCase,
 )
 from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
-from digital_twin.dtos.asset_dto import AssetDto
-from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
+from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.ports.outbound.i_asset_query_repository import (
+    IAssetQueryRepository,
+)
 from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode

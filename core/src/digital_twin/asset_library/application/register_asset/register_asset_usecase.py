@@ -1,6 +1,6 @@
 from digital_twin.asset_library.domain.asset.asset import Asset
-from digital_twin.dtos.asset_dto import AssetDto
-from digital_twin.ports.outbound.i_asset_command_repository import (
+from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
 from shared.context.user_context import UserContext

@@ -1,8 +1,8 @@
 from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     RegisterAssetUseCase,
 )
-from digital_twin.dtos.asset_dto import AssetDto
-from digital_twin.ports.inbound.i_digital_twin_command_facade import (
+from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.ports.inbound.i_digital_twin_command_facade import (
     IDigitalTwinCommandFacade,
 )
 from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (

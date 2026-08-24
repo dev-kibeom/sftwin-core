@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from digital_twin.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 
 
 class IAssetQueryRepository(Protocol):

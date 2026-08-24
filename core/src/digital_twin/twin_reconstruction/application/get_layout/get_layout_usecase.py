@@ -1,4 +1,4 @@
-from digital_twin.ports.outbound.i_baseline_query_repository import (
+from digital_twin.contracts.ports.outbound.i_baseline_query_repository import (
     IBaselineQueryRepository,
 )
 from shared.context.user_context import UserContext

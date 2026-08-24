@@ -1,5 +1,7 @@
-from digital_twin.dtos.asset_dto import AssetDto
-from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
+from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.ports.outbound.i_asset_query_repository import (
+    IAssetQueryRepository,
+)
 from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode

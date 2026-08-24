@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from digital_twin.dtos.twin_baseline_dto import TwinBaselineDto
+from digital_twin.contracts.dtos.twin_baseline_dto import TwinBaselineDto
 
 
 class IBaselineQueryRepository(Protocol):
