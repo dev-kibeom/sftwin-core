@@ -7,9 +7,9 @@ from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kp
 from kpi_b2b.kpi_dashboard.application.generate_dual_kpi_report.generate_dual_kpi_report_usecase import (
     GenerateDualKpiReportUseCase,
 )
-from kpi_b2b.ports.inbound.dtos.dual_kpi_report_dto import DualKpiReportDto
-from kpi_b2b.ports.inbound.dtos.kpi_report_dto import KpiReportDto
-from kpi_b2b.ports.inbound.i_kpi_query_facade import IKpiQueryFacade
+from kpi_b2b.contracts.dtos.dual_kpi_report_dto import DualKpiReportDto
+from kpi_b2b.contracts.dtos.kpi_report_dto import KpiReportDto
+from kpi_b2b.contracts.ports.inbound.i_kpi_query_facade import IKpiQueryFacade
 from shared.context.user_context import UserContext
 from shared.security.rbac_authorization_manager import RbacAuthorizationManager
 

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from .dtos.turnkey_quote_response_dto import TurnkeyQuoteResponseDto
+from ...dtos.turnkey_quote_response_dto import TurnkeyQuoteResponseDto
 
 
 class ITurnkeyQuoteGateway(Protocol):

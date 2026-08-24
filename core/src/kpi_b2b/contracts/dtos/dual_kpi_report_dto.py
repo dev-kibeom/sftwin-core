@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class DualKpiReportDto:
+    """기준/개선 시나리오 간 OEE 및 ROI 비교 분석 결과 DTO"""
+
     baseline_oee: float
     improved_oee: float
     oee_improvement_rate: float

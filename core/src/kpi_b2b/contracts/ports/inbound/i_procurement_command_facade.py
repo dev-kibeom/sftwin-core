@@ -3,11 +3,11 @@ from typing import Protocol
 from kpi_b2b.b2b_procurement.application.process_production_order.production_order_request_dto import (
     ProductionOrderRequestDto,
 )
-from kpi_b2b.ports.inbound.dtos.b2b_quote_dto import B2bQuoteDto
-from kpi_b2b.ports.inbound.dtos.production_order_result_dto import (
+from kpi_b2b.contracts.dtos.b2b_quote_dto import B2bQuoteDto
+from kpi_b2b.contracts.dtos.production_order_result_dto import (
     ProductionOrderResultDto,
 )
-from kpi_b2b.ports.inbound.dtos.session_data_dto import SessionDataDto
+from kpi_b2b.contracts.dtos.session_data_dto import SessionDataDto
 from shared.context.user_context import UserContext
 
 

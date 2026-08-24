@@ -1,14 +1,14 @@
-import uuid
+from dataclasses import asdict
 
 from kpi_b2b.b2b_procurement.domain.b2b_quote.b2b_quote import B2bQuote
-from kpi_b2b.ports.inbound.dtos.b2b_quote_dto import B2bQuoteDto
-from kpi_b2b.ports.outbound.i_procurement_command_repository import (
+from kpi_b2b.contracts.dtos.b2b_quote_dto import B2bQuoteDto
+from kpi_b2b.contracts.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
 )
-from kpi_b2b.ports.outbound.i_quote_idempotency_store import (
+from kpi_b2b.contracts.ports.outbound.i_quote_idempotency_store import (
     IQuoteIdempotencyStore,
 )
-from kpi_b2b.ports.outbound.i_turnkey_quote_gateway import (
+from kpi_b2b.contracts.ports.outbound.i_turnkey_quote_gateway import (
     ITurnkeyQuoteGateway,
 )
 from shared.context.user_context import UserContext
@@ -42,7 +42,14 @@ class GenerateQuoteUseCase:
         ctx: UserContext,
         idempotency_key: str | None = None,
     ) -> B2bQuoteDto:
-        # 1. 멱등성 캐시 확인 (캐시 장애 시 Fallback)
+        # 1. 입력 인자 조기 검증
+        if not asset_ids:
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message="At least one asset_id is required to request a turnkey quote.",
+            )
+
+        # 2. 멱등성 캐시 확인 (캐시 에러 시 메인 로직 fallback)
         if idempotency_key:
             try:
                 cached_data = self._cache_store.find_cached_quote(idempotency_key)
@@ -54,14 +61,13 @@ class GenerateQuoteUseCase:
                     extra={"idempotency_key": idempotency_key},
                 )
 
-        # 2. 외부 B2B Gateway 연동 (Gateway ACL이 통신/스키마 예외 번역 후 DTO 반환 및 상위 전파)
+        # 3. 외부 B2B Gateway 연동 (외부 API 호출 및 스키마 검증)
         quote_res_dto = self._gateway.request_turnkey_quote(asset_ids)
 
-        # 3. 도메인 엔티티 생성 및 불변식 검증
+        # 4. 도메인 엔티티 생성 (식별자 생성 및 불변식 검증 팩토리 위임)
         try:
-            quote_entity = B2bQuote(
-                quote_id=f"QT-{uuid.uuid4()}",
-                asset_ids=tuple(asset_ids),
+            quote_entity = B2bQuote.create(
+                asset_ids=asset_ids,
                 total_estimated_price=quote_res_dto.total_estimated_price,
                 delivery_days_estimated=quote_res_dto.delivery_days_estimated,
             )
@@ -71,7 +77,7 @@ class GenerateQuoteUseCase:
                 custom_message=str(e),
             ) from e
 
-        # 4. 저장소 영속화 (DB 예외는 Repository Adapter에서 처리되어 상위 전파)
+        # 5. 저장소 영속화
         self._command_repo.save_quote(quote_entity)
 
         result_dto = B2bQuoteDto(
@@ -81,17 +87,12 @@ class GenerateQuoteUseCase:
             delivery_days_estimated=quote_entity.delivery_days_estimated,
         )
 
-        # 5. 캐시 갱신
+        # 6. 캐시 갱신
         if idempotency_key:
             try:
                 self._cache_store.save_cached_quote(
                     idempotency_key=idempotency_key,
-                    data={
-                        "quote_id": result_dto.quote_id,
-                        "total_estimated_price": result_dto.total_estimated_price,
-                        "status": result_dto.status,
-                        "delivery_days_estimated": result_dto.delivery_days_estimated,
-                    },
+                    data=asdict(result_dto),
                 )
             except Exception:
                 self._system_logger.warn(
@@ -99,13 +100,14 @@ class GenerateQuoteUseCase:
                     extra={"idempotency_key": idempotency_key},
                 )
 
-        # 6. 비즈니스 마일스톤 성공 로깅
+        # 7. 비즈니스 마일스톤 성공 로깅
         self._system_logger.info(
             f"Successfully generated turnkey quote: {quote_entity.quote_id}",
             extra={
                 "quote_id": quote_entity.quote_id,
                 "asset_count": len(asset_ids),
                 "total_price": quote_entity.total_estimated_price,
+                "company_id": ctx.company_id,
             },
         )
 

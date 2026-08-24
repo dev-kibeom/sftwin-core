@@ -5,7 +5,7 @@ DEFAULT_LOADING_RATE: float = (
 )
 
 
-@dataclass(frozen=True)
+@dataclass
 class OeeMetric:
     """설비 종합 효율(OEE: Overall Equipment Effectiveness) 불변 값 객체(VO)"""
 
@@ -45,18 +45,16 @@ class OeeMetric:
         """실측 계측 데이터(시간, 사이클타임, 생산량)를 기반으로 OeeMetric 생성"""
         availability = (
             min(1.0, max(0.0, uptime / total_time)) if total_time > 0 else 0.0
-        )  #
+        )
         performance = (
             min(1.0, max(0.0, ideal_cycle_time / actual_cycle_time))
             if actual_cycle_time > 0
             else 0.0
-        )  #
+        )
         quality = (
             min(1.0, max(0.0, good_count / total_count)) if total_count > 0 else 0.0
-        )  #
-        return cls(
-            availability=availability, performance=performance, quality=quality
-        )  #
+        )
+        return cls(availability=availability, performance=performance, quality=quality)
 
     @classmethod
     def from_oee_and_fpy(cls, overall_oee: float, fpy: float) -> "OeeMetric":

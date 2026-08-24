@@ -1,9 +1,10 @@
+import uuid
 from dataclasses import dataclass
 
 from .expert_session_status_enum import ExpertSessionStatus
 
 
-@dataclass(frozen=True)
+@dataclass
 class ExpertSession:
     """전문가 트윈 미러링 상담 세션 도메인 엔티티"""
 
@@ -15,6 +16,9 @@ class ExpertSession:
     expires_in_seconds: int = 14400  # 기본 4시간 유효
 
     def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
         if not self.session_id or not self.session_id.strip():
             raise ValueError("Valid session_id is required.")
         if not self.baseline_id or not self.baseline_id.strip():
@@ -23,6 +27,20 @@ class ExpertSession:
             raise ValueError("Valid session_token is required.")
         if self.expires_in_seconds <= 0:
             raise ValueError("expires_in_seconds must be greater than zero.")
+
+    @classmethod
+    def create(
+        cls,
+        baseline_id: str,
+        expires_in_seconds: int = 14400,
+    ) -> "ExpertSession":
+        """식별자 및 토큰 생성을 캡슐화한 팩토리 메서드"""
+        return cls(
+            session_id=f"SESS-{uuid.uuid4()}",
+            baseline_id=baseline_id,
+            session_token=f"TKN-{uuid.uuid4().hex}",
+            expires_in_seconds=expires_in_seconds,
+        )
 
     def assign_expert(self, expert_id: str) -> None:
         """세션에 전문가 배정 및 ACTIVE 전이"""
@@ -41,3 +59,6 @@ class ExpertSession:
         if self.status == ExpertSessionStatus.CLOSED:
             raise ValueError("Session is already closed.")
         self.status = ExpertSessionStatus.CLOSED
+
+    def is_expired(self) -> bool:
+        return self.expires_in_seconds <= 0
