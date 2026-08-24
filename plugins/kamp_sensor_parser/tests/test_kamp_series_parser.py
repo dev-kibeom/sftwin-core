@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 import pytest
-from digital_twin.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
+from digital_twin.contracts.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 

@@ -1,8 +1,8 @@
 import time
 from pathlib import Path
 
-from digital_twin.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
-from digital_twin.ports.outbound.i_sensor_log_parser import ISensorLogParser
+from digital_twin.contracts.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
+from digital_twin.contracts.ports.outbound.i_sensor_log_parser import ISensorLogParser
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
