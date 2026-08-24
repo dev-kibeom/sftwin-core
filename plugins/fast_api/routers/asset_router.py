@@ -15,7 +15,7 @@ from digital_twin.asset_library.application.register_asset.register_asset_usecas
 )
 from fastapi import APIRouter, Depends, status
 
-from digital_twin.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 from core.src.shared.dtos.global_response_dto import GlobalResponseDto
 from shared.context.user_context import UserContext, get_current_user
 

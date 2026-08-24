@@ -15,10 +15,10 @@ from digital_twin.asset_library.application.register_asset.register_asset_usecas
 )
 from digital_twin.facades.digital_twin_command_facade import DigitalTwinCommandFacade
 from digital_twin.facades.digital_twin_query_facade import DigitalTwinQueryFacade
-from digital_twin.ports.inbound.i_digital_twin_command_facade import (
+from digital_twin.contracts.ports.inbound.i_digital_twin_command_facade import (
     IDigitalTwinCommandFacade,
 )
-from digital_twin.ports.inbound.i_digital_twin_query_facade import (
+from digital_twin.contracts.ports.inbound.i_digital_twin_query_facade import (
     IDigitalTwinQueryFacade,
 )
 from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (

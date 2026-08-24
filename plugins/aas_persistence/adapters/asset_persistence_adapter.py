@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Any, cast
 
 from digital_twin.asset_library.domain.asset.asset import Asset
-from digital_twin.ports.outbound.i_asset_command_repository import (
+from digital_twin.contracts.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
-from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
+from digital_twin.contracts.ports.outbound.i_asset_query_repository import (
+    IAssetQueryRepository,
+)
 from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
