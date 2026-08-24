@@ -1,7 +1,7 @@
 from typing import Any
 
 from shared.context.user_context import UserContext
-from simulation.ports.inbound.i_simulation_query_facade import (
+from simulation.contracts.ports.inbound.i_simulation_query_facade import (
     ISimulationQueryFacade,
 )
 

@@ -1,12 +1,21 @@
-from shared.context.log_context import LogContext
+from dataclasses import asdict, is_dataclass
+from datetime import datetime, timezone
+from typing import Any
+
 from shared.context.user_context import UserContext
-from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
-from simulation.ports.outbound.i_fleet_deploy import IFleetDeploy
-from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_dto import (
+from simulation.contracts.dtos.deploy_package_dto import DeployPackageDto
+from simulation.contracts.ports.outbound.i_fleet_deployment_gateway import (
+    IFleetDeploymentGateway,
+)
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_request_dto import (
     DeploySim2RealRequestDto,
+)
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_result_dto import (
+    DeploySim2RealResultDto,
 )
 from simulation.sim_to_real_deploy.domain.deploy_package.deploy_package import (
     DeployPackage,
@@ -17,69 +26,82 @@ from simulation.sim_to_real_deploy.domain.deploy_package.deploy_package_format_e
 
 
 class DeploySim2RealUseCase:
+    """검증된 가상 시뮬레이션 환경을 실 설비(ROS2/VDA5050) 배포 패키지로 변환 및 전송하는 유스케이스"""
+
     def __init__(
         self,
-        fleet_deploy_port: IFleetDeploy,
+        gateway: IFleetDeploymentGateway,
         system_logger: GlobalSystemLogger | None = None,
-    ):
-        self._fleet_deploy_port = fleet_deploy_port
+    ) -> None:
+        self._gateway = gateway
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="DeploySim2RealUseCase"
         )
 
     @require_user_context
-    def execute(self, request_dto: DeploySim2RealRequestDto, ctx: UserContext) -> bool:
-        log_ctx = LogContext(
-            trace_id=getattr(ctx, "trace_id", f"TRC-DEPLOY-{request_dto.package_id}"),
-            context={
-                "user_id": ctx.user_id,
-                "company_id": ctx.company_id,
-                "package_id": request_dto.package_id,
-                "format": request_dto.format_type,
-            },
+    def execute(
+        self, request_dto: DeploySim2RealRequestDto, ctx: UserContext
+    ) -> DeploySim2RealResultDto:
+        # Config DTO를 안전하게 dict 형태로 변환
+        config_dict: dict[str, Any] = (
+            asdict(request_dto.config)
+            if is_dataclass(request_dto.config)
+            else (request_dto.config or {})
         )
-        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
-        if not self._verify_simulation_result(request_dto.package_id):
-            self._system_logger.warn(
-                f"Unverified or invalid scenario for package {request_dto.package_id}",
-                log_ctx,
-            )
-            raise BaseSystemException.from_error_code(
-                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                custom_message="FMS scenario is unverified or missing required configurations.",
-            )
-
+        # 1. 도메인 포맷 검증 및 해시 생성
         try:
             target_format = DeployPackageFormat(request_dto.format_type)
-            pkg = DeployPackage(
+            pkg = DeployPackage.create(
                 package_id=request_dto.package_id,
-                format=target_format,
+                format_type=target_format,
                 ros2_ws_path=request_dto.ros2_ws_path,
-                vda5050_config=request_dto.config,
+                vda5050_config=config_dict,
             )
-        except ValueError as ve:
-            self._system_logger.warn(
-                f"DeployPackage validation failed: {str(ve)}", log_ctx
-            )
+        except ValueError as e:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                custom_message=str(ve),
-            ) from ve
+                custom_message=str(e),
+            ) from e
+
+        # 2. Contracts DTO 변환 및 게이트웨이 전송
+        gateway_dto = DeployPackageDto(
+            package_id=pkg.package_id,
+            format_type=pkg.format.value,
+            ros2_ws_path=pkg.ros2_ws_path or "",
+            package_hash=pkg.package_hash,
+            config=pkg.vda5050_config,
+        )
 
         try:
-            is_success = self._fleet_deploy_port.export_package(pkg)
-            if is_success:
-                self._system_logger.info(
-                    "Successfully exported deploy package", log_ctx
-                )
-            return is_success
+            self._gateway.deploy(gateway_dto)
         except OSError as exc:
-            log_ctx.exc = exc
-            self._system_logger.error("I/O Error during package export", log_ctx)
+            self._system_logger.error(
+                f"I/O Error during package deployment for {pkg.package_id}: {str(exc)}",
+                extra={
+                    "package_id": pkg.package_id,
+                    "company_id": ctx.company_id,
+                },
+            )
             raise BaseSystemException.from_error_code(
-                GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR
+                GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
+                custom_message="Failed to deploy package due to storage/network I/O failure.",
             ) from exc
 
-    def _verify_simulation_result(self, package_id: str) -> bool:
-        return "invalid" not in package_id.lower()
+        # 3. 비즈니스 마일스톤 로깅 및 결과 반환
+        self._system_logger.info(
+            f"Successfully deployed package: {pkg.package_id} (hash: {pkg.package_hash[:8]})",
+            extra={
+                "package_id": pkg.package_id,
+                "company_id": ctx.company_id,
+                "format": pkg.format.value,
+                "package_hash": pkg.package_hash,
+            },
+        )
+
+        return DeploySim2RealResultDto(
+            package_id=pkg.package_id,
+            package_hash=pkg.package_hash,
+            is_success=True,
+            deployed_at=datetime.now(timezone.utc).isoformat(),
+        )

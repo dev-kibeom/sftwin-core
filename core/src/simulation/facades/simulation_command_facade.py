@@ -1,30 +1,31 @@
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 from shared.context.user_context import UserContext
-from simulation.fault_injection.application.inject_fault.inject_fault_dto import (
+from simulation.contracts.dtos.optimized_asset_placement_dto import (
+    OptimizedAssetPlacementDto,
+)
+from simulation.contracts.dtos.sim_result_dto import SimResultDto
+from simulation.contracts.ports.inbound.i_simulation_command_facade import (
+    ISimulationCommandFacade,
+)
+from simulation.fault_recovery.application.inject_fault.inject_fault_request_dto import (
     InjectFaultRequestDto,
 )
-from simulation.fault_injection.application.inject_fault.inject_fault_usecase import (
+from simulation.fault_recovery.application.inject_fault.inject_fault_usecase import (
     InjectFaultUseCase,
 )
-from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_dto import (
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_request_dto import (
     RunFmsSimulationRequestDto,
 )
 from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_usecase import (
     RunFmsSimulationUseCase,
 )
-from simulation.layout_optimization.application.optimize_layout.optimize_layout_dto import (
+from simulation.layout_optimization.application.optimize_layout.optimize_layout_request_dto import (
     OptimizeLayoutRequestDto,
 )
 from simulation.layout_optimization.application.optimize_layout.optimize_layout_usecase import (
     OptimizeLayoutUseCase,
 )
-from simulation.ports.inbound.dtos.optimized_asset_placement_dto import (
-    OptimizedAssetPlacementDto,
-)
-from simulation.ports.inbound.dtos.sim_result_dto import SimResultDto
-from simulation.ports.inbound.i_simulation_command_facade import (
-    ISimulationCommandFacade,
-)
-from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_dto import (
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_request_dto import (
     DeploySim2RealRequestDto,
 )
 from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_usecase import (
@@ -52,10 +53,19 @@ class SimulationCommandFacade(ISimulationCommandFacade):
     ) -> SimResultDto:
         return self._run_fms_uc.execute(request_dto=request_dto, ctx=ctx)
 
-    def inject_fault(
-        self, request_dto: InjectFaultRequestDto, ctx: UserContext
+    def simulate_fault_recovery(
+        self,
+        fault_request_dto: InjectFaultRequestDto,
+        sequence_script: str,
+        assets: tuple[AssetDto, ...],
+        ctx: UserContext,
     ) -> SimResultDto:
-        return self._inject_fault_uc.execute(request_dto=request_dto, ctx=ctx)
+        return self._fault_recovery_scenario_uc.execute(
+            fault_request_dto=fault_request_dto,
+            sequence_script=sequence_script,
+            assets=assets,
+            ctx=ctx,
+        )
 
     def deploy_sim2real_package(
         self, request_dto: DeploySim2RealRequestDto, ctx: UserContext
