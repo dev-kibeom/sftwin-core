@@ -7,8 +7,8 @@
 #include "edge_control/anomaly_failsafe/application/reset_interlock/reset_interlock_usecase.hpp"
 #include "edge_control/anomaly_failsafe/domain/interlock_management/estop_reset_policy.hpp"
 #include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
-#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
-#include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
+#include "edge_control/contracts/dtos/failsafe_command_dto.hpp"
+#include "edge_control/contracts/ports/outbound/i_failsafe_publisher.hpp"
 #include "shared/exceptions/global_exception_handler.hpp"
 #include "shared/logger/global_system_logger.hpp"
 

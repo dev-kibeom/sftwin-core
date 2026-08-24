@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
 
 namespace sftwin::edge_control {
 

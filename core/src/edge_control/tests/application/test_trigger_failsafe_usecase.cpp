@@ -11,12 +11,12 @@
 #include "shared/exceptions/global_exception_handler.hpp"
 #include "shared/logger/global_system_logger.hpp"
 #include "shared/utils/time_provider.hpp"
-#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
-#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
-#include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
-#include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
-#include "edge_control/ports/outbound/i_hardware_interlock.hpp"
-#include "edge_control/ports/outbound/i_recovery_sequence.hpp"
+#include "edge_control/contracts/dtos/failsafe_command_dto.hpp"
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/contracts/dtos/vision_detection_dto.hpp"
+#include "edge_control/contracts/ports/outbound/i_failsafe_publisher.hpp"
+#include "edge_control/contracts/ports/outbound/i_hardware_interlock.hpp"
+#include "edge_control/contracts/ports/outbound/i_recovery_sequence.hpp"
 
 using ::testing::_;
 using ::testing::NiceMock;

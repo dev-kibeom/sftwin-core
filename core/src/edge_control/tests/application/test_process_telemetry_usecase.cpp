@@ -7,10 +7,10 @@
 
 #include "shared/exceptions/global_exception_handler.hpp"
 #include "shared/utils/time_provider.hpp"
-#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
-#include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
-#include "edge_control/ports/outbound/i_telemetry_subscriber.hpp"
-#include "edge_control/ports/outbound/i_vision_detector.hpp"
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/contracts/dtos/vision_detection_dto.hpp"
+#include "edge_control/contracts/ports/outbound/i_telemetry_subscriber.hpp"
+#include "edge_control/contracts/ports/outbound/i_vision_detector.hpp"
 #include "edge_control/realtime_telemetry/application/process_telemetry/process_telemetry_usecase.hpp"
 
 using ::testing::NiceMock;

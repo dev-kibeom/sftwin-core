@@ -7,11 +7,11 @@
 #include "edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_evaluator.hpp"
 #include "edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_rule.hpp"
 #include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
-#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
-#include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
-#include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
-#include "edge_control/ports/outbound/i_hardware_interlock.hpp"
-#include "edge_control/ports/outbound/i_recovery_sequence.hpp"
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/contracts/dtos/vision_detection_dto.hpp"
+#include "edge_control/contracts/ports/outbound/i_failsafe_publisher.hpp"
+#include "edge_control/contracts/ports/outbound/i_hardware_interlock.hpp"
+#include "edge_control/contracts/ports/outbound/i_recovery_sequence.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 

@@ -3,9 +3,9 @@
 #include <memory>
 #include <string>
 
-#include "edge_control/ports/inbound/dtos/telemetry_packet_dto.hpp"
-#include "edge_control/ports/outbound/i_telemetry_subscriber.hpp"
-#include "edge_control/ports/outbound/i_vision_detector.hpp"
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/contracts/ports/outbound/i_telemetry_subscriber.hpp"
+#include "edge_control/contracts/ports/outbound/i_vision_detector.hpp"
 
 namespace sftwin::edge_control::realtime_telemetry::application {
 

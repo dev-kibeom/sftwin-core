@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
+#include "edge_control/contracts/dtos/failsafe_command_dto.hpp"
 
 namespace sftwin::edge_control {
 

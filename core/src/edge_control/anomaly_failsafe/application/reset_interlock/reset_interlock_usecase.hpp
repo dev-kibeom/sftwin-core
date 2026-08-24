@@ -6,7 +6,7 @@
 
 #include "edge_control/anomaly_failsafe/domain/interlock_management/estop_reset_policy.hpp"
 #include "edge_control/anomaly_failsafe/domain/interlock_management/interlock_state_enum.hpp"
-#include "edge_control/ports/outbound/i_failsafe_publisher.hpp"
+#include "edge_control/contracts//ports/outbound/i_failsafe_publisher.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 

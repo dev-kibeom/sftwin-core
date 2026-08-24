@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "edge_control/ports/inbound/dtos/vision_detection_dto.hpp"
+#include "edge_control/contracts/dtos/vision_detection_dto.hpp"
 
 namespace sftwin::edge_control {
 

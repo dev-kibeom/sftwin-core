@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "edge_control/ports/inbound/dtos/failsafe_command_dto.hpp"
+#include "edge_control/contracts/dtos/failsafe_command_dto.hpp"
 #include "shared/exceptions/global_exception_handler.hpp"
 #include "shared/logger/global_system_logger.hpp"
 

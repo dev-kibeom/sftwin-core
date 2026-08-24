@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "edge_control/ports/inbound/i_edge_command_facade.hpp"
+#include "edge_control/contracts/ports/inbound/i_edge_command_facade.hpp"
 
 namespace sftwin::edge_control::anomaly_failsafe::application {
 class TriggerFailsafeUseCase;
