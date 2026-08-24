@@ -4,9 +4,8 @@ from typing import Any
 
 import pandas as pd
 from pydantic import ValidationError
-from shared.context.log_context import LogContext
-from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 from ..schemas.kamp_raw_schema import KampRawRecordSchema
@@ -36,23 +35,12 @@ class KampFileValidator:
         파일 시스템 제약 조건 및 헤더 스키마 무결성을 검증하고 해결된 Path를 반환합니다.
         """
         resolved_path = Path(file_path).resolve()
-        log_ctx = LogContext(
-            trace_id=trace_id or "TRC-DEFAULT",
-            context={"file_path": str(resolved_path)},
-        )
 
-        self._system_logger.debug(f"Validating file: {resolved_path}", log_ctx)
-
-        # 도우미 함수들에 log_ctx를 일일이 넘기지 않고 단일 책임만 부여
         self._check_file_system_constraints(resolved_path)
         df_chunk = self._read_header_chunk(resolved_path)
         self._validate_record_schema(df_chunk)
         self._verify_header_metadata_integrity(df_chunk)
 
-        # 성공 마일스톤 INFO 1줄 기록
-        self._system_logger.info(
-            f"File and header schema validation passed: {resolved_path}", log_ctx
-        )
         return resolved_path
 
     def _check_file_system_constraints(self, file_path: Path) -> None:

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
+from digital_twin.dtos.asset_dto import AssetDto
 from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (
     RawFactoryDataDto,
 )

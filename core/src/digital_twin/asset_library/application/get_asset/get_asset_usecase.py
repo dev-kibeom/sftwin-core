@@ -1,9 +1,8 @@
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
+from digital_twin.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_query_repository import IAssetQueryRepository
-from shared.context.log_context import LogContext
 from shared.context.user_context import UserContext
-from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
 
@@ -21,35 +20,24 @@ class GetAssetUseCase:
 
     @require_user_context
     def execute(self, asset_id: str, ctx: UserContext) -> AssetDto:
-        log_ctx = LogContext(
-            trace_id=getattr(ctx, "trace_id", "TRC-DEFAULT"),
-            context={
-                "asset_id": asset_id,
-                "user_id": ctx.user_id,
-                "company_id": ctx.company_id,
-            },
+        # 1. 테넌시/삭제 필터링이 포함된 DTO 직접 조회
+        dto = self._query_repo.find_by_id(
+            asset_id=asset_id,
+            company_id=ctx.company_id,
         )
-        self._system_logger.debug(f"Executing {self.__class__.__name__}", log_ctx)
 
-        entity = self._query_repo.find_by_id(asset_id)
-
-        if not entity or entity.is_deleted or entity.company_id != ctx.company_id:
-            self._system_logger.warn(
-                f"Asset query failed - not found or unauthorized: {asset_id}",
-                log_ctx,
-            )
+        if not dto:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_TWIN_NOT_FOUND,
-                custom_message=f"Requested asset '{asset_id}' does not exist or access is denied.",
+                custom_message=(
+                    f"Requested asset '{asset_id}' does not exist or access is denied."
+                ),
             )
 
-        self._system_logger.info(f"Asset '{asset_id}' retrieved successfully", log_ctx)
-
-        return AssetDto(
-            asset_id=entity.asset_id,
-            asset_name=entity.asset_name,
-            asset_type=entity.asset_type.value,
-            cad_file_path=entity.cad_file_path,
-            kinematics_metadata=entity.kinematics_metadata,
-            created_at=entity.created_at,
+        # 2. 비즈니스 마일스톤 성공 로깅
+        self._system_logger.info(
+            f"Asset '{asset_id}' retrieved successfully",
+            extra={"asset_id": asset_id},
         )
+
+        return dto

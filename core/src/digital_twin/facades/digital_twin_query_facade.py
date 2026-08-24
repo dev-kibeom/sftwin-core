@@ -1,7 +1,7 @@
 from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
     GetAssetUseCase,
 )
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
+from digital_twin.dtos.asset_dto import AssetDto
 from digital_twin.ports.inbound.i_digital_twin_query_facade import (
     IDigitalTwinQueryFacade,
 )

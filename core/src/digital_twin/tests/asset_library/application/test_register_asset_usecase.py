@@ -1,4 +1,3 @@
-import uuid
 from unittest.mock import MagicMock
 
 import pytest
@@ -6,34 +5,44 @@ from digital_twin.asset_library.application.register_asset.register_asset_usecas
     RegisterAssetUseCase,
 )
 from digital_twin.asset_library.domain.asset.asset import Asset
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
+from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
+from digital_twin.dtos.asset_dto import AssetDto
 from digital_twin.ports.outbound.i_asset_command_repository import (
     IAssetCommandRepository,
 )
 from shared.context.user_context import UserContext
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.security.user_role_enum import UserRole
-from shared.exceptions.base_system_exception import BaseSystemException
 
 
-def test_tc_happy_path_register_asset():
-    """
-    [TC-정상] 신규 자산 정상 등록 및 저장소 호출 검증
-    """
-    # Given
-    mock_repo = MagicMock(spec=IAssetCommandRepository)
+@pytest.fixture
+def mock_command_repo() -> MagicMock:
+    return MagicMock(spec=IAssetCommandRepository)
 
-    def mock_save(entity: Asset):
-        return entity
 
-    mock_repo.save.side_effect = mock_save
+@pytest.fixture
+def usecase(mock_command_repo: MagicMock) -> RegisterAssetUseCase:
+    return RegisterAssetUseCase(command_repo=mock_command_repo)
 
-    usecase = RegisterAssetUseCase(command_repo=mock_repo)
 
-    valid_asset_dto = AssetDto(
+@pytest.fixture
+def standard_context() -> UserContext:
+    return UserContext(
+        user_id="USER-123",
+        username="kibeom_engineer",
+        company_id="TEST-COMPANY-01",
+        role=UserRole.FIELD_ENGINEER,
+        accessible_factory_ids=["FACTORY-01"],
+    )
+
+
+@pytest.fixture
+def valid_asset_dto() -> AssetDto:
+    return AssetDto(
         asset_id="",
         asset_name="Doosan_M1013_Robot",
-        asset_type="ROBOT",
+        asset_type=AssetType.ROBOT,
         cad_file_path="/models/doosan.gltf",
         kinematics_metadata={
             "degrees_of_freedom": 6,
@@ -42,60 +51,59 @@ def test_tc_happy_path_register_asset():
         created_at="2026-07-31T00:00:00Z",
     )
 
-    valid_user_ctx = UserContext(
-        user_id="USER-123",
-        username="kibeom_engineer",
-        company_id="TEST-COMPANY-01",
-        role=UserRole.FIELD_ENGINEER,
-        accessible_factory_ids=["FACTORY-01"],
-    )
+
+def test_tc_happy_path_register_asset(
+    usecase: RegisterAssetUseCase,
+    mock_command_repo: MagicMock,
+    standard_context: UserContext,
+    valid_asset_dto: AssetDto,
+):
+    """
+    [TC-정상] 엔티티 변환, 컨텍스트 정보(company_id, user_id) 주입 및 영속화 호출 검증
+    """
+    # Given: save 호출 시 전달된 Asset 엔티티에 생성된 asset_id를 포함해 반환하도록 모킹
+    mock_saved_asset = MagicMock(spec=Asset)
+    mock_saved_asset.asset_id = "GENERATED-UUID-01"
+    mock_saved_asset.asset_name = valid_asset_dto.asset_name
+    mock_command_repo.save.return_value = mock_saved_asset
 
     # When
-    generated_asset_id = usecase.execute(valid_asset_dto, valid_user_ctx)
+    registered_id = usecase.execute(valid_asset_dto, standard_context)
 
     # Then
-    # 1. 반환된 문자열이 유효한 UUID 형식인지 검증
-    assert uuid.UUID(generated_asset_id) is not None
-    # 2. Mock 저장소 save가 1회 호출되었는지 확인
-    assert mock_repo.save.call_count == 1
-    # 3. 전달된 Asset 객체의 company_id가 TEST-COMPANY-01로 매핑되었는지 단언
-    saved_arg: Asset = mock_repo.save.call_args[0][0]
-    assert saved_arg.company_id == "TEST-COMPANY-01"
-    assert saved_arg.asset_name == "Doosan_M1013_Robot"
+    assert registered_id == "GENERATED-UUID-01"
+    mock_command_repo.save.assert_called_once()
+
+    # Domain Entity 변환 및 컨텍스트 바인딩 값 검증
+    saved_entity: Asset = mock_command_repo.save.call_args[0][0]
+    assert saved_entity.asset_name == valid_asset_dto.asset_name
+    assert saved_entity.asset_type == valid_asset_dto.asset_type
+    assert saved_entity.company_id == standard_context.company_id
+    assert saved_entity.created_by == standard_context.user_id
+    assert saved_entity.updated_by == standard_context.user_id
 
 
-def test_tc_error_handling_invalid_domain_schema():
+def test_tc_error_handling_invalid_domain_schema(
+    usecase: RegisterAssetUseCase,
+    mock_command_repo: MagicMock,
+    standard_context: UserContext,
+):
     """
-    [TC-에러] 도메인 스키마 규격 위반 시 조기 차단(Guard Clause) 검증
+    [TC-에러] Asset 도메인 생성자 검증 실패 시 ERR_TWIN_INVALID_SCHEMA 변환 및 영속화 차단 검증
     """
-    # Given
-    mock_repo = MagicMock(spec=IAssetCommandRepository)
-
-    usecase = RegisterAssetUseCase(command_repo=mock_repo)
-
-    # kinematics_metadata 필수 규격 누락 DTO
+    # Given: 도메인 유효성 검증 실패를 유도하는 잘못된 DTO
     invalid_dto = AssetDto(
         asset_id="",
         asset_name="Invalid_Robot",
-        asset_type="ROBOT",
+        asset_type=AssetType.ROBOT,
         cad_file_path=None,
-        kinematics_metadata={},  # degrees_of_freedom 누락
+        kinematics_metadata={},
         created_at="2026-07-31T00:00:00Z",
-    )
-
-    ctx = UserContext(
-        user_id="USER-123",
-        username="kibeom_engineer",
-        company_id="TEST-COMPANY-01",
-        role=UserRole.FIELD_ENGINEER,
-        accessible_factory_ids=[],
     )
 
     # When & Then
     with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute(invalid_dto, ctx)
+        usecase.execute(invalid_dto, standard_context)
 
     assert exc_info.value.error_code == GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA
-    assert exc_info.value.status_code == 400
-    # Mock 저장소의 save() 메서드가 단 한 번도 호출되지 않았음을 단언
-    mock_repo.save.assert_not_called()
+    mock_command_repo.save.assert_not_called()

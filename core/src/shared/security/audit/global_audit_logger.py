@@ -1,9 +1,8 @@
-import json
 import uuid
 from dataclasses import asdict
 from typing import Any
 
-from shared.context.log_context import LogContext
+from shared.context.log_context import LogContext, current_log_context
 from shared.context.user_context import UserContext
 from shared.logger.global_system_logger import GlobalSystemLogger
 
@@ -32,22 +31,30 @@ class GlobalAuditLogger:
         user_id, company_id = self._extract_user_identity(event.user_ctx)
         audit_id = str(uuid.uuid4())
 
+        # ContextVar에서 현재 trace_id 자동 조회 및 폴백
+        current_ctx = current_log_context.get()
+        resolved_trace_id = (
+            event.trace_id
+            or (current_ctx.trace_id if current_ctx else None)
+            or "TRC-AUDIT-DEFAULT"
+        )
+
         severity_val = (
             event.severity.value
             if hasattr(event.severity, "value")
             else str(event.severity)
         )
 
-        context_data = {
+        context_data: dict[str, Any] = {
             "audit_id": audit_id,
-            "trace_id": event.trace_id,
+            "trace_id": resolved_trace_id,
             "user_id": user_id,
             "company_id": company_id,
             "event_type": event.event_type.value,
             "action_type": event.action,
             "target_resource": event.target,
             "severity": severity_val,
-            "details": json.dumps(event.details),
+            "details": event.details,  # 이중 직렬화 방지를 위해 원시 dict 전달
             "ip_address": (
                 getattr(event.user_ctx, "ip_address", "UNKNOWN")
                 if event.user_ctx
@@ -60,22 +67,22 @@ class GlobalAuditLogger:
             f"'{event.target}' with severity '{severity_val}'"
         )
 
-        log_ctx = LogContext(trace_id=event.trace_id, context=context_data)
+        log_ctx = LogContext(trace_id=resolved_trace_id, context=context_data)
 
         # 심각도(Severity) 기반 로깅 레벨 디스패치
         if event.severity == AuditSeverity.CRITICAL:
-            self._system_logger.error(message, log_ctx)
+            self._system_logger.error(message, log_ctx=log_ctx)
         elif event.severity == AuditSeverity.WARNING:
-            self._system_logger.warn(message, log_ctx)
+            self._system_logger.warn(message, log_ctx=log_ctx)
         else:
-            self._system_logger.info(message, log_ctx)
+            self._system_logger.info(message, log_ctx=log_ctx)
 
         # 영속화 수행
         self._persist_audit_log(
             event_type=event.event_type,
             action=event.action,
             severity=event.severity,
-            trace_id=event.trace_id,
+            trace_id=resolved_trace_id,
             user_id=user_id,
             company_id=company_id,
             target_resource=event.target,
@@ -122,6 +129,6 @@ class GlobalAuditLogger:
             )
             self._system_logger.error(
                 f"Audit log persistence failed via repository: {repo_exc}",
-                fallback_ctx,
+                log_ctx=fallback_ctx,
             )
             return False

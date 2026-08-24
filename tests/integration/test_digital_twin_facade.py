@@ -7,7 +7,7 @@ from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 from digital_twin.asset_library.domain.asset.kinematics_schema_key_enum import (
     KinematicsSchemaKey,
 )
-from digital_twin.ports.inbound.dtos.asset_dto import AssetDto
+from digital_twin.dtos.asset_dto import AssetDto
 from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (
     RawFactoryDataDto,
 )

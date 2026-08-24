@@ -2,7 +2,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from digital_twin.ports.outbound.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
+from digital_twin.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
@@ -89,9 +89,7 @@ def test_tc_kmp_016_happy_path_full_export(
         result = kamp_adapter.parse("data/exp_01.csv")
 
     # Then
-    mock_file_validator.validate_and_resolve.assert_called_once_with(
-        "data/exp_01.csv", trace_id="TRC-KAMP-PARSE-MAIN"
-    )
+    mock_file_validator.validate_and_resolve.assert_called_once_with("data/exp_01.csv")
     mock_parse_series.assert_called_once_with("data/exp_01.csv")
 
     # DTO 인스턴스 및 속성 검증

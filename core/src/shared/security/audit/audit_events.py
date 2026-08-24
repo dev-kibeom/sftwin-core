@@ -15,4 +15,4 @@ class AuditEvent:
     severity: AuditSeverity = AuditSeverity.INFO
     details: dict[str, Any] = field(default_factory=dict)
     user_ctx: UserContext | None = None
-    trace_id: str = "TRC-AUDIT"
+    trace_id: str | None = None  # None 허용으로 ContextVar 자동 연동 지원
