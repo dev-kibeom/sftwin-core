@@ -7,14 +7,14 @@ from digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 from digital_twin.asset_library.domain.asset.kinematics_schema_key_enum import (
     KinematicsSchemaKey,
 )
-from digital_twin.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (
     RawFactoryDataDto,
 )
 from shared.context.user_context import UserContext
+from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.security.user_role_enum import UserRole
-from shared.exceptions.base_system_exception import BaseSystemException
 
 from dependencies import DigitalTwinContainer, InfraContainer
 
@@ -65,7 +65,7 @@ def test_register_asset_success(
     asset_dto = AssetDto(
         asset_id="",
         asset_name="Doosan_M1013_Robot",
-        asset_type="ROBOT",
+        asset_type=AssetType.ROBOT,
         cad_file_path="/app/assets/cad/doosan_m1013.stl",
         kinematics_metadata={
             KinematicsSchemaKey.DEGREES_OF_FREEDOM.value: 6,
