@@ -109,6 +109,11 @@ jobs:
           chmod +x core/run_cpp_tests.sh
           ./core/run_cpp_tests.sh
 
+      - name: Install C++ Toolchain & Libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libspdlog-dev protobuf-compiler libprotobuf-dev libgtest-dev libgmock-dev google-mock
+
   # 4. GHCR 컨테이너 이미지 빌드 및 Push (Push/Tag 이벤트 시에만 실행)
   build-and-push-ghcr:
     name: Build & Push GHCR Images

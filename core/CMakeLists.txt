@@ -17,8 +17,22 @@ find_package(fmt REQUIRED)
 if(NOT TARGET GMock::gmock)
     if(TARGET GTest::gmock)
         add_library(GMock::gmock ALIAS GTest::gmock)
+    elseif(TARGET gmock)
+        add_library(GMock::gmock ALIAS gmock)
     else()
-        find_package(GMock REQUIRED)
+        # Ubuntu 등 시스템에 설치된 gmock 라이브러리를 직접 링크하는 타깃 생성
+        find_library(GMOCK_LIB gmock)
+        find_library(GMOCK_MAIN_LIB gmock_main)
+        if(GMOCK_LIB)
+            add_library(GMock::gmock UNKNOWN IMPORTED)
+            set_target_properties(GMock::gmock PROPERTIES
+                IMPORTED_LOCATION "${GMOCK_LIB}"
+                INTERFACE_LINK_LIBRARIES "GTest::GTest"
+            )
+        else()
+            # 최후 수단: GTest::GTest를 그대로 연결
+            add_library(GMock::gmock ALIAS GTest::GTest)
+        endif()
     endif()
 endif()
 
