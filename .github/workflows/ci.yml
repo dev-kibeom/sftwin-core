@@ -16,9 +16,6 @@ jobs:
   lint-and-architecture:
     name: Lint & Architecture Compliance
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -36,12 +33,14 @@ jobs:
 
       - name: Lint with Flake8
         run: |
-          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 core/src/ plugins/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 core/src/ plugins/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Validate Architectural Compliance (AST Static Check)
+        env:
+          PYTHONPATH: core/src:plugins:.
         run: |
-          python -m pytest tests/shared/test_code_standards.py -v
+          python -m pytest tests/test_code_standards.py -v
 
       - name: Create Dummy Env File for Validation
         run: |
@@ -53,10 +52,10 @@ jobs:
 
       - name: Validate Docker Compose Configuration
         run: |
-          if [ -f "docker-compose.yml" ]; then
-            docker compose config
+          if [ -f "infra/docker-compose.yml" ]; then
+            docker compose -f infra/docker-compose.yml config
           else
-            echo "docker-compose.yml check skipped."
+            echo "infra/docker-compose.yml not found, skipping."
           fi
 
   # 2. Python 단위 및 통합 테스트 스위트
@@ -64,9 +63,6 @@ jobs:
     name: Python Service Tests
     needs: lint-and-architecture
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -84,18 +80,15 @@ jobs:
 
       - name: Run Pytest Suite with Coverage
         env:
-          PYTHONPATH: .
+          PYTHONPATH: core/src:plugins:.
         run: |
-          pytest --cov=src --cov-report=term-missing tests/
+          pytest --cov=core/src --cov=plugins --cov-report=term-missing tests/ core/src/ plugins/
 
   # 3. C++17 Native 에지 제어 및 시뮬레이션 빌드/테스트
   cpp-test-suite:
     name: C++17 Native Tests
     needs: lint-and-architecture
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: core
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -107,8 +100,8 @@ jobs:
 
       - name: Execute C++ Unit Tests
         run: |
-          chmod +x run_cpp_tests.sh
-          ./run_cpp_tests.sh
+          chmod +x core/run_cpp_tests.sh
+          ./core/run_cpp_tests.sh
 
   # 4. GHCR 컨테이너 이미지 빌드 및 Push (Push/Tag 이벤트 시에만 실행)
   build-and-push-ghcr:
@@ -122,14 +115,10 @@ jobs:
     strategy:
       matrix:
         service:
-          - name: asset-svc
-            dockerfile: core/src/digital_twin/Dockerfile
-          - name: sim-svc
-            dockerfile: core/src/simulation/Dockerfile
-          - name: kpi-svc
-            dockerfile: core/src/kpi_b2b/Dockerfile
+          - name: app
+            dockerfile: infra/Dockerfile
           - name: nginx
-            dockerfile: core/infra/nginx/Dockerfile
+            dockerfile: infra/nginx/Dockerfile
 
     steps:
       - name: Checkout Repository

@@ -1,5 +1,6 @@
-# Security & Local Environment Variables (IDD v4.0 4.2절)
+# Security & Local Environment Variables
 .env.local
+.env.*.local
 *.pem
 *.key
 *.pfx
@@ -9,6 +10,7 @@
 
 # Host Persistent Data Directory
 **/data/assets/*
+!**/data/assets/aas/sample_aas.json
 **/data/raw/*
 **/data/sim_packages/*
 **/data/runtime/storage/mysql/*
@@ -16,9 +18,6 @@
 **/data/runtime/storage/influxdb/*
 **/data/runtime/logs/*
 !**/data/**/.gitkeep
-
-# Keep data folder structure via .gitkeep
-!data/**/.gitkeep
 
 # Python Artifacts
 __pycache__/
@@ -28,6 +27,8 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
+.coverage
+htmlcov/
 
 # C++ Build Artifacts (Edge & Physics Engine)
 build/
@@ -37,12 +38,13 @@ lib/
 *.obj
 *.so
 *.dylib
-*.egg-info/
+*.a
 
 # IDE & OS Specific
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
 # Temporary Backup Folder
 _backup/
