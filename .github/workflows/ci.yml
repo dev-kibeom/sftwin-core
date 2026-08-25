@@ -44,10 +44,16 @@ jobs:
 
       - name: Create Dummy Env File for Validation
         run: |
+          # 루트 및 infra 디렉토리에 더미 환경 변수 파일 생성
+          mkdir -p infra
           if [ -f ".env.example" ]; then
             cp .env.example .env.local
+            cp .env.example infra/.env.local
+          elif [ -f "infra/.env.example" ]; then
+            cp infra/.env.example infra/.env.local
+            cp infra/.env.example .env.local
           else
-            touch .env.local .env.shared
+            touch .env.local .env.shared infra/.env.local infra/.env.shared
           fi
 
       - name: Validate Docker Compose Configuration
