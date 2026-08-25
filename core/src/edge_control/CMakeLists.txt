@@ -17,9 +17,15 @@ add_executable(edge_control_tests
 )
 
 # 3. 인클루드 경로 지정 (프로젝트 루트 기준)
+# target_include_directories(edge_control_tests PRIVATE
+#     ${CMAKE_SOURCE_DIR}
+#     ${CMAKE_SOURCE_DIR}/src
+# )
+
+# 3. 인클루드 경로 지정
 target_include_directories(edge_control_tests PRIVATE
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
 )
 
 # 4. 링킹

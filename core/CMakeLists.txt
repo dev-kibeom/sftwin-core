@@ -4,6 +4,9 @@ project(sftwin_core CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=1)
 
 # 공통 3rd-party 의존성 로드
 find_package(GTest REQUIRED)

@@ -26,6 +26,8 @@ class GlobalErrorCode(str, Enum):
     # Edge Control Domain
     ERR_EDGE_COMM_TIMEOUT = "ERR_EDGE_COMM_TIMEOUT"
     ERR_EDGE_FAILSAFE_TRIGGERED = "ERR_EDGE_FAILSAFE_TRIGGERED"
+    ERR_EDGE_INTERLOCK_RESET_DENIED = "ERR_EDGE_INTERLOCK_RESET_DENIED"
+    ERR_EDGE_DDS_INIT_FAIL = "ERR_EDGE_DDS_INIT_FAIL"
 
     # B2B & KPI Domain
     ERR_B2B_API_FAILURE = "ERR_B2B_API_FAILURE"
@@ -109,6 +111,14 @@ ERROR_CODE_METADATA: dict[GlobalErrorCode, dict[str, Any]] = {
     GlobalErrorCode.ERR_EDGE_FAILSAFE_TRIGGERED: {
         "status": 503,
         "msg": "Safety threshold exceeded; Failsafe E-Stop triggered within 100ms.",
+    },
+    GlobalErrorCode.ERR_EDGE_INTERLOCK_RESET_DENIED: {
+        "status": 409,
+        "msg": "Interlock reset request was denied due to unresolved safety preconditions or active faults.",
+    },
+    GlobalErrorCode.ERR_EDGE_DDS_INIT_FAIL: {
+        "status": 500,
+        "msg": "Failed to initialize FastDDS domain participant, publisher, or subscriber entities.",
     },
     # 5. B2B & KPI Domain
     GlobalErrorCode.ERR_B2B_API_FAILURE: {

@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
 #include "edge_control/contracts/ports/inbound/i_edge_query_facade.hpp"
 
 namespace sftwin::edge_control::realtime_telemetry::application {

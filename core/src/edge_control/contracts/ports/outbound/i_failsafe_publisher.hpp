@@ -10,7 +10,7 @@ class IFailsafePublisher {
    public:
     virtual ~IFailsafePublisher() = default;
 
-    virtual bool publish(const std::string& topic, const FailsafeCommandDto& data) = 0;
+    virtual void publish(const std::string& topic, const FailsafeCommandDto& data) = 0;
 };
 
 }  // namespace sftwin::edge_control

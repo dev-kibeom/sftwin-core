@@ -27,9 +27,9 @@ EvaluationResult FailsafeEvaluator::evaluate_violations(
         return {FailsafeAction::BYPASS, "WARNING_INTRUSION"};
     }
 
-    // 4. AI 시계열 이상 점수 초과 판정
-    if (snapshot.ai_anomaly_score > _rule.max_ai_anomaly_score) {
-        return {FailsafeAction::ESTOP, "AI_RECONSTRUCTION_ERR"};
+    // 4. 시계열 이상 점수 초과 판정
+    if (snapshot.anomaly_score > _rule.max_anomaly_score) {
+        return {FailsafeAction::ESTOP, "ANOMALY_SCORE_EXCEEDED"};
     }
 
     return {FailsafeAction::NONE, "OK"};

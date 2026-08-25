@@ -1,39 +1,35 @@
 #include "global_system_logger.hpp"
 
 #include <spdlog/sinks/stdout_color_sinks.h>
-
+#include <mutex>
 #include <iostream>
 
 namespace sftwin::shared {
 
-std::shared_ptr<spdlog::logger> GlobalSystemLogger::_async_logger = nullptr;
+static std::once_flag init_flag;
+static std::shared_ptr<spdlog::logger> g_global_logger = nullptr;
 
-void GlobalSystemLogger::init() {
-    if (_async_logger) return;
+std::shared_ptr<spdlog::logger> GlobalSystemLogger::get_backend_logger(const std::string& logger_name) {
+    std::call_once(init_flag, [&]() {
+        try {
+            auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            stdout_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
 
-    try {
-        spdlog::init_thread_pool(8192, 1);
+            // async_logger 대신 일반 동기 logger 생성 (thread pool 제거)
+            g_global_logger = std::make_shared<spdlog::logger>(logger_name, stdout_sink);
 
-        auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        stdout_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] [core_system] %v");
+            spdlog::register_logger(g_global_logger);
+            g_global_logger->set_level(spdlog::level::info);
+        } catch (const spdlog::spdlog_ex& ex) {
+            std::cerr << "Global logger initialization failed: " << ex.what() << std::endl;
+        }
+    });
 
-        _async_logger = std::make_shared<spdlog::async_logger>(
-            "global_async_logger", stdout_sink, spdlog::thread_pool(),
-            spdlog::async_overflow_policy::block);
-
-        spdlog::register_logger(_async_logger);
-        _async_logger->set_level(spdlog::level::info);
-        spdlog::flush_every(std::chrono::seconds(1));
-    } catch (const spdlog::spdlog_ex& ex) {
-        std::cerr << "Global async logger initialization failed: " << ex.what() << std::endl;
-    }
+    return g_global_logger;
 }
 
-std::shared_ptr<spdlog::logger> GlobalSystemLogger::get_logger() {
-    if (!_async_logger) {
-        init();
-    }
-    return _async_logger;
-}
+GlobalSystemLogger::GlobalSystemLogger(std::string component_name, std::string logger_name)
+    : _component_name(std::move(component_name)),
+      _backend_logger(get_backend_logger(logger_name)) {}
 
 }  // namespace sftwin::shared

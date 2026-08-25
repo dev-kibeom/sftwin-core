@@ -5,7 +5,6 @@
 #include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
 
 namespace sftwin::edge_control {
-
 class IEdgeQueryFacade {
    public:
     virtual ~IEdgeQueryFacade() = default;

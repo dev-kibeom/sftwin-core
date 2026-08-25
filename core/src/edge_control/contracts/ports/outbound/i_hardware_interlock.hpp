@@ -11,8 +11,8 @@ class IHardwareInterlock {
     virtual ~IHardwareInterlock() = default;
 
     virtual void trigger_physical_relay() = 0;
-    virtual bool release_interlock(const std::string& operator_approval_token) = 0;
-    [[nodiscard]] virtual anomaly_failsafe::domain::InterlockState get_state() const = 0;
+    virtual void release_interlock(const std::string& operator_approval_token) = 0;
+    [[nodiscard]] virtual anomaly_failsafe::domain::InterlockState get_state() const = 0; // bool/token 대신 물리 릴레이 해제 동작 집중
 };
 
 }  // namespace sftwin::edge_control
