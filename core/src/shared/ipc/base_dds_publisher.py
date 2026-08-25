@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from shared.context.log_context import LogContext
-from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
@@ -43,10 +43,22 @@ class BaseDdsPublisher(ABC, Generic[T]):
                 details={"topic": topic},
             )
 
-        self._system_logger.info(
-            f"Publishing DDS message packet to topic '{topic}'", log_ctx=log_ctx
-        )
-        return self._do_publish(topic, data)
+        try:
+            self._system_logger.info(
+                f"Publishing DDS message packet to topic '{topic}'", log_ctx=log_ctx
+            )
+            return self._do_publish(topic, data)
+        except Exception as exc:
+            self._system_logger.error(
+                f"DDS transport error while publishing to '{topic}': {str(exc)}",
+                log_ctx=log_ctx,
+            )
+            raise BaseSystemException(
+                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
+                message=f"Underlying DDS publisher failed: {str(exc)}",
+                status_code=500,
+                details={"topic": topic, "error": str(exc)},
+            ) from exc
 
     @abstractmethod
     def _do_publish(self, topic: str, data: T) -> bool:

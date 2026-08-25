@@ -2,6 +2,10 @@ from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.audit.audit_event_type_enum import AuditEventType
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import GlobalAuditLogger
 from shared.security.context_guard import require_user_context
 from simulation.contracts.ports.outbound.i_physics_engine import IPhysicsEngine
 from simulation.fault_recovery.application.inject_fault.inject_fault_request_dto import (
@@ -30,12 +34,14 @@ class InjectFaultUseCase:
         physics_engine: IPhysicsEngine,
         policy: FailsafeRecoveryPolicy | None = None,
         system_logger: GlobalSystemLogger | None = None,
+        audit_logger: GlobalAuditLogger | None = None,
     ) -> None:
         self._physics_engine = physics_engine
         self._policy = policy or FailsafeRecoveryPolicy()
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="InjectFaultUseCase"
         )
+        self._audit_logger = audit_logger or GlobalAuditLogger()
 
     @require_user_context
     def execute(
@@ -61,6 +67,20 @@ class InjectFaultUseCase:
 
         if policy_result.action == SafetyAction.MAINTAIN_ESTOP:
             self._physics_engine.trigger_failsafe_stop()
+            # Failsafe 발동 시 감사 로그 등록
+            self._audit_logger.log(
+                AuditEvent(
+                    event_type=AuditEventType.FAILSAFE,
+                    action="ENFORCE_ESTOP",
+                    target=f"Scenario:{scenario.scenario_id}",
+                    severity=AuditSeverity.CRITICAL,
+                    user_ctx=ctx,
+                    details={
+                        "fault_type": scenario.fault_type.value,
+                        "reason": policy_result.reason,
+                    },
+                )
+            )
             self._system_logger.info(
                 f"Enforced E-STOP by failsafe policy: {policy_result.reason}",
                 extra={

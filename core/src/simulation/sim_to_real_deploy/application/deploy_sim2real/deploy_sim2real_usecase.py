@@ -6,6 +6,10 @@ from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.audit.audit_event_type_enum import AuditEventType
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import GlobalAuditLogger
 from shared.security.context_guard import require_user_context
 from simulation.contracts.dtos.deploy_package_dto import DeployPackageDto
 from simulation.contracts.ports.outbound.i_fleet_deployment_gateway import (
@@ -32,17 +36,18 @@ class DeploySim2RealUseCase:
         self,
         gateway: IFleetDeploymentGateway,
         system_logger: GlobalSystemLogger | None = None,
+        audit_logger: GlobalAuditLogger | None = None,
     ) -> None:
         self._gateway = gateway
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="DeploySim2RealUseCase"
         )
+        self._audit_logger = audit_logger or GlobalAuditLogger()
 
     @require_user_context
     def execute(
         self, request_dto: DeploySim2RealRequestDto, ctx: UserContext
     ) -> DeploySim2RealResultDto:
-        # Config DTO를 안전하게 dict 형태로 변환
         config_dict: dict[str, Any] = (
             asdict(request_dto.config)
             if is_dataclass(request_dto.config)
@@ -83,12 +88,34 @@ class DeploySim2RealUseCase:
                     "company_id": ctx.company_id,
                 },
             )
+            # 배포 실패 감사 로그 기록
+            self._audit_logger.log(
+                AuditEvent(
+                    event_type=AuditEventType.SECURITY,
+                    action="DEPLOY_PACKAGE_FAILED",
+                    target=f"DeployPackage:{pkg.package_id}",
+                    severity=AuditSeverity.CRITICAL,
+                    user_ctx=ctx,
+                    details={"error": str(exc), "format": pkg.format.value},
+                )
+            )
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
                 custom_message="Failed to deploy package due to storage/network I/O failure.",
             ) from exc
 
-        # 3. 비즈니스 마일스톤 로깅 및 결과 반환
+        # 3. 배포 성공 감사 로그 및 비즈니스 마일스톤 기록
+        self._audit_logger.log(
+            AuditEvent(
+                event_type=AuditEventType.SECURITY,
+                action="DEPLOY_PACKAGE_SUCCESS",
+                target=f"DeployPackage:{pkg.package_id}",
+                severity=AuditSeverity.INFO,
+                user_ctx=ctx,
+                details={"format": pkg.format.value, "package_hash": pkg.package_hash},
+            )
+        )
+
         self._system_logger.info(
             f"Successfully deployed package: {pkg.package_id} (hash: {pkg.package_hash[:8]})",
             extra={

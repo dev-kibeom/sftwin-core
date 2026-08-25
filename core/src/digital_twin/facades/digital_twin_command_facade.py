@@ -15,6 +15,8 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.twin_metrics_
     TwinMetricsDto,
 )
 from shared.context.user_context import UserContext
+from shared.security.context_guard import require_permission
+from shared.security.user_role_enum import UserRole
 
 
 class DigitalTwinCommandFacade(IDigitalTwinCommandFacade):
@@ -28,9 +30,11 @@ class DigitalTwinCommandFacade(IDigitalTwinCommandFacade):
         self._register_asset_uc = register_asset_uc
         self._reconstruct_uc = reconstruct_uc
 
+    @require_permission(UserRole.FIELD_ENGINEER, "TWIN_REGISTER_ASSET")
     def register_asset(self, asset_dto: AssetDto, ctx: UserContext) -> str:
         return self._register_asset_uc.execute(asset_dto, ctx)
 
+    @require_permission(UserRole.FACTORY_MANAGER, "TWIN_RECONSTRUCT")
     def reconstruct_twin(
         self, raw_data: RawFactoryDataDto, ctx: UserContext
     ) -> TwinMetricsDto:

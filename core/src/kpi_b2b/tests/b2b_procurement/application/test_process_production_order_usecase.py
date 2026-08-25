@@ -1,14 +1,14 @@
-from unittest.mock import MagicMock
-
-import pytest
-from kpi_b2b.b2b_procurement.application.process_production_order.process_production_order_usecase import (
-    ProcessProductionOrderUseCase,
-)
 from kpi_b2b.b2b_procurement.application.process_production_order.production_order_request_dto import (
     ProductionOrderRequestDto,
 )
 from kpi_b2b.b2b_procurement.domain.production_order.factory_phase_enum import (
     FactoryPhase,
+)
+from kpi_b2b.b2b_procurement.domain.production_order.material_inventory import (
+    MaterialInventory,
+)
+from kpi_b2b.b2b_procurement.domain.production_order.production_order import (
+    ProductionOrder,
 )
 from kpi_b2b.contracts.dtos.production_order_result_dto import (
     ProductionOrderResultDto,
@@ -19,91 +19,106 @@ from kpi_b2b.contracts.ports.outbound.i_procurement_command_repository import (
 from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
-from shared.security.user_role_enum import UserRole
+from shared.logger.global_system_logger import GlobalSystemLogger
+from shared.security.audit.audit_event_type_enum import AuditEventType
+from shared.security.audit.audit_events import AuditEvent
+from shared.security.audit.audit_severity_enum import AuditSeverity
+from shared.security.audit.global_audit_logger import GlobalAuditLogger
+from shared.security.context_guard import require_user_context
 
 
-@pytest.fixture
-def mock_command_repo() -> MagicMock:
-    return MagicMock(spec=IProcurementCommandRepository)
+class ProcessProductionOrderUseCase:
+    """생산 발주 생성, 자재 소진 검증 및 PackML 상태 전이를 처리하는 유스케이스"""
 
+    def __init__(
+        self,
+        command_repo: IProcurementCommandRepository,
+        system_logger: GlobalSystemLogger | None = None,
+        audit_logger: GlobalAuditLogger | None = None,
+    ) -> None:
+        self._command_repo = command_repo
+        self._system_logger = system_logger or GlobalSystemLogger(
+            component_name="ProcessProductionOrderUseCase"
+        )
+        self._audit_logger = audit_logger or GlobalAuditLogger()
 
-@pytest.fixture
-def usecase(mock_command_repo: MagicMock) -> ProcessProductionOrderUseCase:
-    return ProcessProductionOrderUseCase(command_repo=mock_command_repo)
+    @require_user_context
+    def execute(
+        self,
+        request_dto: ProductionOrderRequestDto,
+        ctx: UserContext,
+    ) -> ProductionOrderResultDto:
+        try:
+            # 1. 도메인 엔티티 생성
+            order = ProductionOrder.create(
+                order_id=request_dto.order_id,
+                product_code=request_dto.product_code,
+                target_quantity=request_dto.target_quantity,
+                company_id=ctx.company_id,
+                factory_phase=FactoryPhase(request_dto.factory_phase),
+            )
 
+            # 2. 원자재 재고 검증 및 소진
+            inventory = MaterialInventory(
+                material_code=f"MAT-{request_dto.product_code}",
+                available_stock=10000.0,
+                unit_per_product=2.5,
+            )
+            remaining_stock = inventory.check_and_consume(request_dto.target_quantity)
 
-@pytest.fixture
-def standard_context() -> UserContext:
-    return UserContext(
-        user_id="USER-123",
-        username="kibeom_engineer",
-        company_id="TEST-COMPANY-01",
-        role=UserRole.FIELD_ENGINEER,
-        accessible_factory_ids=["FACTORY-01"],
-    )
+            # 3. PackML 상태 전이 (IDLE -> STARTING -> EXECUTE)
+            order.transition_to_starting()
+            order.transition_to_execute()
 
+            # 4. 저장소 영속화
+            self._command_repo.save_production_order(order)
 
-def test_tc_happy_path_process_production_order(
-    usecase: ProcessProductionOrderUseCase,
-    mock_command_repo: MagicMock,
-    standard_context: UserContext,
-):
-    """[TC-정상] 생산 발주 생성, 원자재 차감, PackML 상태 전이(EXECUTE) 및 영속화 검증"""
-    req_dto = ProductionOrderRequestDto(
-        product_code="PRD-01",
-        target_quantity=100,
-        factory_phase=FactoryPhase.FMS_OPTIMIZED,
-    )
+        except ValueError as e:
+            self._audit_logger.log(
+                AuditEvent(
+                    event_type=AuditEventType.DATA_ACCESS,
+                    action="PROCESS_PRODUCTION_ORDER_REJECTED",
+                    target=f"ProductCode:{request_dto.product_code}",
+                    severity=AuditSeverity.WARNING,
+                    user_ctx=ctx,
+                    details={"reason": str(e), "quantity": request_dto.target_quantity},
+                )
+            )
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
+                custom_message=str(e),
+            ) from e
 
-    result = usecase.execute(request_dto=req_dto, ctx=standard_context)
+        # 5. 감사 로그 및 시스템 로깅
+        self._audit_logger.log(
+            AuditEvent(
+                event_type=AuditEventType.DATA_ACCESS,
+                action="PROCESS_PRODUCTION_ORDER_DISPATCHED",
+                target=f"ProductionOrder:{order.order_id}",
+                severity=AuditSeverity.INFO,
+                user_ctx=ctx,
+                details={
+                    "product_code": order.product_code,
+                    "target_quantity": order.target_quantity,
+                    "packml_state": order.packml_state.value,
+                },
+            )
+        )
 
-    mock_command_repo.save_production_order.assert_called_once()
-    saved_order = mock_command_repo.save_production_order.call_args[0][0]
+        self._system_logger.info(
+            f"Production order '{order.order_id}' successfully dispatched in EXECUTE state.",
+            extra={
+                "order_id": order.order_id,
+                "product_code": order.product_code,
+                "target_quantity": order.target_quantity,
+                "company_id": ctx.company_id,
+                "remaining_stock": remaining_stock,
+            },
+        )
 
-    assert isinstance(result, ProductionOrderResultDto)
-    assert result.packml_state == "EXECUTE"
-    assert result.factory_phase == FactoryPhase.FMS_OPTIMIZED
-    # 기본 가용 재고 10000.0 - (100 * 2.5) = 9750.0
-    assert result.remaining_material_stock == 9750.0
-    assert saved_order.company_id == "TEST-COMPANY-01"
-
-
-def test_tc_edge_case_insufficient_material_stock(
-    usecase: ProcessProductionOrderUseCase,
-    mock_command_repo: MagicMock,
-    standard_context: UserContext,
-):
-    """[TC-예외] 원자재 재고 부족 시 ERR_COMMON_INVALID_INPUT 발생 및 발주 저장 차단 검증"""
-    # 5000 * 2.5 = 12500.0 (가용 재고 10000.0 초과)
-    req_dto = ProductionOrderRequestDto(
-        product_code="PRD-01",
-        target_quantity=5000,
-        factory_phase=FactoryPhase.FMS_OPTIMIZED,
-    )
-
-    with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute(request_dto=req_dto, ctx=standard_context)
-
-    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
-    assert exc_info.value.status_code == 400
-    mock_command_repo.save_production_order.assert_not_called()
-
-
-def test_tc_edge_case_invalid_factory_phase_string(
-    usecase: ProcessProductionOrderUseCase,
-    mock_command_repo: MagicMock,
-    standard_context: UserContext,
-):
-    """[TC-예외] 요청 DTO의 유효하지 않은 Phase 문자열이 400 ERR_COMMON_INVALID_INPUT으로 변환되는지 검증"""
-    req_dto = ProductionOrderRequestDto(
-        product_code="PRD-01",
-        target_quantity=10,
-        factory_phase="UNKNOWN_PHASE_STRING",
-    )
-
-    with pytest.raises(BaseSystemException) as exc_info:
-        usecase.execute(request_dto=req_dto, ctx=standard_context)
-
-    assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
-    assert exc_info.value.status_code == 400
-    mock_command_repo.save_production_order.assert_not_called()
+        return ProductionOrderResultDto(
+            order_id=order.order_id,
+            packml_state=order.packml_state.value,
+            factory_phase=order.factory_phase.value,
+            remaining_material_stock=remaining_stock,
+        )

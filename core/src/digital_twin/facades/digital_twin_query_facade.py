@@ -12,6 +12,8 @@ from digital_twin.twin_reconstruction.application.get_layout.layout_render_dto i
     LayoutRenderDto,
 )
 from shared.context.user_context import UserContext
+from shared.security.context_guard import require_permission
+from shared.security.user_role_enum import UserRole
 
 
 class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
@@ -25,8 +27,10 @@ class DigitalTwinQueryFacade(IDigitalTwinQueryFacade):
         self._get_asset_uc = get_asset_uc
         self._get_layout_uc = get_layout_uc
 
+    @require_permission(UserRole.CREATOR, "TWIN_GET_ASSET")
     def get_asset(self, asset_id: str, ctx: UserContext) -> AssetDto:
         return self._get_asset_uc.execute(asset_id, ctx)
 
+    @require_permission(UserRole.CREATOR, "TWIN_GET_LAYOUT")
     def get_layout(self, baseline_id: str, ctx: UserContext) -> LayoutRenderDto:
         return self._get_layout_uc.execute(baseline_id, ctx)

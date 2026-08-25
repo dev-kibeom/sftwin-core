@@ -1,4 +1,8 @@
+import asyncio
+import inspect
 from collections.abc import Callable
+from threading import RLock
+from typing import Any
 
 from shared.context.log_context import LogContext
 from shared.dtos.integration_event_dto import IntegrationEventDto
@@ -6,21 +10,26 @@ from shared.logger.global_system_logger import GlobalSystemLogger
 
 
 class EventBus:
-    """프로세스 내 비동기 Pub/Sub 메모리 이벤트 버스"""
+    """스레드 안전 및 동기/비동기 디스패치를 지원하는 인프로세스 이벤트 버스"""
 
     def __init__(self, system_logger: GlobalSystemLogger | None = None) -> None:
-        self._subscribers: dict[str, list[Callable[[IntegrationEventDto], None]]] = {}
+        self._subscribers: dict[
+            str, list[Callable[[IntegrationEventDto[Any]], Any]]
+        ] = {}
+        self._lock = RLock()
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="EventBusComponent"
         )
 
     def subscribe(
-        self, topic: str, handler: Callable[[IntegrationEventDto], None]
+        self, topic: str, handler: Callable[[IntegrationEventDto[Any]], Any]
     ) -> None:
-        if topic not in self._subscribers:
-            self._subscribers[topic] = []
+        with self._lock:
+            if topic not in self._subscribers:
+                self._subscribers[topic] = []
+            if handler not in self._subscribers[topic]:
+                self._subscribers[topic].append(handler)
 
-        self._subscribers[topic].append(handler)
         log_ctx = LogContext(
             context={
                 "topic": topic,
@@ -31,8 +40,17 @@ class EventBus:
             f"Registered subscriber handler for topic '{topic}'", log_ctx=log_ctx
         )
 
-    def publish(self, topic: str, event: IntegrationEventDto) -> None:
-        handlers = self._subscribers.get(topic, [])
+    def unsubscribe(
+        self, topic: str, handler: Callable[[IntegrationEventDto[Any]], Any]
+    ) -> None:
+        with self._lock:
+            if topic in self._subscribers and handler in self._subscribers[topic]:
+                self._subscribers[topic].remove(handler)
+
+    def publish(self, topic: str, event: IntegrationEventDto[Any]) -> None:
+        with self._lock:
+            handlers = list(self._subscribers.get(topic, []))
+
         trace_id = self._extract_trace_id(event)
         event_id = self._extract_event_id(event)
 
@@ -62,15 +80,21 @@ class EventBus:
 
     def _safe_dispatch(
         self,
-        handler: Callable[[IntegrationEventDto], None],
-        event: IntegrationEventDto,
+        handler: Callable[[IntegrationEventDto[Any]], Any],
+        event: IntegrationEventDto[Any],
         topic: str,
         trace_id: str,
         event_id: str,
     ) -> None:
-        """단일 핸들러 실행 실패가 전체 EventBus로 전파되지 않도록 개별 try-except로 격리"""
         try:
-            handler(event)
+            if inspect.iscoroutinefunction(handler):
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(handler(event))
+                except RuntimeError:
+                    asyncio.run(handler(event))
+            else:
+                handler(event)
         except Exception as exc:
             handler_name = getattr(handler, "__name__", str(handler))
             log_ctx = LogContext(
@@ -88,14 +112,12 @@ class EventBus:
                 log_ctx=log_ctx,
             )
 
-    def _extract_trace_id(self, event: IntegrationEventDto) -> str:
+    def _extract_trace_id(self, event: IntegrationEventDto[Any]) -> str:
         if isinstance(event, IntegrationEventDto) and hasattr(event, "header"):
-            raw_trace_id = event.header.get("trace_id")
-            if raw_trace_id:
-                return str(raw_trace_id)
+            return str(event.header.get("trace_id", "TRC-EVENTBUS"))
         return "TRC-EVENTBUS"
 
-    def _extract_event_id(self, event: IntegrationEventDto) -> str:
+    def _extract_event_id(self, event: IntegrationEventDto[Any]) -> str:
         if isinstance(event, IntegrationEventDto) and hasattr(event, "header"):
             return str(event.header.get("event_id", "UNKNOWN"))
         return "UNKNOWN"

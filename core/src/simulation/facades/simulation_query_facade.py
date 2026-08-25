@@ -1,12 +1,15 @@
 from typing import Any
 
 from shared.context.user_context import UserContext
+from shared.security.context_guard import require_permission
+from shared.security.user_role_enum import UserRole
 from simulation.contracts.ports.inbound.i_simulation_query_facade import (
     ISimulationQueryFacade,
 )
 
 
 class SimulationQueryFacade(ISimulationQueryFacade):
+    @require_permission(UserRole.CREATOR, "SIM_GET_STATUS")
     def get_simulation_status(
         self, scenario_id: str, ctx: UserContext
     ) -> dict[str, Any]:

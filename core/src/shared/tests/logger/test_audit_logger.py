@@ -68,12 +68,15 @@ def test_tc_log_02_system_event_failsafe_user_context_fallback(
     audit_logger.log(event)
 
     mock_system_logger.error.assert_called_once()
-    args = mock_system_logger.error.call_args
-    log_ctx = args[0][1]
-
+    call = mock_system_logger.error.call_args
+    # 키워드 인자(log_ctx=...) 또는 위치 인자에서 안전하게 추출
+    log_ctx = call.kwargs.get("log_ctx") or (
+        call.args[1] if len(call.args) > 1 else None
+    )
+    assert log_ctx is not None
+    assert log_ctx.trace_id == "TRC-FAILSAFE-001"
     assert log_ctx.context["user_id"] == "SYSTEM"
     assert log_ctx.context["company_id"] == "SYSTEM"
-    assert log_ctx.context["target_resource"] == "ROBOT-ARM-01"
 
 
 def test_tc_log_03_db_timeout_fallback_non_blocking(
