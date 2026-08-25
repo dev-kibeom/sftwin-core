@@ -1,4 +1,4 @@
-from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.asset_dto import AssetDetailDto
 from digital_twin.contracts.ports.outbound.i_asset_query_repository import (
     IAssetQueryRepository,
 )
@@ -10,6 +10,8 @@ from shared.security.context_guard import require_user_context
 
 
 class GetAssetUseCase:
+    """자산 단건 조회 UseCase"""
+
     def __init__(
         self,
         query_repo: IAssetQueryRepository,
@@ -21,8 +23,7 @@ class GetAssetUseCase:
         )
 
     @require_user_context
-    def execute(self, asset_id: str, ctx: UserContext) -> AssetDto:
-        # 1. 테넌시/삭제 필터링이 포함된 DTO 직접 조회
+    def execute(self, asset_id: str, ctx: UserContext) -> AssetDetailDto:
         dto = self._query_repo.find_by_id(
             asset_id=asset_id,
             company_id=ctx.company_id,
@@ -36,10 +37,8 @@ class GetAssetUseCase:
                 ),
             )
 
-        # 2. 비즈니스 마일스톤 성공 로깅
         self._system_logger.info(
             f"Asset '{asset_id}' retrieved successfully",
             extra={"asset_id": asset_id},
         )
-
         return dto

@@ -17,6 +17,7 @@ class Asset:
     kinematics_metadata: dict[str, Any]
     asset_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     cad_file_path: str | None = None
+    submodels: dict[str, Any] = field(default_factory=dict)
     created_by: str = "SYSTEM"
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
@@ -52,3 +53,31 @@ class Asset:
                 raise ValueError(
                     f"Missing required key in kinematics_metadata: '{key.value}'"
                 )
+
+    def soft_delete(self, modifier_user_id: str = "SYSTEM") -> None:
+        """엔티티 소프트 삭제 처리 및 갱신자 기록"""
+        self.is_deleted = True
+        self.updated_by = modifier_user_id
+        self.updated_at = datetime.now(timezone.utc).isoformat()
+
+    def update_metadata(
+        self,
+        asset_name: str | None = None,
+        kinematics_metadata: dict[str, Any] | None = None,
+        cad_file_path: str | None = None,
+        submodels: dict[str, Any] | None = None,
+        modifier_user_id: str = "SYSTEM",
+    ) -> None:
+        """도메인 속성 갱신"""
+        if asset_name is not None:
+            self.asset_name = asset_name
+        if kinematics_metadata is not None:
+            self.kinematics_metadata = kinematics_metadata
+        if cad_file_path is not None:
+            self.cad_file_path = cad_file_path
+        if submodels is not None:
+            self.submodels = submodels
+
+        self.updated_by = modifier_user_id
+        self.updated_at = datetime.now(timezone.utc).isoformat()
+        self.validate()

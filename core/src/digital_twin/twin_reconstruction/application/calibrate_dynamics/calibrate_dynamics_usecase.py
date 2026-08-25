@@ -47,7 +47,7 @@ class CalibrateDynamicsUseCase:
             ) from exc
 
         # 2. 베이스라인 엔티티 조회
-        baseline = self._command_repo.find_by_id(request_dto.baseline_id)
+        baseline = self._command_repo.load_by_id(request_dto.baseline_id)
         if not baseline or baseline.company_id != ctx.company_id:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_TWIN_NOT_FOUND,

@@ -62,5 +62,11 @@ class TwinBaseline:
         self.updated_at = datetime.now(timezone.utc).isoformat()
         return self.sync_error_rate
 
+    def soft_delete(self, modifier_user_id: str = "SYSTEM") -> None:
+        """베이스라인 소프트 삭제 처리"""
+        self.is_deleted = True
+        self.updated_by = modifier_user_id
+        self.updated_at = datetime.now(timezone.utc).isoformat()
+
     def is_precision_acceptable(self) -> bool:
         return self.sync_status == TwinSyncStatus.COMPLETED
