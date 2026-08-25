@@ -3,10 +3,12 @@ from pathlib import Path
 
 from digital_twin.contracts.dtos.parsed_sensor_log_dto import ParsedSensorLogDto
 from digital_twin.contracts.ports.outbound.i_sensor_log_parser import ISensorLogParser
+from shared.context.log_context import LogContext
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 
+from ..configs.kamp_parser_settings import KampParserSettings
 from ..utils.csv_chunk_reader import CsvChunkReader
 from ..utils.kamp_file_validator import KampFileValidator
 from ..utils.kamp_series_processor import KampSeriesProcessor
@@ -15,22 +17,24 @@ from ..utils.kamp_series_processor import KampSeriesProcessor
 class KampDataAdapter(ISensorLogParser):
     """KAMP 실측 센서 로그 파서 어댑터 (ISensorLogParser 포트 구현체)"""
 
-    CHUNK_STREAM_SIZE = 50000
-
     def __init__(
         self,
+        settings: KampParserSettings | None = None,
         file_validator: KampFileValidator | None = None,
         series_processor: KampSeriesProcessor | None = None,
         chunk_reader: CsvChunkReader | None = None,
         system_logger: GlobalSystemLogger | None = None,
     ) -> None:
+        self._settings = settings or KampParserSettings()
         self._chunk_reader = chunk_reader or CsvChunkReader(
-            chunk_size=self.CHUNK_STREAM_SIZE
+            default_chunk_size=self._settings.csv_read_chunk_size
         )
         self._file_validator = file_validator or KampFileValidator(
-            chunk_reader=self._chunk_reader
+            settings=self._settings, chunk_reader=self._chunk_reader
         )
-        self._series_processor = series_processor or KampSeriesProcessor()
+        self._series_processor = series_processor or KampSeriesProcessor(
+            settings=self._settings
+        )
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="KampDataAdapter"
         )
@@ -38,6 +42,7 @@ class KampDataAdapter(ISensorLogParser):
     def parse(self, file_path: str) -> ParsedSensorLogDto:
         """[ISensorLogParser 메인 진입점] 사전 검증, 스트리밍 파싱 및 DTO 생성"""
         start_time = time.perf_counter()
+        log_ctx = LogContext(trace_id="TRC-KAMP-PARSE")
 
         self.validate_file(file_path)
 
@@ -47,6 +52,7 @@ class KampDataAdapter(ISensorLogParser):
         self._system_logger.info(
             f"Parsed KAMP CSV successfully: {parsed_dto.file_name} "
             f"({parsed_dto.total_samples} samples in {duration_sec:.4f}s)",
+            log_ctx=log_ctx,
             extra={
                 "file_name": parsed_dto.file_name,
                 "total_samples": parsed_dto.total_samples,
@@ -57,16 +63,11 @@ class KampDataAdapter(ISensorLogParser):
         return parsed_dto
 
     def validate_file(self, file_path: str) -> None:
-        """
-        [공개 API] 파일 시스템 제약 및 Pydantic 스키마 가드 검증을 수행합니다.
-
-        Raises:
-            BaseSystemException: 파일 미존재, 용량 초과 또는 스키마 규격 불일치 시
-        """
+        """[공개 API] 파일 시스템 제약 및 Pydantic 스키마 가드 검증을 수행합니다."""
         self._file_validator.validate_and_resolve(file_path)
 
     def _parse_series_data(self, file_path: str) -> ParsedSensorLogDto:
-        """스트리밍 누적, 결측치 보정 및 100Hz 리샘플링 수행"""
+        """스트리밍 누적, 결측치 보정 및 목표 주기 리샘플링 수행"""
         raw_series_map, total_samples, total_nulls = self._stream_and_collect_chunks(
             file_path
         )
@@ -78,7 +79,7 @@ class KampDataAdapter(ISensorLogParser):
         return ParsedSensorLogDto(
             file_name=Path(file_path).name,
             total_samples=resampled_count,
-            sampling_rate_hz=self._series_processor.TARGET_SAMPLING_RATE_HZ,
+            sampling_rate_hz=self._series_processor.target_sampling_rate_hz,
             time_series=resampled_series,
             summary_metrics=summary_metrics,
         )
@@ -102,7 +103,7 @@ class KampDataAdapter(ISensorLogParser):
 
         try:
             chunk_iterator = self._chunk_reader.read_csv_in_chunks(
-                file_path, chunk_size=self.CHUNK_STREAM_SIZE
+                file_path, chunk_size=self._settings.csv_read_chunk_size
             )
 
             for chunk in chunk_iterator:
@@ -128,7 +129,7 @@ class KampDataAdapter(ISensorLogParser):
                     sub_df["time"] = chunk["time"]
                 else:
                     chunk_len = len(sub_df)
-                    dt = 1.0 / self._series_processor.TARGET_SAMPLING_RATE_HZ
+                    dt = 1.0 / self._series_processor.target_sampling_rate_hz
                     start_idx = total_samples
                     sub_df["time"] = [
                         round((start_idx + i) * dt, 4) for i in range(chunk_len)

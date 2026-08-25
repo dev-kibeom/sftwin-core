@@ -6,8 +6,8 @@ import pandas as pd
 from pydantic import ValidationError
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
-from shared.logger.global_system_logger import GlobalSystemLogger
 
+from ..configs.kamp_parser_settings import KampParserSettings
 from ..schemas.kamp_raw_schema import KampRawRecordSchema
 from .csv_chunk_reader import CsvChunkReader
 
@@ -15,25 +15,18 @@ from .csv_chunk_reader import CsvChunkReader
 class KampFileValidator:
     """KAMP CSV 파일 시스템 제약 및 첫 레코드 스키마 무결성 검증기 (FCN-KMP-001)"""
 
-    MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024
-    MIN_REQUIRED_COLUMNS = 10
-
     def __init__(
         self,
+        settings: KampParserSettings | None = None,
         chunk_reader: CsvChunkReader | None = None,
-        system_logger: GlobalSystemLogger | None = None,
     ) -> None:
-        self._chunk_reader = chunk_reader or CsvChunkReader()
-        self._system_logger = system_logger or GlobalSystemLogger(
-            component_name="KampFileValidator"
+        self._settings = settings or KampParserSettings()
+        self._chunk_reader = chunk_reader or CsvChunkReader(
+            default_chunk_size=self._settings.csv_read_chunk_size
         )
 
-    def validate_and_resolve(
-        self, file_path: str | Path, trace_id: str | None = None
-    ) -> Path:
-        """
-        파일 시스템 제약 조건 및 헤더 스키마 무결성을 검증하고 해결된 Path를 반환합니다.
-        """
+    def validate_and_resolve(self, file_path: str | Path) -> Path:
+        """파일 시스템 제약 조건 및 헤더 스키마 무결성을 검증하고 해결된 Path를 반환합니다."""
         resolved_path = Path(file_path).resolve()
 
         self._check_file_system_constraints(resolved_path)
@@ -44,7 +37,10 @@ class KampFileValidator:
         return resolved_path
 
     def _check_file_system_constraints(self, file_path: Path) -> None:
-        if not file_path.is_file() or file_path.suffix.lower() != ".csv":
+        if (
+            not file_path.is_file()
+            or file_path.suffix.lower() != self._settings.allowed_file_extension
+        ):
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_TWIN_NOT_FOUND,
                 custom_message=f"CSV file not found or invalid extension: '{file_path}'",
@@ -58,10 +54,10 @@ class KampFileValidator:
                 custom_message=f"Permission denied accessing file: '{file_path}'",
             ) from e
 
-        if file_size > self.MAX_FILE_SIZE_BYTES:
+        if file_size > self._settings.max_file_size_bytes:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_TWIN_SENSOR_PARSE_FAIL,
-                custom_message=f"File size exceeds allowable limit (100MB): {file_size} bytes",
+                custom_message=f"File size exceeds allowable limit ({self._settings.max_allowable_file_size_mb}MB): {file_size} bytes",
             )
 
     def _read_header_chunk(self, file_path: Path) -> pd.DataFrame:
@@ -107,7 +103,7 @@ class KampFileValidator:
             ) from e
 
     def _verify_header_metadata_integrity(self, df_chunk: pd.DataFrame) -> None:
-        if len(df_chunk.columns) < self.MIN_REQUIRED_COLUMNS:
+        if len(df_chunk.columns) < self._settings.min_required_columns:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_TWIN_INVALID_SCHEMA,
                 custom_message=f"Insufficient columns in CSV header: {len(df_chunk.columns)} columns found.",
