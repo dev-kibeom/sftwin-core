@@ -14,11 +14,14 @@ class LayoutRenderMapper:
         self._color_calculator = color_calculator or HotspotColorCalculator()
 
     def to_render_dto(self, baseline: TwinBaselineDto) -> LayoutRenderDto:
+        # 도메인 서비스에 DTO 대신 순수 기본 타입 튜플 전달
+        error_pairs = [
+            (item.asset_id, item.sync_error_rate) for item in baseline.asset_mappings
+        ]
+
         heatmap_results = {
             res.asset_id: res
-            for res in self._color_calculator.calculate_layout_heatmap(
-                baseline.asset_mappings
-            )
+            for res in self._color_calculator.calculate_layout_heatmap(error_pairs)
         }
 
         mappings = tuple(

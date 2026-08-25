@@ -1,5 +1,5 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
 
 from .hotspot_severity_enum import HotspotSeverity
 
@@ -41,13 +41,11 @@ class HotspotColorCalculator:
             )
 
     def calculate_layout_heatmap(
-        self, asset_mappings: list[dict[str, Any]]
+        self, asset_error_pairs: Sequence[tuple[str, float]]
     ) -> list[AssetHeatmapResult]:
-        """레이아웃 매핑 목록 전체에 대한 핫스팟 일괄 도메인 연산"""
+        """(asset_id, error_rate) 시퀀스를 받아 핫스팟 일괄 연산 수행"""
         results: list[AssetHeatmapResult] = []
-        for asset in asset_mappings:
-            asset_id = str(asset.get("asset_id", "UNKNOWN"))
-            error_rate = float(asset.get("sync_error_rate", 0.0))
+        for asset_id, error_rate in asset_error_pairs:
             color_res = self.calculate_color(error_rate)
 
             results.append(

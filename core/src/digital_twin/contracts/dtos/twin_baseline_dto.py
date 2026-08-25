@@ -2,6 +2,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+from digital_twin.contracts.dtos.asset_mapping_dto import AssetMappingDto
 from digital_twin.twin_reconstruction.domain.twin_baseline.twin_sync_status_enum import (
     TwinSyncStatus,
 )
@@ -16,3 +17,4 @@ class TwinBaselineDto:
     sync_error_rate: float = 0.0
     sync_status: TwinSyncStatus = TwinSyncStatus.PENDING
     raw_sensor_summary: dict[str, Any] = field(default_factory=dict)
+    asset_mappings: tuple[AssetMappingDto, ...] = field(default_factory=tuple)
