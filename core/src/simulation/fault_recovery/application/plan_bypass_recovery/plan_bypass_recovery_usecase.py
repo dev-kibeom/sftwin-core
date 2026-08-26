@@ -4,9 +4,6 @@ from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 from shared.security.context_guard import require_user_context
 from simulation.contracts.ports.outbound.i_bypass_planner import IBypassPlanner
-from simulation.contracts.ports.outbound.i_recovery_script_loader import (
-    IRecoveryScriptLoader,
-)
 from simulation.fault_recovery.application.plan_bypass_recovery.plan_bypass_recovery_request_dto import (
     PlanBypassRecoveryRequestDto,
 )
@@ -16,16 +13,14 @@ from simulation.fault_recovery.application.plan_bypass_recovery.plan_bypass_reco
 
 
 class PlanBypassRecoveryUseCase:
-    """복구 스크립트 검증 및 IBypassPlanner를 통한 우회 경로 산출 전담 유스케이스"""
+    """IBypassPlanner를 통한 우회 경로 산출 전담 유스케이스"""
 
     def __init__(
         self,
         bypass_planner: IBypassPlanner,
-        script_loader: IRecoveryScriptLoader,
         system_logger: GlobalSystemLogger | None = None,
     ) -> None:
         self._bypass_planner = bypass_planner
-        self._script_loader = script_loader
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="PlanBypassRecoveryUseCase"
         )
@@ -34,27 +29,11 @@ class PlanBypassRecoveryUseCase:
     def execute(
         self, request_dto: PlanBypassRecoveryRequestDto, ctx: UserContext
     ) -> PlanBypassRecoveryResultDto:
-        recovery_seq = self._script_loader.load_and_validate(
-            request_dto.sequence_script
-        )
-        if not recovery_seq:
-            self._system_logger.warn(
-                f"Failed to validate recovery sequence for {request_dto.scenario_id}",
-                extra={
-                    "scenario_id": request_dto.scenario_id,
-                    "company_id": ctx.company_id,
-                },
-            )
-            raise BaseSystemException.from_error_code(
-                GlobalErrorCode.ERR_SIM_RECOVER_EVAL_FAILED
-            )
 
         bypass_waypoints = self._bypass_planner.plan_bypass_trajectory(
             obstacle_data={
                 "trigger_time": request_dto.trigger_time_sec,
                 "obstacle_distance_m": request_dto.obstacle_distance_m,
-                "sequence_id": recovery_seq.sequence_id,
-                "sequence_script": recovery_seq.sequence_script,
             }
         )
 

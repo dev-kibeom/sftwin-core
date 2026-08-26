@@ -1,8 +1,8 @@
 from typing import Any, Generic, TypeVar
 
 from shared.context.log_context import LogContext
-from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
 
 T = TypeVar("T")
@@ -26,15 +26,6 @@ class BaseRepository(Generic[T]):
         self, exc: Exception, action_context: str, log_ctx: LogContext | None = None
     ) -> None:
         """저수준 DB 드라이버 원시 예외를 포획하여 LogContext로 기록하고 BaseSystemException으로 변환"""
-
-        ctx = log_ctx or LogContext()
-        ctx.exc = exc
-        ctx.context["action"] = action_context
-
-        self._system_logger.error(
-            f"DB Driver Exception caught during [{action_context}]: {str(exc)}",
-            log_ctx=ctx,
-        )
 
         raise BaseSystemException(
             error_code=GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
