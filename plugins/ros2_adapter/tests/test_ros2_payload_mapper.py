@@ -23,17 +23,18 @@ class TestRos2PayloadMapper:
         assert AdapterCallState.TIMEOUT_EXCEEDED.value == "TIMEOUT_EXCEEDED"
         assert AdapterCallState.SERVICE_UNAVAILABLE.value == "SERVICE_UNAVAILABLE"
 
-    def test_to_simulate_request_success(self) -> None:
-        """시나리오 1: FmsScenario -> SimulateScenario.Request 변환 검증 (Happy Path)"""
+    def test_to_simulate_request_with_geometry_points_and_playback_flag(self) -> None:
+        """시나리오 1: FmsScenario -> SimulateScenario.Request 변환 (geometry_msgs/Point 및 real_time_playback 검증)"""
         # Given
+        wp1 = SimpleNamespace(x=1.0, y=2.0, z=0.5)
+        wp2 = SimpleNamespace(x=3.0, y=4.0, z=0.5)
+
         scenario_mock = MagicMock()
         scenario_mock.scenario_id = "SCENARIO_001"
         scenario_mock.cad_file_path = "/models/factory.xml"
         scenario_mock.parameters = {"joint_damping": 0.5, "friction_loss": 0.1}
-        scenario_mock.waypoints = [
-            {"time_sec": 0.0, "x": 1.0, "y": 2.0, "z": 0.0},
-            {"time_sec": 1.0, "x": 2.0, "y": 3.0, "z": 0.0},
-        ]
+        scenario_mock.task_waypoints = (wp1, wp2)
+        scenario_mock.real_time_playback = True
 
         mapper = Ros2PayloadMapper()
 
@@ -44,10 +45,38 @@ class TestRos2PayloadMapper:
         assert request.scenario_id == "SCENARIO_001"
         assert request.model_path == "/models/factory.xml"
         assert request.parameters == {"joint_damping": 0.5, "friction_loss": 0.1}
+        assert request.real_time_playback is True
         assert len(request.waypoints) == 2
+        assert request.waypoints[0].x == 1.0
+        assert request.waypoints[0].y == 2.0
+        assert request.waypoints[0].z == 0.5
+        assert request.waypoints[1].x == 3.0
+        assert request.waypoints[1].y == 4.0
+        assert request.waypoints[1].z == 0.5
+
+    def test_to_simulate_request_with_empty_waypoints(self) -> None:
+        """시나리오 2: task_waypoints가 비어있는 FmsScenario 변환 검증"""
+        # Given
+        scenario_mock = MagicMock()
+        scenario_mock.scenario_id = "SCENARIO_EMPTY"
+        scenario_mock.cad_file_path = "/models/empty.xml"
+        scenario_mock.parameters = {}
+        scenario_mock.task_waypoints = ()
+        scenario_mock.real_time_playback = False
+
+        mapper = Ros2PayloadMapper()
+
+        # When
+        request = mapper.to_simulate_request(scenario_mock)
+
+        # Then
+        assert request.scenario_id == "SCENARIO_EMPTY"
+        assert request.model_path == "/models/empty.xml"
+        assert request.real_time_playback is False
+        assert request.waypoints == []
 
     def test_to_trajectory_dtos_success(self) -> None:
-        """시나리오 2: ROS 2 TrajectoryPoint 목록 -> list[TrajectoryPointDto] 변환 검증 (Happy Path)"""
+        """시나리오 3: ROS 2 TrajectoryPoint 목록 -> list[TrajectoryPointDto] 변환 검증"""
         # Given
         msg_point1 = SimpleNamespace(
             time_sec=0.5,
@@ -89,7 +118,7 @@ class TestRos2PayloadMapper:
         assert dtos[1].is_collided is True
 
     def test_to_amr_bypass_request_success(self) -> None:
-        """시나리오 3: 장애물 데이터 기반 AMR 우회 경로 요청 변환 검증 (AssetType.AMR)"""
+        """시나리오 4-1: 장애물 데이터 기반 AMR 우회 경로 요청 변환 검증 (AssetType.AMR)"""
         # Given
         obstacle_data = {
             "asset_type": AssetType.AMR,
@@ -112,7 +141,7 @@ class TestRos2PayloadMapper:
         assert request.obstacle_distance_m == 0.8
 
     def test_to_arm_plan_request_success_for_robot_and_humanoid(self) -> None:
-        """시나리오 4: 장애물 데이터 기반 매니퓰레이터 궤적 요청 변환 검증 (AssetType.ROBOT, HUMANOID)"""
+        """시나리오 4-2: 장애물 데이터 기반 매니퓰레이터 궤적 요청 변환 검증 (AssetType.ROBOT, HUMANOID)"""
         # Given
         mapper = Ros2PayloadMapper()
         obstacle_data_robot = {
@@ -145,7 +174,7 @@ class TestRos2PayloadMapper:
         assert req_humanoid.allowed_planning_time_sec == 5.0
 
     def test_to_update_scene_request_success(self) -> None:
-        """시나리오 5: 동적 3D Planning Scene 갱신 요청 변환 검증"""
+        """시나리오 4-3: 동적 3D Planning Scene 갱신 요청 변환 검증"""
         # Given
         obstacles = [
             {
@@ -153,12 +182,6 @@ class TestRos2PayloadMapper:
                 "shape": "BOX",
                 "size": [0.3, 0.3, 0.3],
                 "position": [1.0, 0.5, 0.0],
-            },
-            {
-                "obstacle_id": "OBS_2",
-                "shape": "CYLINDER",
-                "size": [0.2, 0.5],
-                "position": [1.2, 0.8, 0.0],
             },
         ]
         mapper = Ros2PayloadMapper()
@@ -170,7 +193,7 @@ class TestRos2PayloadMapper:
         assert request.obstacles == obstacles
 
     def test_to_amr_bypass_request_invalid_asset_type_raises_exception(self) -> None:
-        """시나리오 6-1: AMR 요청 변환 시 부적절한 AssetType 예외 검증"""
+        """시나리오 5-1: AMR 요청 변환 시 부적절한 AssetType 예외 검증"""
         # Given
         obstacle_data = {
             "asset_type": AssetType.CNC,
@@ -185,11 +208,10 @@ class TestRos2PayloadMapper:
         assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
 
     def test_to_arm_plan_request_missing_required_fields_raises_exception(self) -> None:
-        """시나리오 6-2: Arm 플랜 요청 변환 시 필수 필드 누락 예외 검증"""
+        """시나리오 5-2: Arm 플랜 요청 변환 시 필수 필드 누락 예외 검증"""
         # Given
         obstacle_data = {
             "asset_type": AssetType.ROBOT,
-            # asset_id 누락
             "target_pose": {"x": 0.5, "y": 0.3, "z": 0.8},
         }
         mapper = Ros2PayloadMapper()

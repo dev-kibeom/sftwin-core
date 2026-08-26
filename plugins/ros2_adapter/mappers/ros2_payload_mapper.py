@@ -12,18 +12,31 @@ class Ros2PayloadMapper:
     """Core 도메인 DTO와 ROS 2 메시지 간의 상호 직렬화/역직렬화 전담 매퍼"""
 
     def to_simulate_request(self, scenario: Any) -> Any:
-        """Core FmsScenario를 SimulateScenario.Request 메시지 구조로 직렬화"""
+        """Core FmsScenario를 SimulateScenario.Request 메시지 구조로 직렬화 (geometry_msgs/Point 및 real_time_playback 지원)"""
         try:
             scenario_id = getattr(scenario, "scenario_id", "")
             model_path = getattr(scenario, "cad_file_path", "")
             parameters = getattr(scenario, "parameters", {})
-            waypoints = getattr(scenario, "waypoints", [])
+            real_time_playback = bool(getattr(scenario, "real_time_playback", False))
+            task_waypoints = getattr(scenario, "task_waypoints", ())
+
+            # task_waypoints의 각 Waypoint(x, y, z)를 geometry_msgs/msg/Point 형식 객체로 1:1 변환
+            waypoints_points: list[Any] = []
+            for wp in task_waypoints:
+                waypoints_points.append(
+                    SimpleNamespace(
+                        x=float(getattr(wp, "x", 0.0)),
+                        y=float(getattr(wp, "y", 0.0)),
+                        z=float(getattr(wp, "z", 0.0)),
+                    )
+                )
 
             return SimpleNamespace(
                 scenario_id=scenario_id,
                 model_path=model_path,
                 parameters=parameters,
-                waypoints=waypoints,
+                real_time_playback=real_time_playback,
+                waypoints=waypoints_points,
             )
         except Exception as exc:
             raise BaseSystemException.from_error_code(
