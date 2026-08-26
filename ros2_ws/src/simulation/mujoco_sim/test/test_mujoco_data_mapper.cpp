@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <mujoco/mujoco.h>
 #include <rclcpp/time.hpp>
 
@@ -11,32 +13,43 @@
 #include "shared/exceptions/global_error_code_enum.hpp"
 #include "shared/exceptions/global_exception_handler.hpp"
 
+namespace fs = std::filesystem;
 using namespace sftwin::plugins::mujoco;
-using namespace sftwin::shared::exceptions;
+using namespace sftwin::shared;
 
 class MujocoDataMapperTest : public ::testing::Test {
 protected:
+    std::string temp_dir_;
+    std::string valid_xml_path_;
     UniqueMjModel model_;
     UniqueMjData data_;
 
     void SetUp() override {
-        char error[1024] = {0};
-        const char* xml_content =
-            "<mujoco model=\"test_robot\">\n"
-            "  <worldbody>\n"
-            "    <body name=\"link1\" pos=\"1.0 2.0 3.0\">\n"
-            "      <joint name=\"joint1\" type=\"hinge\" axis=\"0 0 1\"/>\n"
-            "      <geom type=\"sphere\" size=\"0.1\"/>\n"
-            "    </body>\n"
-            "  </worldbody>\n"
-            "</mujoco>";
+        temp_dir_ = (fs::temp_directory_path() / "mj_data_mapper_test_dir").string();
+        fs::create_directories(temp_dir_);
 
-        mjModel* m = mj_loadXML(nullptr, xml_content, error, sizeof(error));
-        model_ = UniqueMjModel(m);
+        valid_xml_path_ = (fs::path(temp_dir_) / "mapper_test_robot.xml").string();
+        std::ofstream valid_file(valid_xml_path_);
+        valid_file << "<mujoco model=\"test_robot\">\n"
+                   << "  <worldbody>\n"
+                   << "    <body name=\"link1\" pos=\"1.0 2.0 3.0\">\n"
+                   << "      <joint name=\"joint1\" type=\"hinge\" axis=\"0 0 1\"/>\n"
+                   << "      <geom type=\"sphere\" size=\"0.1\"/>\n"
+                   << "    </body>\n"
+                   << "  </worldbody>\n"
+                   << "</mujoco>";
+        valid_file.close();
+
+        MjcfModelLoader loader;
+        model_ = loader.load_mjmodel(valid_xml_path_);
         if (model_) {
             data_ = UniqueMjData(mj_makeData(model_.get()));
             mj_forward(model_.get(), data_.get());
         }
+    }
+
+    void TearDown() override {
+        fs::remove_all(temp_dir_);
     }
 };
 
