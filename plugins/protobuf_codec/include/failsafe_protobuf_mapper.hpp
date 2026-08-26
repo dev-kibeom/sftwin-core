@@ -4,8 +4,8 @@
 
 #include "failsafe_command.pb.h"
 
-#include "core/edge_control/anomaly_failsafe/domain/failsafe_rule.hpp"
-#include "core/edge_control/anomaly_failsafe/domain/edge_local_enums.hpp"
+#include "core/src/edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_rule.hpp"
+#include "core/src/edge_control/anomaly_failsafe/domain/failsafe_evaluation/failsafe_action_enum.hpp"
 
 namespace sftwin::plugins::protobuf_codec {
 
@@ -14,9 +14,8 @@ class FailsafeProtobufMapper {
     FailsafeProtobufMapper() = default;
     ~FailsafeProtobufMapper() = default;
 
-    // domain::FailsafeActionEnum 및 상태 파라미터를 Protobuf FailsafeCommandProto 객체로 변환
     sftwin::failsafe::FailsafeCommandProto to_protobuf(
-        edge_control::anomaly_failsafe::domain::FailsafeActionEnum action,
+        edge_control::anomaly_failsafe::domain::FailsafeAction action,
         const std::string& target_id,
         const std::string& reason) const;
 };

@@ -51,8 +51,8 @@ endforeach()
 # ------------------------------------------------------------------------------
 # 3. Protobuf Codec 플러그인 타겟 라이브러리 빌드
 # ------------------------------------------------------------------------------
-# core DTO <-> Protobuf Mapper 변환 C++ 구현체 포함
-file(GLOB_RECURSE MAPPER_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+# Mapper 구현체 소스 스캔 (src 디렉토리 한정)
+file(GLOB MAPPER_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_library(sftwin_protobuf_codec STATIC
     ${PROTO_SRCS}
@@ -60,10 +60,16 @@ add_library(sftwin_protobuf_codec STATIC
     ${MAPPER_SRCS}
 )
 
+# .so(pybind) 모듈에 정적 링크를 위한 PIC 속성 활성화
+set_target_properties(sftwin_protobuf_codec PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
 target_include_directories(sftwin_protobuf_codec PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROTO_CPP_OUT_DIR}
-    ${CMAKE_SOURCE_DIR}/core  # core DTO 인클루드용
+    ${CMAKE_SOURCE_DIR}/core
+    ${CMAKE_SOURCE_DIR}/core/src  # core DTO 및 shared 헤더 참조용
 )
 
 target_link_libraries(sftwin_protobuf_codec PUBLIC

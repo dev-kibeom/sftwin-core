@@ -8,7 +8,7 @@ using namespace sftwin::failsafe;
 using namespace sftwin::edge_control::anomaly_failsafe;
 
 FailsafeCommandProto FailsafeProtobufMapper::to_protobuf(
-    domain::FailsafeActionEnum action, const std::string& target_id,
+    domain::FailsafeAction action, const std::string& target_id,
     const std::string& reason) const {
     FailsafeCommandProto proto;
     proto.set_target_device_id(target_id);
@@ -19,16 +19,16 @@ FailsafeCommandProto FailsafeProtobufMapper::to_protobuf(
         std::chrono::duration_cast<std::chrono::nanoseconds>(now).count());
 
     switch (action) {
-        case domain::FailsafeActionEnum::ESTOP:
+        case domain::FailsafeAction::ESTOP:
             proto.set_action_type("ESTOP");
             break;
-        case domain::FailsafeActionEnum::RESUME:
+        case domain::FailsafeAction::RESUME:
             proto.set_action_type("RESUME");
             break;
-        case domain::FailsafeActionEnum::BYPASS:
+        case domain::FailsafeAction::BYPASS:
             proto.set_action_type("BYPASS");
             break;
-        case domain::FailsafeActionEnum::PAUSE:
+        case domain::FailsafeAction::PAUSE:
             proto.set_action_type("PAUSE");
             break;
         default:
