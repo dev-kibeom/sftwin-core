@@ -12,10 +12,8 @@ using namespace sftwin::shared;
 
 ProcessTelemetryUseCase::ProcessTelemetryUseCase(
     std::shared_ptr<ITelemetrySubscriber> telemetry_subscriber,
-    std::shared_ptr<IVisionDetector> vision_detector,
     std::shared_ptr<GlobalSystemLogger> system_logger)
     : _telemetry_subscriber(std::move(telemetry_subscriber)),
-      _vision_detector(std::move(vision_detector)),
       _system_logger(system_logger ? std::move(system_logger)
                                    : std::make_shared<GlobalSystemLogger>("ProcessTelemetryUseCase")) {}
 
@@ -42,20 +40,6 @@ TelemetryPacketDto ProcessTelemetryUseCase::execute(const ProcessTelemetryReques
             GlobalErrorCode::ERR_EDGE_COMM_TIMEOUT,
             "Telemetry heartbeat delayed over 100ms for " + request_dto.device_id
         );
-    }
-
-    // 4. 비전 감지 결과 기반 경고 플래그 갱신
-    if (_vision_detector) {
-        const auto detections = _vision_detector->get_latest_detections();
-        for (const auto& det : detections) {
-            // 명시적 distance_m 필드 검사 (주의 반경 1.5m 이내)
-            if (det.distance_m > 0.0f && det.distance_m < 1.5f) {
-                packet.set_warning(true);
-                _system_logger->debug("Object detected within warning distance ({}m) for device: {}",
-                                 det.distance_m, request_dto.device_id);
-                break;
-            }
-        }
     }
 
     return packet;
