@@ -1,3 +1,4 @@
+import threading
 from types import SimpleNamespace
 from typing import Any
 
@@ -41,39 +42,49 @@ class Ros2ServiceClientManager:
         timeout_sec: float,
         service_name: str,
     ) -> Any:
-        """ROS 2 서비스 비동기 요청 후 동기 대기 및 에러 변환 격리 헬퍼"""
+        """ROS 2 서비스 비동기 요청 후 threading.Event 기반 동기 안전 대기"""
         # 1. 서비스 가용성 점검 (Service Unavailable Guard)
         if not client.wait_for_service(timeout_sec=2.0):
-            self._system_logger.error(
-                f"ROS 2 service '{service_name}' is unavailable",
-                extra={"service": service_name},
-            )
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_EDGE_DDS_INIT_FAIL,
                 custom_message=f"ROS 2 service '{service_name}' is not reachable.",
             )
 
-        # 2. 비동기 요청 발행
+        # 2. 비동기 요청 발행 및 Event 동기화 객체 구성
+        event = threading.Event()
         future = client.call_async(request)
 
-        # 3. 비동기 응답 대기 및 타임아웃 격리
-        try:
-            import rclpy
+        def _on_complete(_: Any) -> None:
+            event.set()
 
-            rclpy.spin_until_future_complete(
-                self._node, future, timeout_sec=timeout_sec
-            )
-            return future.result()
-        except Exception as exc:
+        future.add_done_callback(_on_complete)
+
+        # 3. threading.Event를 이용한 안전한 동기 블로킹 대기 (Spin 데드락 방지)
+        completed = event.wait(timeout=timeout_sec)
+        if not completed:
             if hasattr(future, "cancel"):
                 future.cancel()
-            self._system_logger.error(
-                f"ROS 2 service '{service_name}' call failed or timed out: {exc}",
-                extra={"service": service_name, "error": str(exc)},
-            )
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_SIM_RECOVER_EVAL_FAILED,
                 custom_message=f"ROS 2 service '{service_name}' call exceeded timeout of {timeout_sec}s.",
+            )
+
+        # 4. 비동기 실행 중 발생한 예외 점검 (future.exception 확인)
+        if hasattr(future, "exception"):
+            exc = future.exception()
+            if exc is not None:
+                raise BaseSystemException.from_error_code(
+                    GlobalErrorCode.ERR_SIM_RECOVER_EVAL_FAILED,
+                    custom_message=f"ROS 2 service '{service_name}' raised an exception: {exc}",
+                )
+
+        # 5. 결과 검증 및 반환
+        try:
+            return future.result()
+        except Exception as exc:
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_RECOVER_EVAL_FAILED,
+                custom_message=f"ROS 2 service '{service_name}' raised an exception: {exc}",
             ) from exc
 
     def call_simulate_scenario(self, request: Any, timeout_sec: float = 15.0) -> Any:
@@ -127,3 +138,8 @@ class Ros2ServiceClientManager:
             "Failsafe E-Stop broadcasted to /failsafe/estop",
             extra={"action_type": action_type, "trigger_reason": trigger_reason},
         )
+
+    def shutdown(self) -> None:
+        """매니저 리소스 정리 및 수명 주기 종료"""
+        self._is_running = False
+        self._logger.info("Ros2ServiceClientManager shutdown completed")
