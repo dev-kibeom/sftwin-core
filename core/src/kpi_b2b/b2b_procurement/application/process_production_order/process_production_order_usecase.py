@@ -87,7 +87,7 @@ class ProcessProductionOrderUseCase:
             order.transition_to_starting()
             order.transition_to_execute()
 
-            self._command_repo.save(order)
+            self._command_repo.save_production_order(order)
 
         except ValueError as e:
             self._audit_logger.log(

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from dataclasses import dataclass
 
 
-class TurnkeyQuoteResponseDto(BaseModel):
-    total_estimated_price: float = Field(..., gt=0)
-    delivery_days_estimated: int = Field(..., ge=1)
+@dataclass(frozen=True)
+class TurnkeyQuoteResponseDto:
+    total_estimated_price: float
+    delivery_days_estimated: int

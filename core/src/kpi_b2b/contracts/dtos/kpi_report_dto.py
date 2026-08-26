@@ -6,7 +6,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class KpiReportDto:
     report_id: str
     oee: float
