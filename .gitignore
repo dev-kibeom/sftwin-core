@@ -1,11 +1,12 @@
 # Security & Local Environment Variables
+.env
 .env.local
 .env.*.local
 *.pem
 *.key
 *.pfx
 
-# documents (모든 하위 디렉토리 내 PDF 포함)
+# Documents (모든 하위 디렉토리 내 PDF 포함)
 **/documents/*.pdf
 
 # Host Persistent Data Directory
@@ -19,6 +20,25 @@
 **/data/runtime/logs/*
 !**/data/**/.gitkeep
 
+# ROS 2 Build Artifacts & Workspace
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+ros2_ws/.colcon/
+ros2_ws/.colcon_install_layout
+ros2_ws/COLCON_IGNORE
+COLCON_IGNORE
+
+# C++ Build Artifacts (Edge & Physics Engine)
+build/
+bin/
+lib/
+*.o
+*.obj
+*.so
+*.dylib
+*.a
+
 # Python Artifacts
 __pycache__/
 *.py[cod]
@@ -30,15 +50,10 @@ venv/
 .coverage
 htmlcov/
 
-# C++ Build Artifacts (Edge & Physics Engine)
-build/
-bin/
-lib/
-*.o
-*.obj
-*.so
-*.dylib
-*.a
+# Simulation & Cache Artifacts
+*.bag
+*.mcap
+*.log
 
 # IDE & OS Specific
 .vscode/

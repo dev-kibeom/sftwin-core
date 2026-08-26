@@ -13,13 +13,16 @@ from digital_twin.asset_library.application.get_asset.get_asset_usecase import (
 from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
     RegisterAssetUseCase,
 )
-from digital_twin.facades.digital_twin_command_facade import DigitalTwinCommandFacade
-from digital_twin.facades.digital_twin_query_facade import DigitalTwinQueryFacade
 from digital_twin.contracts.ports.inbound.i_digital_twin_command_facade import (
     IDigitalTwinCommandFacade,
 )
 from digital_twin.contracts.ports.inbound.i_digital_twin_query_facade import (
     IDigitalTwinQueryFacade,
+)
+from digital_twin.facades.digital_twin_command_facade import DigitalTwinCommandFacade
+from digital_twin.facades.digital_twin_query_facade import DigitalTwinQueryFacade
+from digital_twin.twin_reconstruction.application.calibrate_dynamics.calibrate_dynamics_usecase import (
+    CalibrateDynamicsUseCase,
 )
 from digital_twin.twin_reconstruction.application.get_layout.get_layout_usecase import (
     GetLayoutUseCase,
@@ -28,10 +31,10 @@ from digital_twin.twin_reconstruction.application.reconstruct_twin.reconstruct_t
     ReconstructTwinUseCase,
 )
 
-from plugins.aas_persistence.adapters.asset_persistence_adapter import (
+from plugins.aas_persistence.adapters.asset_query_persistence_adapter import (
     AssetPersistenceAdapter,
 )
-from plugins.aas_persistence.adapters.baseline_persistence_adapter import (
+from plugins.aas_persistence.adapters.baseline_query_persistence_adapter import (
     BaselinePersistenceAdapter,
 )
 from plugins.aas_persistence.session.mysql_session_factory import (
@@ -64,6 +67,7 @@ class DigitalTwinContainer:
                 sensor_parser=self._sensor_parser,
                 command_repo=self._baseline_adapter,
             ),
+            calibrate_dynamics_uc=CalibrateDynamicsUseCase(),
         )
 
     def get_query_facade(self) -> IDigitalTwinQueryFacade:

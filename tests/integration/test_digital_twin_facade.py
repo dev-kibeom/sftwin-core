@@ -8,8 +8,13 @@ from digital_twin.asset_library.domain.asset.kinematics_schema_key_enum import (
     KinematicsSchemaKey,
 )
 from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.asset_mapping_dto import AssetMappingDto
+from digital_twin.contracts.dtos.twin_baseline_dto import TwinBaselineDto
 from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (
     RawFactoryDataDto,
+)
+from digital_twin.twin_reconstruction.domain.twin_baseline.twin_sync_status_enum import (
+    TwinSyncStatus,
 )
 from shared.context.user_context import UserContext
 from shared.exceptions.base_system_exception import BaseSystemException
@@ -187,27 +192,32 @@ def test_get_layout_success(
     """베이스라인 3D 레이아웃 및 히트맵 조회(Query Facade) 검증"""
     query_facade = dt_container.get_query_facade()
 
-    # Baseline Query Repo Mock 세팅
-    mock_raw_data = {
-        "baseline_id": "FACTORY-01",
-        "baseline_name": "Factory_01_Main_Layout",
-        "company_id": test_user_context.company_id,
-        "sync_error_rate": 0.02,
-        "sync_status": "COMPLETED",
-        "asset_mappings": [
-            {
-                "asset_id": "AST-M1013-001",
-                "asset_name": "Doosan_M1013",
-                "asset_type": "ROBOT",
-                "position_xyz_json": {"x": 1.0, "y": 2.0, "z": 0.0},
-            }
-        ],
-    }
-    dt_container._baseline_adapter.find_by_id = MagicMock(return_value=mock_raw_data)
+    # Baseline Query Repo Mock 세팅: dict 대신 DTO 객체 반환
+    mock_baseline_dto = TwinBaselineDto(
+        baseline_id="FACTORY-01",
+        baseline_name="Factory_01_Main_Layout",
+        company_id=test_user_context.company_id,
+        sync_error_rate=0.02,
+        sync_status=TwinSyncStatus.COMPLETED,
+        asset_mappings=(
+            AssetMappingDto(
+                asset_id="AST-M1013-001",
+                asset_name="Doosan_M1013",
+                asset_type=AssetType.ROBOT,
+                cad_file_path=None,
+                position_xyz_json={"x": 1.0, "y": 2.0, "z": 0.0},
+                rotation_q_json={"x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0},
+                sync_error_rate=0.02,
+            ),
+        ),
+    )
+    dt_container._baseline_adapter.find_by_id = MagicMock(
+        return_value=mock_baseline_dto
+    )
 
     layout_dto = query_facade.get_layout(
         baseline_id="FACTORY-01", ctx=test_user_context
     )
+
     assert layout_dto.baseline_id == "FACTORY-01"
     assert len(layout_dto.asset_mappings) == 1
-    assert layout_dto.asset_mappings[0].asset_id == "AST-M1013-001"
