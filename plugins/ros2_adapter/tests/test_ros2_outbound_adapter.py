@@ -1,246 +1,225 @@
 import hashlib
-import os
-import tempfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
-from simulation.contracts.dtos.deploy_package_dto import DeployPackageDto
 from simulation.contracts.dtos.trajectory_point_dto import TrajectoryPointDto
 
 from core.src.digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
 from plugins.ros2_adapter.adapters.ros2_outbound_adapter import Ros2OutboundAdapter
-from plugins.ros2_adapter.clients.ros2_service_client_manager import (
-    Ros2ServiceClientManager,
-)
-from plugins.ros2_adapter.mappers.ros2_payload_mapper import Ros2PayloadMapper
 
 
 class TestRos2OutboundAdapter:
-    """Ros2OutboundAdapter 단위 테스트 (BDD Given-When-Then)"""
+    """Ros2OutboundAdapter 포트 구현체 단위 테스트 (BDD Given-When-Then)"""
 
     @pytest.fixture
     def mock_dependencies(self) -> tuple[MagicMock, MagicMock]:
-        """Ros2ServiceClientManager 및 Ros2PayloadMapper 모의 객체 Fixture"""
-        mock_client_mgr = MagicMock(spec=Ros2ServiceClientManager)
-        mock_mapper = MagicMock(spec=Ros2PayloadMapper)
+        """Ros2ServiceClientManager 및 Ros2PayloadMapper Mock Fixture"""
+        mock_client_mgr = MagicMock()
+        mock_mapper = MagicMock()
         return mock_client_mgr, mock_mapper
 
-    def test_simulate_scenario_success(
+    def test_run_simulation_success(
         self, mock_dependencies: tuple[MagicMock, MagicMock]
     ) -> None:
-        """시나리오 1: simulate_scenario() 물리 시뮬레이션 연동 검증 (Happy Path)"""
+        """시나리오 1: IPhysicsEngine.run_simulation 정상 실행 및 TrajectoryPoint 반환 검증 (Happy Path)"""
         # Given
         mock_client_mgr, mock_mapper = mock_dependencies
         adapter = Ros2OutboundAdapter(
-            client_manager=mock_client_mgr,
-            mapper=mock_mapper,
+            service_client_manager=mock_client_mgr,
+            payload_mapper=mock_mapper,
         )
 
         scenario_mock = MagicMock()
-        mock_req = SimpleNamespace(scenario_id="SCENARIO_001")
-        mock_res = SimpleNamespace(trajectory_points=[SimpleNamespace(time_sec=1.0)])
+        scenario_mock.scenario_id = "SCENARIO_001"
+
+        req_mock = SimpleNamespace(scenario_id="SCENARIO_001")
+        mock_mapper.to_simulate_request.return_value = req_mock
+
+        resp_point_msg = SimpleNamespace(time_sec=0.1, asset_id="ROBOT_01")
+        resp_mock = SimpleNamespace(
+            success=True,
+            trajectory_points=[resp_point_msg],
+            error_message="",
+        )
+        mock_client_mgr.call_simulate_scenario.return_value = resp_mock
+
         expected_dtos = [
             TrajectoryPointDto(
-                time_sec=1.0,
-                asset_id="AMR_01",
+                time_sec=0.1,
+                asset_id="ROBOT_01",
                 position_x=1.0,
                 position_y=2.0,
-                position_z=0.0,
-                velocity=1.0,
-                is_collided=False,
-            )
-        ]
-
-        mock_mapper.to_simulate_request.return_value = mock_req
-        mock_client_mgr.call_simulate_scenario.return_value = mock_res
-        mock_mapper.to_trajectory_dtos.return_value = expected_dtos
-
-        # When
-        result = adapter.simulate_scenario(scenario_mock)
-
-        # Then
-        mock_mapper.to_simulate_request.assert_called_once_with(scenario_mock)
-        mock_client_mgr.call_simulate_scenario.assert_called_once_with(mock_req)
-        mock_mapper.to_trajectory_dtos.assert_called_once_with(
-            mock_res.trajectory_points
-        )
-        assert result == expected_dtos
-
-    def test_plan_bypass_trajectory_for_amr_success(
-        self, mock_dependencies: tuple[MagicMock, MagicMock]
-    ) -> None:
-        """시나리오 2: plan_bypass_trajectory() AMR 장애물 우회 라우팅 검증 (Happy Path - AMR)"""
-        # Given
-        mock_client_mgr, mock_mapper = mock_dependencies
-        adapter = Ros2OutboundAdapter(
-            client_manager=mock_client_mgr,
-            mapper=mock_mapper,
-        )
-
-        obstacle_data = {
-            "asset_type": AssetType.AMR,
-            "robot_id": "AMR_001",
-            "start_pose": {"x": 0.0, "y": 0.0},
-            "target_pose": {"x": 5.0, "y": 5.0},
-        }
-        mock_req = SimpleNamespace(robot_id="AMR_001")
-        mock_res = SimpleNamespace(trajectory_points=[SimpleNamespace(time_sec=0.5)])
-        expected_dtos = [
-            TrajectoryPointDto(
-                time_sec=0.5,
-                asset_id="AMR_001",
-                position_x=2.5,
-                position_y=2.5,
-                position_z=0.0,
-                velocity=1.0,
-                is_collided=False,
-            )
-        ]
-
-        mock_mapper.to_amr_bypass_request.return_value = mock_req
-        mock_client_mgr.call_plan_amr_bypass.return_value = mock_res
-        mock_mapper.to_trajectory_dtos.return_value = expected_dtos
-
-        # When
-        result = adapter.plan_bypass_trajectory(obstacle_data)
-
-        # Then
-        mock_mapper.to_amr_bypass_request.assert_called_once_with(obstacle_data)
-        mock_client_mgr.call_plan_amr_bypass.assert_called_once_with(mock_req)
-        assert result == expected_dtos
-
-    def test_plan_bypass_trajectory_for_manipulator_with_scene_update(
-        self, mock_dependencies: tuple[MagicMock, MagicMock]
-    ) -> None:
-        """시나리오 3: plan_bypass_trajectory() 매니퓰레이터 궤적 및 3D Scene 동기화 검증 (Happy Path)"""
-        # Given
-        mock_client_mgr, mock_mapper = mock_dependencies
-        adapter = Ros2OutboundAdapter(
-            client_manager=mock_client_mgr,
-            mapper=mock_mapper,
-        )
-
-        obstacles = [{"obstacle_id": "OBS_1"}]
-        obstacle_data = {
-            "asset_type": AssetType.ROBOT,
-            "asset_id": "ARM_001",
-            "obstacles": obstacles,
-        }
-
-        mock_scene_req = SimpleNamespace(obstacles=obstacles)
-        mock_arm_req = SimpleNamespace(asset_id="ARM_001")
-        mock_res = SimpleNamespace(trajectory_points=[SimpleNamespace(time_sec=0.2)])
-        expected_dtos = [
-            TrajectoryPointDto(
-                time_sec=0.2,
-                asset_id="ARM_001",
-                position_x=0.5,
-                position_y=0.2,
-                position_z=0.8,
+                position_z=0.5,
                 velocity=0.5,
                 is_collided=False,
             )
         ]
-
-        mock_mapper.to_update_scene_request.return_value = mock_scene_req
-        mock_mapper.to_arm_plan_request.return_value = mock_arm_req
-        mock_client_mgr.call_plan_arm_trajectory.return_value = mock_res
         mock_mapper.to_trajectory_dtos.return_value = expected_dtos
 
         # When
-        result = adapter.plan_bypass_trajectory(obstacle_data)
+        result_dtos = adapter.run_simulation(scenario_mock)
 
         # Then
-        mock_mapper.to_update_scene_request.assert_called_once_with(obstacles)
-        mock_client_mgr.call_update_planning_scene.assert_called_once_with(
-            mock_scene_req
+        mock_mapper.to_simulate_request.assert_called_once_with(scenario_mock)
+        mock_client_mgr.call_simulate_scenario.assert_called_once_with(
+            req_mock, timeout_sec=15.0
         )
-        mock_mapper.to_arm_plan_request.assert_called_once_with(obstacle_data)
-        mock_client_mgr.call_plan_arm_trajectory.assert_called_once_with(mock_arm_req)
-        assert result == expected_dtos
+        mock_mapper.to_trajectory_dtos.assert_called_once_with([resp_point_msg])
+        assert result_dtos == expected_dtos
 
-    def test_trigger_failsafe_stop_success(
+    def test_plan_bypass_amr_routing_success(
         self, mock_dependencies: tuple[MagicMock, MagicMock]
     ) -> None:
-        """시나리오 4: trigger_failsafe_stop() 비상 정지 브로드캐스트 검증 (Happy Path)"""
+        """시나리오 2-1: IBypassPlanner.plan_bypass AMR 타입 동적 라우팅 및 궤적 반환 검증 (Happy Path)"""
         # Given
         mock_client_mgr, mock_mapper = mock_dependencies
         adapter = Ros2OutboundAdapter(
-            client_manager=mock_client_mgr,
-            mapper=mock_mapper,
+            service_client_manager=mock_client_mgr,
+            payload_mapper=mock_mapper,
         )
+
+        obstacle_data = {"asset_type": AssetType.AMR, "robot_id": "AMR_001"}
+        req_mock = SimpleNamespace(robot_id="AMR_001")
+        mock_mapper.to_amr_bypass_request.return_value = req_mock
+
+        resp_mock = SimpleNamespace(
+            success=True,
+            trajectory_points=[SimpleNamespace(time_sec=0.1)],
+        )
+        mock_client_mgr.call_plan_amr_bypass.return_value = resp_mock
+
+        expected_dtos = [
+            TrajectoryPointDto(
+                time_sec=0.1,
+                asset_id="AMR_001",
+                position_x=0.0,
+                position_y=0.0,
+                position_z=0.0,
+                velocity=1.0,
+                is_collided=False,
+            )
+        ]
+        mock_mapper.to_trajectory_dtos.return_value = expected_dtos
 
         # When
-        adapter.trigger_failsafe_stop()
+        result_dtos = adapter.plan_bypass(obstacle_data)
 
         # Then
-        mock_client_mgr.publish_estop.assert_called_once_with(
-            action_type="ESTOP", trigger_reason="CORE_FAILSAFE_TRIGGERED"
+        mock_mapper.to_amr_bypass_request.assert_called_once_with(obstacle_data)
+        mock_client_mgr.call_plan_amr_bypass.assert_called_once_with(
+            req_mock, timeout_sec=5.0
         )
+        assert result_dtos == expected_dtos
 
-    def test_deploy_package_success(
+    def test_plan_bypass_manipulator_routing_success(
         self, mock_dependencies: tuple[MagicMock, MagicMock]
     ) -> None:
-        """시나리오 5: deploy() 패키지 해시 및 ROS 2 워크스페이스 구조 검증 성공 (Happy Path)"""
+        """시나리오 2-2: IBypassPlanner.plan_bypass ROBOT/HUMANOID 타입 동적 라우팅 검증 (Happy Path)"""
         # Given
         mock_client_mgr, mock_mapper = mock_dependencies
         adapter = Ros2OutboundAdapter(
-            client_manager=mock_client_mgr,
-            mapper=mock_mapper,
+            service_client_manager=mock_client_mgr,
+            payload_mapper=mock_mapper,
         )
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            src_dir = os.path.join(tmp_dir, "src")
-            os.makedirs(src_dir)
-            sample_file = os.path.join(src_dir, "package.xml")
-            with open(sample_file, "w", encoding="utf-8") as f:
-                f.write("<package>test</package>")
+        obstacle_data = {"asset_type": AssetType.ROBOT, "asset_id": "ROBOT_001"}
+        req_mock = SimpleNamespace(asset_id="ROBOT_001")
+        mock_mapper.to_arm_plan_request.return_value = req_mock
 
-            # 임시 워크스페이스 해시 생성
-            hasher = hashlib.sha256()
-            hasher.update(b"<package>test</package>")
-            valid_hash = hasher.hexdigest()
+        resp_mock = SimpleNamespace(
+            success=True,
+            trajectory_points=[SimpleNamespace(time_sec=0.1)],
+        )
+        mock_client_mgr.call_plan_arm_trajectory.return_value = resp_mock
+        mock_mapper.to_trajectory_dtos.return_value = []
 
-            package_dto = DeployPackageDto(
-                package_id="PKG_001",
-                format_type="ROS2_WS",
-                ros2_ws_path=tmp_dir,
-                package_hash=valid_hash,
-            )
+        # When
+        result = adapter.plan_bypass(obstacle_data)
 
-            # When & Then (예외 없이 정상 통과)
-            adapter.deploy(package_dto)
+        # Then
+        mock_mapper.to_arm_plan_request.assert_called_once_with(obstacle_data)
+        mock_client_mgr.call_plan_arm_trajectory.assert_called_once_with(
+            req_mock, timeout_sec=5.0
+        )
+        assert result == []
 
-    def test_deploy_package_invalid_hash_raises_exception(
+    def test_deploy_model_package_success_and_hash_mismatch(
         self, mock_dependencies: tuple[MagicMock, MagicMock]
     ) -> None:
-        """시나리오 6: deploy() 패키지 해시 불일치 시 ERR_COMMON_INVALID_INPUT 예외 검증 (Edge Case)"""
+        """시나리오 3: IFleetDeploymentGateway.deploy_model_package 해시 일치 성공 및 불일치 예외 검증"""
         # Given
         mock_client_mgr, mock_mapper = mock_dependencies
         adapter = Ros2OutboundAdapter(
-            client_manager=mock_client_mgr,
-            mapper=mock_mapper,
+            service_client_manager=mock_client_mgr,
+            payload_mapper=mock_mapper,
         )
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            src_dir = os.path.join(tmp_dir, "src")
-            os.makedirs(src_dir)
-            sample_file = os.path.join(src_dir, "package.xml")
-            with open(sample_file, "w", encoding="utf-8") as f:
-                f.write("<package>test</package>")
+        package_bytes = b"sample_model_package_binary_data"
+        correct_hash = hashlib.sha256(package_bytes).hexdigest()
+        wrong_hash = "invalid_hash_value_12345"
 
-            package_dto = DeployPackageDto(
-                package_id="PKG_001",
-                format_type="ROS2_WS",
-                ros2_ws_path=tmp_dir,
-                package_hash="INVALID_SHA256_HASH_STRING",
+        # When (Happy Path)
+        success = adapter.deploy_model_package("FLEET_001", package_bytes, correct_hash)
+        assert success is True
+
+        # When & Then (Hash Mismatch Edge Case)
+        with pytest.raises(BaseSystemException) as exc_info:
+            adapter.deploy_model_package("FLEET_001", package_bytes, wrong_hash)
+
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
+
+    def test_run_simulation_failure_response_raises_physics_step_error(
+        self, mock_dependencies: tuple[MagicMock, MagicMock]
+    ) -> None:
+        """시나리오 4: 시뮬레이션 응답 success=False 시 ERR_SIM_PHYSICS_STEP_ERROR 예외 검증 (Edge Case)"""
+        # Given
+        mock_client_mgr, mock_mapper = mock_dependencies
+        adapter = Ros2OutboundAdapter(
+            service_client_manager=mock_client_mgr,
+            payload_mapper=mock_mapper,
+        )
+
+        scenario_mock = MagicMock()
+        mock_mapper.to_simulate_request.return_value = SimpleNamespace()
+
+        resp_mock = SimpleNamespace(
+            success=False,
+            trajectory_points=[],
+            error_message="Simulation step divergence detected",
+        )
+        mock_client_mgr.call_simulate_scenario.return_value = resp_mock
+
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            adapter.run_simulation(scenario_mock)
+
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_SIM_PHYSICS_STEP_ERROR
+
+    def test_dds_exception_propagates_intact(
+        self, mock_dependencies: tuple[MagicMock, MagicMock]
+    ) -> None:
+        """시나리오 5: Client Manager에서 발생한 BaseSystemException 예외 무손실 전파 검증 (Edge Case)"""
+        # Given
+        mock_client_mgr, mock_mapper = mock_dependencies
+        adapter = Ros2OutboundAdapter(
+            service_client_manager=mock_client_mgr,
+            payload_mapper=mock_mapper,
+        )
+
+        scenario_mock = MagicMock()
+        mock_mapper.to_simulate_request.return_value = SimpleNamespace()
+        mock_client_mgr.call_simulate_scenario.side_effect = (
+            BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_EDGE_DDS_INIT_FAIL,
+                custom_message="DDS Connection Failed",
             )
+        )
 
-            # When & Then
-            with pytest.raises(BaseSystemException) as exc_info:
-                adapter.deploy(package_dto)
+        # When & Then
+        with pytest.raises(BaseSystemException) as exc_info:
+            adapter.run_simulation(scenario_mock)
 
-            assert exc_info.value.error_code == GlobalErrorCode.ERR_COMMON_INVALID_INPUT
+        assert exc_info.value.error_code == GlobalErrorCode.ERR_EDGE_DDS_INIT_FAIL

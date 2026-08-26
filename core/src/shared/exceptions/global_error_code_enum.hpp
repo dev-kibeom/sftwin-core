@@ -26,6 +26,7 @@ enum class GlobalErrorCode {
     ERR_SIM_IPC_TIMEOUT,
     ERR_SIM_RECOVER_EVAL_FAILED,
     ERR_SIM_RESOURCE_EXHAUSTED,
+    ERR_SIM_PHYSICS_STEP_ERROR,
 
     // 4. Edge Control Domain
     ERR_EDGE_COMM_TIMEOUT,
@@ -65,6 +66,7 @@ constexpr std::string_view toString(GlobalErrorCode code) noexcept {
         case GlobalErrorCode::ERR_SIM_IPC_TIMEOUT:            return "ERR_SIM_IPC_TIMEOUT";
         case GlobalErrorCode::ERR_SIM_RECOVER_EVAL_FAILED:    return "ERR_SIM_RECOVER_EVAL_FAILED";
         case GlobalErrorCode::ERR_SIM_RESOURCE_EXHAUSTED:     return "ERR_SIM_RESOURCE_EXHAUSTED";
+        case GlobalErrorCode::ERR_SIM_PHYSICS_STEP_ERROR: return "ERR_SIM_PHYSICS_STEP_ERROR";
 
         case GlobalErrorCode::ERR_EDGE_COMM_TIMEOUT:          return "ERR_EDGE_COMM_TIMEOUT";
         case GlobalErrorCode::ERR_EDGE_FAILSAFE_TRIGGERED:    return "ERR_EDGE_FAILSAFE_TRIGGERED";
@@ -122,6 +124,8 @@ constexpr ErrorCodeMetadata getMetadata(GlobalErrorCode code) noexcept {
             return {422, "No alternative recovery path found."};
         case GlobalErrorCode::ERR_SIM_RESOURCE_EXHAUSTED:
             return {503, "GPU VRAM memory consumption exceeded the threshold (4.2GB)."};
+        case GlobalErrorCode::ERR_SIM_PHYSICS_STEP_ERROR:
+            return {500, "Numerical instability or physics step simulation computation failure in MuJoCo engine."};
 
         // 4. Edge Control Domain
         case GlobalErrorCode::ERR_EDGE_COMM_TIMEOUT:

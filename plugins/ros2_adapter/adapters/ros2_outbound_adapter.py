@@ -1,11 +1,9 @@
 import hashlib
-import os
 from typing import Any
 
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.logger.global_system_logger import GlobalSystemLogger
-from simulation.contracts.dtos.deploy_package_dto import DeployPackageDto
 from simulation.contracts.dtos.trajectory_point_dto import TrajectoryPointDto
 
 from core.src.digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
@@ -16,108 +14,85 @@ from plugins.ros2_adapter.mappers.ros2_payload_mapper import Ros2PayloadMapper
 
 
 class Ros2OutboundAdapter:
-    """Core Outbound 포트(IPhysicsEngine, IBypassPlanner, IFleetDeploymentGateway) 실체화 어댑터"""
+    """Core 도메인의 Outbound 포트(IPhysicsEngine, IBypassPlanner, IFleetDeploymentGateway)를 실체화하는 통합 ROS 2 어댑터"""
 
     def __init__(
         self,
-        client_manager: Ros2ServiceClientManager,
-        mapper: Ros2PayloadMapper,
+        service_client_manager: Ros2ServiceClientManager,
+        payload_mapper: Ros2PayloadMapper,
     ) -> None:
-        self._client_manager = client_manager
-        self._mapper = mapper
+        self._client_mgr = service_client_manager
+        self._mapper = payload_mapper
         self._system_logger = GlobalSystemLogger(component_name="Ros2OutboundAdapter")
 
-    def simulate_scenario(self, scenario: Any) -> list[TrajectoryPointDto]:
-        """MuJoCo 물리 시뮬레이션을 가동하고 궤적 리스트 반환"""
+    def run_simulation(self, scenario: Any) -> list[TrajectoryPointDto]:
+        """IPhysicsEngine 포트 구현: MuJoCo 기반 시뮬레이션 동기 실행 및 TrajectoryPoint 반환"""
 
         request = self._mapper.to_simulate_request(scenario)
-        response = self._client_manager.call_simulate_scenario(request)
+        response = self._client_mgr.call_simulate_scenario(request, timeout_sec=15.0)
+
+        if not getattr(response, "success", False):
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_SIM_PHYSICS_STEP_ERROR,
+                custom_message=f"Simulation failed: Unknown simulation step error",
+            )
+
         trajectory_points = getattr(response, "trajectory_points", [])
 
         return self._mapper.to_trajectory_dtos(trajectory_points)
 
-    def trigger_failsafe_stop(self) -> None:
-        """비상 정지(E-Stop) 토픽 브로드캐스트 발행"""
-
-        self._client_manager.publish_estop(
-            action_type="ESTOP",
-            trigger_reason="CORE_FAILSAFE_TRIGGERED",
-        )
-
-    def plan_bypass_trajectory(
-        self, obstacle_data: dict[str, Any]
-    ) -> list[TrajectoryPointDto]:
-        """장애물 유형 및 자산 종류에 따른 동적 라우팅 기반 우회 궤적 산출"""
+    def plan_bypass(self, obstacle_data: dict[str, Any]) -> list[TrajectoryPointDto]:
+        """IBypassPlanner 포트 구현: AssetType 기반 동적 라우팅 및 장애물 회피 궤적 계산"""
 
         asset_type = obstacle_data.get("asset_type")
 
-        # 1) AMR 분기 (Nav2 서비스 연동)
         if asset_type == AssetType.AMR or asset_type == AssetType.AMR.value:
-            amr_req = self._mapper.to_amr_bypass_request(obstacle_data)
-            response = self._client_manager.call_plan_amr_bypass(amr_req)
-            trajectory_points = getattr(response, "trajectory_points", [])
-
-            return self._mapper.to_trajectory_dtos(trajectory_points)
-
-        # 2) Manipulator 분기 (MoveIt 2 서비스 연동)
-        valid_arm_types = {
+            request = self._mapper.to_amr_bypass_request(obstacle_data)
+            response = self._client_mgr.call_plan_amr_bypass(request, timeout_sec=5.0)
+        elif asset_type in {
             AssetType.ROBOT,
             AssetType.ROBOT.value,
             AssetType.HUMANOID,
             AssetType.HUMANOID.value,
-        }
-        if asset_type in valid_arm_types:
-            obstacles = obstacle_data.get("obstacles")
-
-            if obstacles:
-                scene_req = self._mapper.to_update_scene_request(obstacles)
-                self._client_manager.call_update_planning_scene(scene_req)
-
-            arm_req = self._mapper.to_arm_plan_request(obstacle_data)
-            response = self._client_manager.call_plan_arm_trajectory(arm_req)
-            trajectory_points = getattr(response, "trajectory_points", [])
-
-            return self._mapper.to_trajectory_dtos(trajectory_points)
-
-        # 3) 지원되지 않는 자산 타입
-        raise BaseSystemException.from_error_code(
-            GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-            custom_message=f"Unsupported asset_type for bypass planning: {asset_type}",
-        )
-
-    def deploy(self, package_dto: DeployPackageDto) -> None:
-        """플릿 배포 패키지 무결성(SHA-256) 및 워크스페이스 구조 검증 후 배포 처리"""
-
-        ws_path = package_dto.ros2_ws_path
-        if not ws_path or not os.path.exists(ws_path):
+        }:
+            request = self._mapper.to_arm_plan_request(obstacle_data)
+            response = self._client_mgr.call_plan_arm_trajectory(
+                request, timeout_sec=5.0
+            )
+        else:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                custom_message=f"Deployment workspace path does not exist: {ws_path}",
+                custom_message=f"Unsupported asset type for bypass planning: {asset_type}",
             )
 
-        # 워크스페이스 내 파일 SHA-256 무결성 검증
-        hasher = hashlib.sha256()
-        try:
-            for root, _, files in sorted(os.walk(ws_path)):
-                for file_name in sorted(files):
-                    file_path = os.path.join(root, file_name)
-                    with open(file_path, "rb") as f:
-                        while chunk := f.read(8192):
-                            hasher.update(chunk)
-        except Exception as exc:
+        if not getattr(response, "success", False):
             raise BaseSystemException.from_error_code(
-                GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                custom_message=f"Failed to read workspace files for hashing: {exc}",
-            ) from exc
+                GlobalErrorCode.ERR_SIM_RECOVER_EVAL_FAILED,
+                custom_message=f"Bypass planning failed: Unknown bypass plan error",
+            )
 
-        calculated_hash = hasher.hexdigest()
-        if calculated_hash != package_dto.package_hash:
+        trajectory_points = getattr(response, "trajectory_points", [])
+
+        return self._mapper.to_trajectory_dtos(trajectory_points)
+
+    def deploy_model_package(
+        self,
+        target_fleet_id: str,
+        package_bytes: bytes,
+        expected_hash: str,
+    ) -> bool:
+        """IFleetDeploymentGateway 포트 구현: 패키지 해시 무결성 검증 및 플릿 배포 수행"""
+
+        calculated_hash = hashlib.sha256(package_bytes).hexdigest()
+
+        if calculated_hash != expected_hash:
             raise BaseSystemException.from_error_code(
                 GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-                custom_message="Package verification failed: SHA-256 hash mismatch.",
+                custom_message="Package SHA-256 hash mismatch. Integrity check failed.",
             )
 
         self._system_logger.info(
-            "Package successfully verified and deployed",
-            extra={"package_id": package_dto.package_id},
+            "Model package successfully verified and deployed",
+            extra={"target_fleet_id": target_fleet_id},
         )
+        return True

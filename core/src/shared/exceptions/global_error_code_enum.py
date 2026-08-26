@@ -22,6 +22,7 @@ class GlobalErrorCode(str, Enum):
     ERR_SIM_IPC_TIMEOUT = "ERR_SIM_IPC_TIMEOUT"
     ERR_SIM_RECOVER_EVAL_FAILED = "ERR_SIM_RECOVER_EVAL_FAILED"
     ERR_SIM_RESOURCE_EXHAUSTED = "ERR_SIM_RESOURCE_EXHAUSTED"
+    ERR_SIM_PHYSICS_STEP_ERROR = "ERR_SIM_PHYSICS_STEP_ERROR"
 
     # Edge Control Domain
     ERR_EDGE_COMM_TIMEOUT = "ERR_EDGE_COMM_TIMEOUT"
@@ -102,6 +103,10 @@ ERROR_CODE_METADATA: dict[GlobalErrorCode, dict[str, Any]] = {
     GlobalErrorCode.ERR_SIM_RESOURCE_EXHAUSTED: {
         "status": 503,
         "msg": "GPU VRAM memory consumption exceeded the threshold (4.2GB).",
+    },
+    GlobalErrorCode.ERR_SIM_PHYSICS_STEP_ERROR: {
+        "status": 500,
+        "msg": "Numerical instability or physics step simulation computation failure in MuJoCo engine.",
     },
     # 4. Edge Control Domain
     GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT: {
