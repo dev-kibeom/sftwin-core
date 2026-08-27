@@ -42,16 +42,41 @@ target_link_libraries(${PROJECT_NAME}_server
   rclcpp::rclcpp
 )
 
+add_library(${PROJECT_NAME}_node
+  src/node/foxglove_bridge_node.cpp
+)
+target_link_libraries(${PROJECT_NAME}_node
+  ${PROJECT_NAME}_mappers
+  ${PROJECT_NAME}_managers
+  ${PROJECT_NAME}_server
+  rclcpp::rclcpp
+)
+if(shared_interfaces_FOUND)
+  ament_target_dependencies(${PROJECT_NAME}_node shared_interfaces)
+endif()
+
+add_executable(${PROJECT_NAME}_node_exec
+  src/main.cpp
+)
+target_link_libraries(${PROJECT_NAME}_node_exec
+  ${PROJECT_NAME}_node
+)
+
 install(
   DIRECTORY include/
   DESTINATION include
 )
 
 install(
-  TARGETS ${PROJECT_NAME}_mappers ${PROJECT_NAME}_managers ${PROJECT_NAME}_server
+  TARGETS
+    ${PROJECT_NAME}_mappers
+    ${PROJECT_NAME}_managers
+    ${PROJECT_NAME}_server
+    ${PROJECT_NAME}_node
+    ${PROJECT_NAME}_node_exec
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
@@ -101,6 +126,15 @@ if(BUILD_TESTING)
     ${PROJECT_NAME}_managers
     rclcpp::rclcpp
   )
+
+  ament_add_gtest(test_bridge_node tests/test_bridge_node.cpp)
+  target_link_libraries(test_bridge_node
+    ${PROJECT_NAME}_node
+    rclcpp::rclcpp
+  )
+  if(shared_interfaces_FOUND)
+    ament_target_dependencies(test_bridge_node shared_interfaces)
+  endif()
 endif()
 
 ament_package()

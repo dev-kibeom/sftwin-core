@@ -15,7 +15,7 @@ namespace sftwin::plugins::foxglove_bridge {
 
 class DynamicTopicChannelManager {
 public:
-    explicit DynamicTopicChannelManager(rclcpp::Node::SharedPtr node);
+    explicit DynamicTopicChannelManager(rclcpp::Node* node);
     ~DynamicTopicChannelManager() = default;
 
     DynamicTopicChannelManager(const DynamicTopicChannelManager&) = delete;
@@ -28,7 +28,7 @@ public:
     [[nodiscard]] size_t registered_channel_count() const;
 
 private:
-    rclcpp::Node::SharedPtr _node;
+    rclcpp::Node* _node{nullptr};
     mutable std::mutex _mutex;
     ChannelId _next_channel_id{1};
     std::unordered_map<std::string, ChannelId> _topic_to_channel;

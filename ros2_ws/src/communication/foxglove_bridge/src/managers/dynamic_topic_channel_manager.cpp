@@ -2,8 +2,8 @@
 
 namespace sftwin::plugins::foxglove_bridge {
 
-DynamicTopicChannelManager::DynamicTopicChannelManager(rclcpp::Node::SharedPtr node)
-    : _node(std::move(node)) {}
+DynamicTopicChannelManager::DynamicTopicChannelManager(rclcpp::Node* node)
+    : _node(node) {}
 
 ChannelId DynamicTopicChannelManager::register_topic(const std::string& topic_name, const std::string& type_name) {
     std::lock_guard<std::mutex> lock(_mutex);
