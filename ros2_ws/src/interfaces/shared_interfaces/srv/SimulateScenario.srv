@@ -1,0 +1,20 @@
+# ros2_ws/src/interfaces/shared_interfaces/srv/SimulateScenario.srv
+string scenario_id
+string baseline_id
+string model_file_path
+float64 dt_sec
+float64 max_duration_sec
+float64 joint_damping
+float64 friction_loss
+
+# [제어 대상별 분리 필드]
+geometry_msgs/Pose[] nav_waypoints        # AGV/AMR 이동 경로 (Position + Yaw)
+geometry_msgs/Pose[] arm_target_poses     # 매니퓰레이터 6DOF 타깃 포즈
+bool real_time_playback                   # 데모 시연용 실시간 동기화 플래그
+---
+bool is_success
+int32 collision_count
+float64 estimated_cycle_time_sec
+string evaluated_at
+TrajectoryPoint[] trajectory_points
+string error_message
