@@ -1,6 +1,10 @@
 from typing import Protocol
 
 from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.dtos.calibrate_dynamics_dto import (
+    CalibrateDynamicsRequestDto,
+    CalibrateDynamicsResponseDto,
+)
 from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (
     RawFactoryDataDto,
 )
@@ -16,3 +20,7 @@ class IDigitalTwinCommandFacade(Protocol):
     def reconstruct_twin(
         self, raw_data: RawFactoryDataDto, ctx: UserContext
     ) -> TwinMetricsDto: ...
+
+    def calibrate_dynamics(
+        self, request_dto: CalibrateDynamicsRequestDto, ctx: UserContext
+    ) -> CalibrateDynamicsResponseDto: ...
