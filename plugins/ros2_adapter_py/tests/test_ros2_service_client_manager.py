@@ -6,7 +6,7 @@ import pytest
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
-from plugins.ros2_adapter.clients.ros2_service_client_manager import (
+from plugins.ros2_adapter_py.clients.ros2_service_client_manager import (
     Ros2ServiceClientManager,
 )
 

@@ -1,7 +1,7 @@
 import inspect
 
-import plugins.ros2_adapter as ros2_adapter_pkg
-from plugins.ros2_adapter import (
+import plugins.ros2_adapter_py as ros2_adapter_pkg
+from plugins.ros2_adapter_py import (
     Ros2OutboundAdapter,
     Ros2PayloadMapper,
     Ros2ServiceClientManager,

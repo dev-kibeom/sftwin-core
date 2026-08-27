@@ -7,10 +7,10 @@ from shared.logger.global_system_logger import GlobalSystemLogger
 from simulation.contracts.dtos.trajectory_point_dto import TrajectoryPointDto
 
 from core.src.digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
-from plugins.ros2_adapter.clients.ros2_service_client_manager import (
+from plugins.ros2_adapter_py.clients.ros2_service_client_manager import (
     Ros2ServiceClientManager,
 )
-from plugins.ros2_adapter.mappers.ros2_payload_mapper import Ros2PayloadMapper
+from plugins.ros2_adapter_py.mappers.ros2_payload_mapper import Ros2PayloadMapper
 
 
 class Ros2OutboundAdapter:

@@ -7,8 +7,8 @@ from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from simulation.contracts.dtos.trajectory_point_dto import TrajectoryPointDto
 
 from core.src.digital_twin.asset_library.domain.asset.asset_type_enum import AssetType
-from plugins.ros2_adapter.domain.enums import AdapterCallState
-from plugins.ros2_adapter.mappers.ros2_payload_mapper import Ros2PayloadMapper
+from plugins.ros2_adapter_py.domain.enums import AdapterCallState
+from plugins.ros2_adapter_py.mappers.ros2_payload_mapper import Ros2PayloadMapper
 
 
 class TestRos2PayloadMapper:
