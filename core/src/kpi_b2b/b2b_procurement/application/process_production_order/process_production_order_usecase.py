@@ -1,3 +1,5 @@
+# File: sftwin_project/core/src/kpi_b2b/b2b_procurement/application/process_production_order/process_production_order_usecase.py
+
 from dataclasses import dataclass
 
 from kpi_b2b.b2b_procurement.application.process_production_order.production_order_request_dto import (
@@ -6,14 +8,17 @@ from kpi_b2b.b2b_procurement.application.process_production_order.production_ord
 from kpi_b2b.b2b_procurement.domain.production_order.factory_phase_enum import (
     FactoryPhase,
 )
-from kpi_b2b.b2b_procurement.domain.production_order.material_inventory import (
-    MaterialInventory,
-)
 from kpi_b2b.b2b_procurement.domain.production_order.production_order import (
     ProductionOrder,
 )
 from kpi_b2b.contracts.dtos.production_order_result_dto import (
     ProductionOrderResultDto,
+)
+from kpi_b2b.contracts.ports.outbound.i_material_inventory_command_repository import (
+    IMaterialInventoryCommandRepository,
+)
+from kpi_b2b.contracts.ports.outbound.i_material_inventory_query_repository import (
+    IMaterialInventoryQueryRepository,
 )
 from kpi_b2b.contracts.ports.outbound.i_procurement_command_repository import (
     IProcurementCommandRepository,
@@ -51,11 +56,15 @@ class ProcessProductionOrderUseCase:
     def __init__(
         self,
         command_repo: IProcurementCommandRepository,
+        inventory_query_repo: IMaterialInventoryQueryRepository,
+        inventory_command_repo: IMaterialInventoryCommandRepository,
         system_logger: GlobalSystemLogger | None = None,
         audit_logger: GlobalAuditLogger | None = None,
         event_bus: EventBus | None = None,
     ) -> None:
         self._command_repo = command_repo
+        self._inventory_query_repo = inventory_query_repo
+        self._inventory_command_repo = inventory_command_repo
         self._system_logger = system_logger or GlobalSystemLogger(
             component_name="ProcessProductionOrderUseCase"
         )
@@ -68,7 +77,10 @@ class ProcessProductionOrderUseCase:
         request_dto: ProductionOrderRequestDto,
         ctx: UserContext,
     ) -> ProductionOrderResultDto:
+        material_code = f"MAT-{request_dto.product_code}"
+
         try:
+            # 1. 생산 발주 도메인 엔티티 생성
             order = ProductionOrder.create(
                 order_id=request_dto.order_id,
                 product_code=request_dto.product_code,
@@ -77,16 +89,21 @@ class ProcessProductionOrderUseCase:
                 factory_phase=FactoryPhase(request_dto.factory_phase),
             )
 
-            inventory = MaterialInventory(
-                material_code=f"MAT-{request_dto.product_code}",
-                available_stock=10000.0,
-                unit_per_product=2.5,
-            )
-            remaining_stock = inventory.check_and_consume(request_dto.target_quantity)
+            # 2. 원자재 재고 조회 및 유효성 검증
+            inventory = self._inventory_query_repo.get_by_material_code(material_code)
+            if not inventory:
+                raise BaseSystemException.from_error_code(
+                    GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
+                    custom_message="Inventory not found",
+                )
 
+            # 3. 재고 차감 및 영속화
+            remaining_stock = inventory.check_and_consume(request_dto.target_quantity)
+            self._inventory_command_repo.update_stock(inventory)
+
+            # 4. PackML 상태 전이 및 주문 엔티티 저장
             order.transition_to_starting()
             order.transition_to_execute()
-
             self._command_repo.save_production_order(order)
 
         except ValueError as e:
@@ -105,6 +122,7 @@ class ProcessProductionOrderUseCase:
                 custom_message=str(e),
             ) from e
 
+        # 5. 성공 감사 로그 및 비즈니스 로그 기록
         self._audit_logger.log(
             AuditEvent(
                 event_type=AuditEventType.DATA_ACCESS,
@@ -131,7 +149,7 @@ class ProcessProductionOrderUseCase:
             },
         )
 
-        # EventBus 이벤트 발행
+        # 6. EventBus 이벤트 발행
         if self._event_bus:
             domain_event = ProductionOrderDispatchedDomainEvent(
                 order_id=order.order_id,

@@ -12,5 +12,5 @@ class IPhysicsEngine(Protocol):
         ...
 
     def trigger_failsafe_stop(self) -> None:
-        """비상 정지 트리거"""
+        """이상 감지 복구 및 소프트 정지 트리거"""
         ...

@@ -1,4 +1,9 @@
+# File: sftwin_project/core/src/simulation/facades/simulation_command_facade.py
+
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 from shared.context.user_context import UserContext
+from shared.exceptions.base_system_exception import BaseSystemException
+from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.security.context_guard import require_permission
 from shared.security.user_role_enum import UserRole
 from simulation.contracts.dtos.optimized_asset_placement_dto import (
@@ -13,6 +18,9 @@ from simulation.fault_recovery.application.fault_recovery_scenario.fault_recover
 )
 from simulation.fault_recovery.application.inject_fault.inject_fault_request_dto import (
     InjectFaultRequestDto,
+)
+from simulation.fault_recovery.application.inject_fault.inject_fault_result_dto import (
+    InjectFaultResultDto,
 )
 from simulation.fault_recovery.application.inject_fault.inject_fault_usecase import (
     InjectFaultUseCase,
@@ -61,8 +69,28 @@ class SimulationCommandFacade(ISimulationCommandFacade):
     @require_permission(UserRole.FIELD_ENGINEER, "SIM_INJECT_FAULT")
     def inject_fault(
         self, request_dto: InjectFaultRequestDto, ctx: UserContext
-    ) -> SimResultDto:
+    ) -> InjectFaultResultDto:
         return self._inject_fault_uc.execute(request_dto=request_dto, ctx=ctx)
+
+    @require_permission(UserRole.FIELD_ENGINEER, "SIM_FAULT_RECOVERY_SCENARIO")
+    def simulate_fault_recovery_scenario(
+        self,
+        fault_request_dto: InjectFaultRequestDto,
+        sequence_script: str,
+        assets: tuple[AssetDto, ...],
+        ctx: UserContext,
+    ) -> SimResultDto:
+        if not self._fault_recovery_scenario_uc:
+            raise BaseSystemException.from_error_code(
+                GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
+                custom_message="SimulateFaultRecoveryScenarioUseCase is not configured in SimulationCommandFacade.",
+            )
+        return self._fault_recovery_scenario_uc.execute(
+            fault_request_dto=fault_request_dto,
+            sequence_script=sequence_script,
+            assets=assets,
+            ctx=ctx,
+        )
 
     @require_permission(UserRole.FACTORY_MANAGER, "SIM_DEPLOY_SIM2REAL")
     def deploy_sim2real_package(

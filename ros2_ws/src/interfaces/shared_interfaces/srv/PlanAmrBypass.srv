@@ -1,0 +1,8 @@
+string target_asset_id
+float64 trigger_time_sec
+float64 obstacle_distance_m
+---
+bool is_success
+string error_code
+string error_message
+geometry_msgs/Pose[] waypoints

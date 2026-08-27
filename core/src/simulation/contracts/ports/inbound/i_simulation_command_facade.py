@@ -1,5 +1,8 @@
+# File: sftwin_project/core/src/simulation/contracts/ports/inbound/i_simulation_command_facade.py
+
 from typing import Protocol
 
+from digital_twin.contracts.dtos.asset_dto import AssetDto
 from shared.context.user_context import UserContext
 from simulation.contracts.dtos.optimized_asset_placement_dto import (
     OptimizedAssetPlacementDto,
@@ -7,6 +10,9 @@ from simulation.contracts.dtos.optimized_asset_placement_dto import (
 from simulation.contracts.dtos.sim_result_dto import SimResultDto
 from simulation.fault_recovery.application.inject_fault.inject_fault_request_dto import (
     InjectFaultRequestDto,
+)
+from simulation.fault_recovery.application.inject_fault.inject_fault_result_dto import (
+    InjectFaultResultDto,
 )
 from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_request_dto import (
     RunFmsSimulationRequestDto,
@@ -26,6 +32,14 @@ class ISimulationCommandFacade(Protocol):
 
     def inject_fault(
         self, request_dto: InjectFaultRequestDto, ctx: UserContext
+    ) -> InjectFaultResultDto: ...
+
+    def simulate_fault_recovery_scenario(
+        self,
+        fault_request_dto: InjectFaultRequestDto,
+        sequence_script: str,
+        assets: tuple[AssetDto, ...],
+        ctx: UserContext,
     ) -> SimResultDto: ...
 
     def deploy_sim2real_package(
