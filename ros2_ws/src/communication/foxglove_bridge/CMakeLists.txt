@@ -9,6 +9,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(shared_interfaces QUIET)
@@ -80,12 +81,13 @@ install(
 )
 
 install(
-  DIRECTORY config
+  DIRECTORY config launch
   DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_cmake_pytest REQUIRED)
 
   ament_add_gtest(test_infra_setup tests/test_infra_setup.cpp)
   target_link_libraries(test_infra_setup
@@ -135,6 +137,8 @@ if(BUILD_TESTING)
   if(shared_interfaces_FOUND)
     ament_target_dependencies(test_bridge_node shared_interfaces)
   endif()
+
+  ament_add_pytest_test(test_launch_packaging tests/test_launch_packaging.py)
 endif()
 
 ament_package()

@@ -15,16 +15,44 @@ FoxgloveBridgeNode::~FoxgloveBridgeNode() {
 }
 
 void FoxgloveBridgeNode::initialize_parameters() {
-    this->declare_parameter<int>("port", 8765);
-    this->declare_parameter<std::string>("address", "0.0.0.0");
-    this->declare_parameter<std::vector<std::string>>(
-        "whitelist_topics",
-        std::vector<std::string>{"/joint_states", "/tf", "/vision/detections"}
-    );
+    std::vector<std::string> default_whitelist = {
+        "/joint_states",
+        "/tf",
+        "/tf_static",
+        "/vision/detections",
+        "/failsafe/status",
+        "/manipulator/trajectory",
+        "/rmf/fleet_states"
+    };
 
-    _port = static_cast<uint16_t>(this->get_parameter("port").as_int());
-    _address = this->get_parameter("address").as_string();
-    _whitelist_topics = this->get_parameter("whitelist_topics").as_string_array();
+    this->declare_parameter<int>("port", 8765);
+    this->declare_parameter<int>("server.port", 8765);
+    this->declare_parameter<std::string>("address", "0.0.0.0");
+    this->declare_parameter<std::string>("server.address", "0.0.0.0");
+    this->declare_parameter<std::vector<std::string>>("whitelist_topics", default_whitelist);
+    this->declare_parameter<std::vector<std::string>>("streaming.topic_whitelist", default_whitelist);
+
+    // 포트 결정
+    int s_port = this->get_parameter("server.port").as_int();
+    int p_port = this->get_parameter("port").as_int();
+    _port = static_cast<uint16_t>(s_port != 8765 ? s_port : p_port);
+
+    // 바인드 주소 결정
+    std::string s_addr = this->get_parameter("server.address").as_string();
+    std::string p_addr = this->get_parameter("address").as_string();
+    _address = (s_addr != "0.0.0.0") ? s_addr : p_addr;
+
+    // 화이트리스트 토픽 결정 (오버라이드된 항목 우선 채택)
+    auto p_whitelist = this->get_parameter("whitelist_topics").as_string_array();
+    auto s_whitelist = this->get_parameter("streaming.topic_whitelist").as_string_array();
+
+    if (p_whitelist != default_whitelist) {
+        _whitelist_topics = p_whitelist;
+    } else if (s_whitelist != default_whitelist) {
+        _whitelist_topics = s_whitelist;
+    } else {
+        _whitelist_topics = default_whitelist;
+    }
 }
 
 void FoxgloveBridgeNode::setup_publishers() {
