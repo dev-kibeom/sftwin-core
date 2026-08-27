@@ -27,13 +27,20 @@ if(shared_interfaces_FOUND)
   ament_target_dependencies(${PROJECT_NAME}_mappers shared_interfaces)
 endif()
 
+add_library(${PROJECT_NAME}_managers
+  src/managers/client_session_manager.cpp
+)
+target_link_libraries(${PROJECT_NAME}_managers
+  rclcpp::rclcpp
+)
+
 install(
   DIRECTORY include/
   DESTINATION include
 )
 
 install(
-  TARGETS ${PROJECT_NAME}_mappers
+  TARGETS ${PROJECT_NAME}_mappers ${PROJECT_NAME}_managers
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -68,6 +75,12 @@ if(BUILD_TESTING)
   if(shared_interfaces_FOUND)
     ament_target_dependencies(test_payload_mapper shared_interfaces)
   endif()
+
+  ament_add_gtest(test_client_session_manager tests/test_client_session_manager.cpp)
+  target_link_libraries(test_client_session_manager
+    ${PROJECT_NAME}_managers
+    rclcpp::rclcpp
+  )
 endif()
 
 ament_package()
