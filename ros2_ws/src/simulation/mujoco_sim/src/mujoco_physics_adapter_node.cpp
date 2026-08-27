@@ -4,6 +4,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <thread>
 
 #include "shared/exceptions/global_error_code_enum.hpp"
 #include "shared/exceptions/global_exception_handler.hpp"
@@ -89,6 +90,11 @@ void MujocoPhysicsAdapterNode::handle_simulate_scenario(
             point_msg.velocity = dto.velocity;
             point_msg.is_collided = dto.is_collided;
             response->trajectory_points.push_back(point_msg);
+
+            if (request->real_time_playback) {
+                this->publish_simulation_state();
+                std::this_thread::sleep_for(std::chrono::duration<double>(dt));
+            }
 
             current_time += dt;
         }

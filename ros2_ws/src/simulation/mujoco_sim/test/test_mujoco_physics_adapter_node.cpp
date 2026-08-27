@@ -2,9 +2,11 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <vector>
 #include <filesystem>
 #include <fstream>
 #include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 
 #include "mujoco_sim/mujoco_physics_adapter_node.hpp"
 #include "shared/exceptions/global_error_code_enum.hpp"
@@ -56,20 +58,33 @@ protected:
     }
 };
 
-TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_ValidRequest_ReturnsSuccessResponse) {
+TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_SeparatedWaypoints_ReturnsSuccessResponse) {
     // Given
     rclcpp::NodeOptions options;
     auto node = std::make_shared<MujocoPhysicsAdapterNode>(options);
     auto request = std::make_shared<shared_interfaces::srv::SimulateScenario::Request>();
     auto response = std::make_shared<shared_interfaces::srv::SimulateScenario::Response>();
 
-    request->scenario_id = "SCENARIO_001";
-    request->baseline_id = "BASELINE_001";
+    request->scenario_id = "SCENARIO_EXP_001";
+    request->baseline_id = "BASELINE_EXP_001";
     request->model_file_path = valid_xml_path_;
     request->dt_sec = 0.002;
     request->max_duration_sec = 0.01;
     request->joint_damping = 0.5;
     request->friction_loss = 0.1;
+    request->real_time_playback = false;
+
+    geometry_msgs::msg::Pose nav_pose;
+    nav_pose.position.x = 1.0;
+    nav_pose.position.y = 2.0;
+    nav_pose.orientation.w = 1.0;
+    request->nav_waypoints.push_back(nav_pose);
+
+    geometry_msgs::msg::Pose arm_pose;
+    arm_pose.position.x = 0.5;
+    arm_pose.position.z = 0.8;
+    arm_pose.orientation.w = 1.0;
+    request->arm_target_poses.push_back(arm_pose);
 
     // When
     node->handle_simulate_scenario(request, response);
@@ -81,6 +96,27 @@ TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_ValidRequest_Returns
     EXPECT_TRUE(response->error_message.empty());
 }
 
+TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_RealTimePlaybackMode_ExecutesSuccessfully) {
+    // Given
+    rclcpp::NodeOptions options;
+    auto node = std::make_shared<MujocoPhysicsAdapterNode>(options);
+    auto request = std::make_shared<shared_interfaces::srv::SimulateScenario::Request>();
+    auto response = std::make_shared<shared_interfaces::srv::SimulateScenario::Response>();
+
+    request->scenario_id = "SCENARIO_PLAYBACK_001";
+    request->model_file_path = valid_xml_path_;
+    request->dt_sec = 0.002;
+    request->max_duration_sec = 0.004; // 2 steps for fast testing
+    request->real_time_playback = true;
+
+    // When
+    node->handle_simulate_scenario(request, response);
+
+    // Then
+    EXPECT_TRUE(response->is_success);
+    EXPECT_EQ(response->trajectory_points.size(), 2);
+}
+
 TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_InvalidFilePath_ReturnsFailureResponse) {
     // Given
     rclcpp::NodeOptions options;
@@ -88,7 +124,7 @@ TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_InvalidFilePath_Retu
     auto request = std::make_shared<shared_interfaces::srv::SimulateScenario::Request>();
     auto response = std::make_shared<shared_interfaces::srv::SimulateScenario::Response>();
 
-    request->scenario_id = "SCENARIO_002";
+    request->scenario_id = "SCENARIO_INVALID_001";
     request->model_file_path = "/invalid/path/non_existent.xml";
     request->max_duration_sec = 0.01;
 
@@ -118,7 +154,7 @@ TEST_F(MujocoPhysicsAdapterNodeTest, FailsafeEstopCallback_MsgReceived_LocksEngi
     auto node = std::make_shared<MujocoPhysicsAdapterNode>(options);
     shared_interfaces::msg::FailsafeCommand msg;
     msg.action_type = "ESTOP";
-    msg.trigger_reason = "Emergency Stop Requested";
+    msg.trigger_reason = "Emergency Stop Triggered in Test";
 
     // When
     node->on_failsafe_estop_received(msg);

@@ -6,7 +6,7 @@
 #include <vector>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <tf2_ros/transform_broadcaster.hpp>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include "mujoco_sim/mujoco_engine_wrapper.hpp"
 #include "mujoco_sim/mujoco_data_mapper.hpp"
