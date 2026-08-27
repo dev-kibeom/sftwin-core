@@ -13,6 +13,7 @@
 namespace sftwin::edge_control {
 
 using anomaly_failsafe::application::EvaluateTelemetryFailsafeUseCase;
+using anomaly_failsafe::application::EvaluateTelemetryFailsafeRequestDto;
 using anomaly_failsafe::application::TriggerManualEstopUseCase;
 using anomaly_failsafe::application::ExecuteRecoverySequenceUseCase;
 using anomaly_failsafe::application::ResetInterlockUseCase;
@@ -33,6 +34,17 @@ EdgeCommandFacade::EdgeCommandFacade(
       _recovery_uc(std::move(recovery_uc)),
       _reset_uc(std::move(reset_uc)),
       _interlock_mgr(std::move(interlock_mgr)) {}
+
+void EdgeCommandFacade::evaluate_failsafe(
+    const TelemetryPacketDto& telemetry,
+    const std::vector<VisionDetectionDto>& vision_detections) {
+    if (_evaluate_uc) {
+        _evaluate_uc->execute(EvaluateTelemetryFailsafeRequestDto{
+            telemetry,
+            vision_detections
+        });
+    }
+}
 
 void EdgeCommandFacade::execute_manual_estop(const std::string& reason) {
     if (_manual_estop_uc) {

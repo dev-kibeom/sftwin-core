@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
-#include "edge_control/contracts/dtos/webrtc_stream_dto.hpp"
+#include "edge_control/contracts/dtos/webrtc_session_dto.hpp"
 
 namespace sftwin::edge_control {
 

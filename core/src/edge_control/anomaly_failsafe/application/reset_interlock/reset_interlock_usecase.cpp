@@ -15,10 +15,12 @@ using namespace sftwin::shared;
 ResetInterlockUseCase::ResetInterlockUseCase(
     std::shared_ptr<domain::InterlockManager> interlock_mgr,
     domain::EstopResetPolicy policy,
+    std::shared_ptr<IHardwareInterlock> hw_interlock,
     std::shared_ptr<IFailsafePublisher> failsafe_pub,
     std::shared_ptr<GlobalSystemLogger> system_logger)
     : _interlock_mgr(std::move(interlock_mgr)),
       _policy(std::move(policy)),
+      _hw_interlock(std::move(hw_interlock)),
       _failsafe_pub(std::move(failsafe_pub)),
       _system_logger(system_logger ? std::move(system_logger)
                                    : std::make_shared<GlobalSystemLogger>("ResetInterlockUseCase")) {}
@@ -32,23 +34,26 @@ domain::InterlockState ResetInterlockUseCase::execute(const ResetInterlockReques
             request_dto.is_manager_approved
         );
     } catch (const std::invalid_argument& e) {
-        _system_logger->warn("E-Stop reset rejected: {}", e.what());
         throw GlobalExceptionHandler(
             GlobalErrorCode::ERR_EDGE_INTERLOCK_RESET_DENIED,
             e.what()
         );
     } catch (const std::logic_error& e) {
-        _system_logger->warn("E-Stop reset invalid state transition: {}", e.what());
         throw GlobalExceptionHandler(
             GlobalErrorCode::ERR_COMMON_INVALID_INPUT,
             e.what()
         );
     }
 
-    // 2. 도메인 인터록 해제
+    // 2. 물리 하드웨어 릴레이 차단 해제
+    if (_hw_interlock) {
+        _hw_interlock->release_interlock("RESET_AUTHORIZED");
+    }
+
+    // 3. 도메인 인터록 해제
     _interlock_mgr->release();
 
-    // 3. 복구 완료 이벤트 발행
+    // 4. 복구 완료 이벤트 발행
     const uint64_t current_time_ns = GlobalTimeProvider::get_steady_time_ns();
     if (_failsafe_pub) {
         FailsafeCommandDto cmd(request_dto.device_id, "RESUME", "MANUAL_2STEP_RESET_SUCCESS", current_time_ns);

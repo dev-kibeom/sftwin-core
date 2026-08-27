@@ -2,7 +2,10 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "edge_control/contracts/dtos/telemetry_packet_dto.hpp"
+#include "edge_control/contracts/dtos/vision_detection_dto.hpp"
 #include "edge_control/contracts/dtos/recovery_execution_result_dto.hpp"
 #include "edge_control/contracts/ports/inbound/i_edge_command_facade.hpp"
 
@@ -30,6 +33,8 @@ class EdgeCommandFacade : public IEdgeCommandFacade {
 
     ~EdgeCommandFacade() override = default;
 
+    void evaluate_failsafe(const TelemetryPacketDto& telemetry,
+                           const std::vector<VisionDetectionDto>& vision_detections) override; // 신규 추가
     void execute_manual_estop(const std::string& reason) override;
     RecoveryExecutionResultDto resume_recovery_sequence(const std::string& sequence_script) override;
     bool reset_estop_interlock(bool is_field_inspected, bool is_manager_approved) override;
