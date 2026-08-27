@@ -66,8 +66,13 @@ void FoxgloveBridgeNode::setup_publishers() {
 
 void FoxgloveBridgeNode::setup_bridge() {
     _channel_manager = std::make_unique<DynamicTopicChannelManager>(this);
-    _channel_manager->discover_and_advertise_topics(_whitelist_topics);
 
+    // 수신된 CDR 페이로드를 WebSocket 서버로 브로드캐스트 전달하도록 콜백 등록
+    _channel_manager->set_message_callback([this](ChannelId id, const uint8_t* data, size_t size) {
+        _server.broadcast_message(id, data, size);
+    });
+
+    _channel_manager->discover_and_advertise_topics(_whitelist_topics);
     _server.start(_port, _address);
 }
 

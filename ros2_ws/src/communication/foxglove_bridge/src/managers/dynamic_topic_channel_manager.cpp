@@ -5,7 +5,16 @@ namespace sftwin::plugins::foxglove_bridge {
 DynamicTopicChannelManager::DynamicTopicChannelManager(rclcpp::Node* node)
     : _node(node) {}
 
+void DynamicTopicChannelManager::set_message_callback(MessageDispatchCallback cb) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _dispatch_cb = std::move(cb);
+}
+
 ChannelId DynamicTopicChannelManager::register_topic(const std::string& topic_name, const std::string& type_name) {
+    if (topic_name.empty() || type_name.empty()) {
+        return 0;
+    }
+
     std::lock_guard<std::mutex> lock(_mutex);
 
     auto it = _topic_to_channel.find(topic_name);
@@ -23,18 +32,50 @@ ChannelId DynamicTopicChannelManager::register_topic(const std::string& topic_na
     channel.schema_name = type_name;
     _channels[new_id] = channel;
 
+    if (_node != nullptr) {
+        try {
+            auto sub = _node->create_generic_subscription(
+                topic_name,
+                type_name,
+                rclcpp::QoS(10),
+                [this, new_id](std::shared_ptr<const rclcpp::SerializedMessage> serialized_msg) {
+                    if (_dispatch_cb && serialized_msg) {
+                        const auto& rcl_msg = serialized_msg->get_rcl_serialized_message();
+                        _dispatch_cb(new_id, rcl_msg.buffer, rcl_msg.buffer_length);
+                    }
+                }
+            );
+            _subscriptions[new_id] = sub;
+        } catch (const std::exception& e) {
+            if (_node) {
+                RCLCPP_WARN(_node->get_logger(), "Failed to create generic subscription for %s: %s", topic_name.c_str(), e.what());
+            }
+        }
+    }
+
     return new_id;
 }
 
 void DynamicTopicChannelManager::discover_and_advertise_topics(const std::vector<std::string>& whitelist) {
+    if (!_node) return;
+
+    // 1. ROS 2 그래프로부터 런타임 활성 토픽 타입 조회
+    const auto topic_names_and_types = _node->get_topic_names_and_types();
+
     for (const auto& topic : whitelist) {
-        std::string assumed_type = "sensor_msgs/msg/JointState";
-        if (topic.find("tf") != std::string::npos) {
-            assumed_type = "tf2_msgs/msg/TFMessage";
-        } else if (topic.find("vision") != std::string::npos) {
-            assumed_type = "vision_msgs/msg/Detection3DArray";
+        auto it = topic_names_and_types.find(topic);
+        if (it != topic_names_and_types.end() && !it->second.empty()) {
+            register_topic(topic, it->second[0]);
+        } else {
+            // 2. 그래프에 노드가 아직 뜨지 않았거나 테스트 환경일 때 기본 규약 타입으로 사전 바인딩
+            std::string fallback_type = "sensor_msgs/msg/JointState";
+            if (topic.find("tf") != std::string::npos) {
+                fallback_type = "tf2_msgs/msg/TFMessage";
+            } else if (topic.find("vision") != std::string::npos) {
+                fallback_type = "vision_msgs/msg/Detection3DArray";
+            }
+            register_topic(topic, fallback_type);
         }
-        register_topic(topic, assumed_type);
     }
 }
 

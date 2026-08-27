@@ -8,7 +8,8 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     pkg_dir = get_package_share_directory("foxglove_bridge")
-    default_config = os.path.join(pkg_dir, "config", "foxglove_bridge.yaml")
+    # foxglove_bridge.yaml -> foxglove_bridge_params.yaml 로 일치
+    default_config = os.path.join(pkg_dir, "config", "foxglove_bridge_params.yaml")
 
     return LaunchDescription(
         [
