@@ -29,6 +29,7 @@ endif()
 
 add_library(${PROJECT_NAME}_managers
   src/managers/client_session_manager.cpp
+  src/managers/dynamic_topic_channel_manager.cpp
 )
 target_link_libraries(${PROJECT_NAME}_managers
   rclcpp::rclcpp
@@ -92,6 +93,12 @@ if(BUILD_TESTING)
   ament_add_gtest(test_server_wrapper tests/test_server_wrapper.cpp)
   target_link_libraries(test_server_wrapper
     ${PROJECT_NAME}_server
+    rclcpp::rclcpp
+  )
+
+  ament_add_gtest(test_dynamic_topic_channel_manager tests/test_dynamic_topic_channel_manager.cpp)
+  target_link_libraries(test_dynamic_topic_channel_manager
+    ${PROJECT_NAME}_managers
     rclcpp::rclcpp
   )
 endif()
