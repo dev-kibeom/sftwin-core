@@ -12,3 +12,4 @@ class RunFmsSimulationRequestDto:
     baseline_id: str
     assets: tuple[AssetDto, ...]
     task_waypoints: tuple[TrajectoryPointDto, ...] = field(default_factory=tuple)
+    max_duration_sec: float = 30.0
