@@ -34,13 +34,20 @@ target_link_libraries(${PROJECT_NAME}_managers
   rclcpp::rclcpp
 )
 
+add_library(${PROJECT_NAME}_server
+  src/server/foxglove_server_wrapper.cpp
+)
+target_link_libraries(${PROJECT_NAME}_server
+  rclcpp::rclcpp
+)
+
 install(
   DIRECTORY include/
   DESTINATION include
 )
 
 install(
-  TARGETS ${PROJECT_NAME}_mappers ${PROJECT_NAME}_managers
+  TARGETS ${PROJECT_NAME}_mappers ${PROJECT_NAME}_managers ${PROJECT_NAME}_server
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -79,6 +86,12 @@ if(BUILD_TESTING)
   ament_add_gtest(test_client_session_manager tests/test_client_session_manager.cpp)
   target_link_libraries(test_client_session_manager
     ${PROJECT_NAME}_managers
+    rclcpp::rclcpp
+  )
+
+  ament_add_gtest(test_server_wrapper tests/test_server_wrapper.cpp)
+  target_link_libraries(test_server_wrapper
+    ${PROJECT_NAME}_server
     rclcpp::rclcpp
   )
 endif()
