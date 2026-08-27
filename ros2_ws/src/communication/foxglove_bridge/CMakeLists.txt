@@ -17,13 +17,33 @@ include_directories(
   include
 )
 
-# Configuration & Parameter Files Install
+add_library(${PROJECT_NAME}_mappers
+  src/mappers/foxglove_payload_mapper.cpp
+)
+target_link_libraries(${PROJECT_NAME}_mappers
+  nlohmann_json::nlohmann_json
+)
+if(shared_interfaces_FOUND)
+  ament_target_dependencies(${PROJECT_NAME}_mappers shared_interfaces)
+endif()
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_mappers
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 install(
   DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Unit Testing Targets
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
@@ -32,8 +52,21 @@ if(BUILD_TESTING)
     rclcpp::rclcpp
     nlohmann_json::nlohmann_json
   )
+
+  ament_add_gtest(test_domain_models tests/test_domain_models.cpp)
+  target_link_libraries(test_domain_models
+    rclcpp::rclcpp
+    nlohmann_json::nlohmann_json
+  )
+
+  ament_add_gtest(test_payload_mapper tests/test_payload_mapper.cpp)
+  target_link_libraries(test_payload_mapper
+    ${PROJECT_NAME}_mappers
+    rclcpp::rclcpp
+    nlohmann_json::nlohmann_json
+  )
   if(shared_interfaces_FOUND)
-    ament_target_dependencies(test_infra_setup shared_interfaces)
+    ament_target_dependencies(test_payload_mapper shared_interfaces)
   endif()
 endif()
 
