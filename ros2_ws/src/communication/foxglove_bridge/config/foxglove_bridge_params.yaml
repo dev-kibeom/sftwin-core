@@ -1,0 +1,25 @@
+/**:
+  ros__parameters:
+    node_name: "sftwin_foxglove_bridge"
+    server:
+      port: 8765
+      address: "0.0.0.0"
+      max_client_connections: 16
+      send_buffer_limit_bytes: 10485760 # 10MB
+      websocket_ping_interval_sec: 5
+      websocket_ping_timeout_sec: 10
+    streaming:
+      default_encoding: "cdr"
+      max_publish_frequency_hz: 60.0
+      backpressure_policy: "DROP_OLDEST"
+      topic_whitelist:
+        - "/joint_states"
+        - "/tf"
+        - "/tf_static"
+        - "/vision/detections"
+        - "/failsafe/status"
+        - "/manipulator/trajectory"
+        - "/rmf/fleet_states"
+    command_routing:
+      enable_remote_estop: true
+      require_client_auth_token: false
