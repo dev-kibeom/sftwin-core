@@ -9,7 +9,6 @@ describe('TelemetryBridgeService 단위 테스트', () => {
     let bridgeService: TelemetryBridgeService;
     let mockWsClient: RosWebSocketClient;
     let mockViewportController: ThreeViewportController;
-
     let topicCallbacks: Map<string, (msg: any) => void>;
 
     beforeEach(() => {
@@ -40,10 +39,8 @@ describe('TelemetryBridgeService 단위 테스트', () => {
 
     describe('Happy Path: 시작, 토픽 구독 및 메시지 브릿징', () => {
         it('Given: WebSocket URL이 주어졌을 때, When: start(wsUrl)를 호출하면, Then: WebSocket이 연결되고 필수 토픽들이 일괄 구독 등록되어야 한다.', () => {
-            // Given & When
             bridgeService.start('ws://localhost:9090');
 
-            // Then
             expect(mockWsClient.connect).toHaveBeenCalledWith('ws://localhost:9090');
             expect(mockWsClient.subscribe).toHaveBeenCalledWith('/joint_states', expect.any(Function));
             expect(mockWsClient.subscribe).toHaveBeenCalledWith('/tf', expect.any(Function));
@@ -54,16 +51,13 @@ describe('TelemetryBridgeService 단위 테스트', () => {
             bridgeService.start('ws://localhost:9090');
             const jointCallback = topicCallbacks.get('/joint_states')!;
 
-            // ROS JointState 메시지 페이로드
             const rosJointMsg = {
                 name: ['joint_1', 'joint_2'],
                 position: [0.78, -1.57],
             };
 
-            // When
             jointCallback(rosJointMsg);
 
-            // Then: mockViewportController.pushTelemetryFrame으로 검증
             expect(mockViewportController.pushTelemetryFrame).toHaveBeenCalledWith(
                 expect.objectContaining({
                     jointPositions: {
@@ -78,14 +72,44 @@ describe('TelemetryBridgeService 단위 테스트', () => {
             );
         });
 
+        it('Given: /tf 토픽 메시지가 수신되었을 때, When: 브릿지 핸들러가 동작하면, Then: TF 변환 맵으로 변환되어 ViewportController.pushTelemetryFrame으로 주입되어야 한다.', () => {
+            bridgeService.start('ws://localhost:9090');
+            const tfCallback = topicCallbacks.get('/tf')!;
+
+            const rosTfMsg = {
+                transforms: [
+                    {
+                        child_frame_id: 'amr_01',
+                        transform: {
+                            translation: { x: 1.5, y: 2.0, z: 0.0 },
+                            rotation: { x: 0, y: 0, z: 0, w: 1 },
+                        },
+                    },
+                ],
+            };
+
+            tfCallback(rosTfMsg);
+
+            expect(mockViewportController.pushTelemetryFrame).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    jointPositions: {},
+                    tfTransforms: {
+                        amr_01: {
+                            position: [1.5, 2.0, 0.0],
+                            rotation: [0, 0, 0, 1],
+                        },
+                    },
+                    timestamp: expect.any(Number),
+                }),
+            );
+        });
+
         it('Given: /safety/estop 토픽 메시지가 수신되었을 때, When: 브릿지 핸들러가 동작하면, Then: 불리언 값이 ViewportController.setSafetyState로 전달되어야 한다.', () => {
             bridgeService.start('ws://localhost:9090');
             const estopCallback = topicCallbacks.get('/safety/estop')!;
 
-            // When
             estopCallback({ data: true });
 
-            // Then
             expect(mockViewportController.setSafetyState).toHaveBeenCalledWith(true);
         });
 
@@ -102,13 +126,21 @@ describe('TelemetryBridgeService 단위 테스트', () => {
             bridgeService.start('ws://localhost:9090');
             const jointCallback = topicCallbacks.get('/joint_states')!;
 
-            // name과 position 길이가 다른 비정상 데이터
             const malformedMsg = {
                 name: ['joint_1', 'joint_2'],
                 position: [0.78],
             };
 
             expect(() => jointCallback(malformedMsg)).not.toThrow();
+            expect(mockViewportController.pushTelemetryFrame).not.toHaveBeenCalled();
+        });
+
+        it('Given: transforms 배열이 없는 유효하지 않은 TF 메시지가 수신될 때, When: 핸들러가 실행되면, Then: 크래시 없이 안전하게 무시되어야 한다.', () => {
+            bridgeService.start('ws://localhost:9090');
+            const tfCallback = topicCallbacks.get('/tf')!;
+
+            expect(() => tfCallback(null)).not.toThrow();
+            expect(() => tfCallback({})).not.toThrow();
             expect(mockViewportController.pushTelemetryFrame).not.toHaveBeenCalled();
         });
 

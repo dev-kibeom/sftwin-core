@@ -1,11 +1,14 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three-stdlib';
 import { VramResourceManager } from './vram_resource_manager';
+import { SampleModelFactory } from '../shared/factories/sample_model_factory';
 import { BaseSystemException } from '../shared/exceptions/base_system_exception';
 import { GlobalErrorCode } from '../shared/exceptions/global_error_code';
 
 export class AssetLoaderManager {
     private readonly maxCapacity: number;
     private lruCache: Map<string, THREE.Object3D> = new Map();
+    private gltfLoader: GLTFLoader = new GLTFLoader();
 
     constructor(maxCapacity: number = 20) {
         this.maxCapacity = maxCapacity;
@@ -15,9 +18,6 @@ export class AssetLoaderManager {
         return this.lruCache.size;
     }
 
-    /**
-     * 3D CAD/GLTF 에셋 로드 및 LRU 캐시 관리
-     */
     public async loadAsset(assetId: string, url: string): Promise<THREE.Object3D> {
         if (!assetId || !url || typeof assetId !== 'string' || typeof url !== 'string') {
             throw BaseSystemException.fromErrorCode(
@@ -30,7 +30,6 @@ export class AssetLoaderManager {
         // 1. Cache Hit
         if (this.lruCache.has(assetId)) {
             const cached = this.lruCache.get(assetId)!;
-            // LRU 갱신: 재배치
             this.lruCache.delete(assetId);
             this.lruCache.set(assetId, cached);
             return cached.clone();
@@ -38,20 +37,17 @@ export class AssetLoaderManager {
 
         // 2. Cache Miss: 비동기 로드 시도
         try {
-            const model = await this.fetchModel(url);
+            const model = await this.fetchModel(url, assetId);
             model.name = assetId;
 
             this.putCache(assetId, model);
             return model.clone();
         } catch (_err: unknown) {
-            // 3. 5.2절 에러 규격: CAD 로드 실패 시 Fallback Mesh 생성
+            // CAD 로드 실패 시 Fallback Wireframe Mesh 반환
             return this.createFallbackMesh(assetId);
         }
     }
 
-    /**
-     * 개별 에셋 GPU 해제 및 캐시 제거
-     */
     public disposeAsset(assetId: string): void {
         if (this.lruCache.has(assetId)) {
             const object = this.lruCache.get(assetId)!;
@@ -60,9 +56,6 @@ export class AssetLoaderManager {
         }
     }
 
-    /**
-     * 캐시 전체 해제
-     */
     public clearCache(): void {
         this.lruCache.forEach((object) => {
             VramResourceManager.disposeObject(object);
@@ -70,9 +63,6 @@ export class AssetLoaderManager {
         this.lruCache.clear();
     }
 
-    /**
-     * 5.2절 Fallback Mesh: 붉은색 와이어프레임 Bounding Box
-     */
     private createFallbackMesh(assetId: string): THREE.Mesh {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshBasicMaterial({
@@ -89,9 +79,6 @@ export class AssetLoaderManager {
         return fallbackMesh;
     }
 
-    /**
-     * LRU 캐시 적재 및 용량 초과 관리
-     */
     private putCache(key: string, value: THREE.Object3D): void {
         if (this.lruCache.has(key)) {
             this.lruCache.delete(key);
@@ -105,11 +92,32 @@ export class AssetLoaderManager {
     }
 
     /**
-     * 내부 모델 fetcher (확장 및 모킹 대상)
+     * 외부 GLTF 파일 파싱 또는 내장 샘플 팩토리 로딩
      */
-    protected async fetchModel(url: string): Promise<THREE.Object3D> {
-        const group = new THREE.Group();
-        group.userData = { sourceUrl: url };
-        return group;
+    protected async fetchModel(url: string, assetId: string): Promise<THREE.Object3D> {
+        if (url.startsWith('sample://')) {
+            const type = url.replace('sample://', '');
+            switch (type) {
+                case 'amr':
+                    return SampleModelFactory.createAmr(assetId);
+                case 'conveyor':
+                    return SampleModelFactory.createConveyor(assetId);
+                case 'cnc':
+                case 'cnc_machine':
+                    return SampleModelFactory.createCncMachine(assetId);
+                case 'robot_arm':
+                default:
+                    return SampleModelFactory.createRobotArm(assetId);
+            }
+        }
+
+        return new Promise((resolve, reject) => {
+            this.gltfLoader.load(
+                url,
+                (gltf) => resolve(gltf.scene),
+                undefined,
+                (error) => reject(error)
+            );
+        });
     }
 }

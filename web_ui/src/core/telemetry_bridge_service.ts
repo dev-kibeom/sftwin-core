@@ -2,6 +2,7 @@ import { RosWebSocketClient } from './ros_websocket_client';
 import { ThreeViewportController } from './three_viewport_controller';
 import { BaseSystemException } from '../shared/exceptions/base_system_exception';
 import { GlobalErrorCode } from '../shared/exceptions/global_error_code';
+import { TfTransformDto } from '../shared/types/telemetry';
 
 export interface RosJointStateMsg {
     name?: string[];
@@ -11,6 +12,17 @@ export interface RosJointStateMsg {
 
 export interface RosEstopMsg {
     data?: boolean;
+    [key: string]: any;
+}
+
+export interface RosTfMsg {
+    transforms?: Array<{
+        child_frame_id?: string;
+        transform?: {
+            translation?: { x: number; y: number; z: number };
+            rotation?: { x: number; y: number; z: number; w: number };
+        };
+    }>;
     [key: string]: any;
 }
 
@@ -39,9 +51,6 @@ export class TelemetryBridgeService {
         this.defaultAssetId = assetId;
     }
 
-    /**
-     * WebSocket 연결 시작 및 주요 토픽 일괄 구독 등록
-     */
     public start(wsUrl: string): void {
         this.wsClient.connect(wsUrl);
 
@@ -49,7 +58,7 @@ export class TelemetryBridgeService {
             this.handleJointStates(this.defaultAssetId, msg);
         });
 
-        this.wsClient.subscribe('/tf', (msg: any) => {
+        this.wsClient.subscribe('/tf', (msg: RosTfMsg) => {
             this.handleTfTransforms(msg);
         });
 
@@ -58,9 +67,6 @@ export class TelemetryBridgeService {
         });
     }
 
-    /**
-     * 특정 assetId 대상 ROS JointState 메시지 파싱 및 뷰포트 전달
-     */
     private handleJointStates(assetId: string, msg: RosJointStateMsg): void {
         if (
             !msg ||
@@ -78,7 +84,7 @@ export class TelemetryBridgeService {
         }
 
         this.viewportController.pushTelemetryFrame({
-            timestamp: Date.now(),
+            timestamp: performance.now(),
             jointPositions: {
                 [assetId]: joints,
             },
@@ -86,10 +92,30 @@ export class TelemetryBridgeService {
         });
     }
 
-    private handleTfTransforms(msg: any): void {
-        if (!msg || !msg.transforms) {
+    private handleTfTransforms(msg: RosTfMsg): void {
+        if (!msg || !Array.isArray(msg.transforms) || msg.transforms.length === 0) {
             return;
         }
+
+        const tfTransforms: Record<string, TfTransformDto> = {};
+        for (const tf of msg.transforms) {
+            const frameId = tf.child_frame_id;
+            const t = tf.transform?.translation;
+            const r = tf.transform?.rotation;
+
+            if (frameId && t && r) {
+                tfTransforms[frameId] = {
+                    position: [t.x ?? 0, t.y ?? 0, t.z ?? 0],
+                    rotation: [r.x ?? 0, r.y ?? 0, r.z ?? 0, r.w ?? 1],
+                };
+            }
+        }
+
+        this.viewportController.pushTelemetryFrame({
+            timestamp: performance.now(),
+            jointPositions: {},
+            tfTransforms,
+        });
     }
 
     private handleSafetyEstop(msg: RosEstopMsg): void {

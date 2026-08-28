@@ -32,7 +32,7 @@ describe('TelemetryRenderLoop 단위 테스트', () => {
             mockRenderer,
             mockScene,
             mockCamera,
-            50, // bufferDelayMs = 50ms
+            50,
         );
     });
 
@@ -65,7 +65,7 @@ describe('TelemetryRenderLoop 단위 테스트', () => {
             expect(cancelSpy).toHaveBeenCalled();
         });
 
-        it('Given: 텔레메트리 프레임이 버퍼에 적재되어 있을 때, When: tick()이 호출되면, Then: 딜레이 오프셋(50ms)이 반영된 시점으로 interpolate를 수행하고 SceneGraph 업데이트 및 Three.js 렌더를 수행해야 한다.', () => {
+        it('Given: 텔레메트리 프레임이 버퍼에 적재되어 있을 때, When: tick()이 호출되면, Then: 딜레이 오프셋(50ms)이 반영된 시점으로 interpolate를 수행하고 Joint 및 TF 변환을 씬에 반영해야 한다.', () => {
             const interpolateSpy = vi.spyOn(ringBuffer, 'interpolate').mockReturnValue({
                 timestamp: 950,
                 jointPositions: {
@@ -80,13 +80,16 @@ describe('TelemetryRenderLoop 단위 테스트', () => {
             });
 
             const updateJointsSpy = vi.spyOn(sceneGraphManager, 'updateJoints');
+            const updatePoseSpy = vi.spyOn(sceneGraphManager, 'updatePose');
 
-            // When: currentTime = 1000ms 호출 시 targetTime은 1000 - 50 = 950ms
             renderLoop.tick(1000);
 
-            // Then
             expect(interpolateSpy).toHaveBeenCalledWith(950);
             expect(updateJointsSpy).toHaveBeenCalledWith('robot_01', { joint_1: 0.5 });
+            expect(updatePoseSpy).toHaveBeenCalledWith('robot_01', {
+                position: [1, 2, 3],
+                rotation: [0, 0, 0, 1],
+            });
             expect(mockRenderer.render).toHaveBeenCalledWith(mockScene, mockCamera);
         });
     });

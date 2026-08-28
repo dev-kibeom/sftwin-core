@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { OrbitControls } from 'three-stdlib';
 import { TransformRingBuffer } from './transform_ring_buffer';
 import { SceneGraphManager } from './scene_graph_manager';
 import { BaseSystemException } from '../shared/exceptions/base_system_exception';
@@ -11,6 +12,7 @@ export class TelemetryRenderLoop {
     private readonly scene: THREE.Scene;
     private readonly camera: THREE.Camera;
     private readonly bufferDelayMs: number;
+    private readonly controls: OrbitControls | null;
 
     private running: boolean = false;
     private animationFrameId: number | null = null;
@@ -22,6 +24,7 @@ export class TelemetryRenderLoop {
         scene: THREE.Scene,
         camera: THREE.Camera,
         bufferDelayMs: number = 50,
+        controls?: OrbitControls | null, // 선택적 매개변수로 추가
     ) {
         if (!ringBuffer || !sceneGraphManager || !renderer || !scene || !camera) {
             throw BaseSystemException.fromErrorCode(
@@ -37,15 +40,13 @@ export class TelemetryRenderLoop {
         this.scene = scene;
         this.camera = camera;
         this.bufferDelayMs = bufferDelayMs;
+        this.controls = controls ?? null;
     }
 
     public isActive(): boolean {
         return this.running;
     }
 
-    /**
-     * 렌더 루프 시작
-     */
     public start(): void {
         if (this.running) {
             return;
@@ -65,9 +66,6 @@ export class TelemetryRenderLoop {
         this.animationFrameId = window.requestAnimationFrame(loop);
     }
 
-    /**
-     * 렌더 루프 정지
-     */
     public stop(): void {
         if (!this.running) {
             return;
@@ -80,22 +78,29 @@ export class TelemetryRenderLoop {
         }
     }
 
-    /**
-     * 단일 프레임 틱 연산 및 렌더링
-     */
     public tick(currentTime: number): void {
         const targetTime = currentTime - this.bufferDelayMs;
         const interpolatedFrame = this.ringBuffer.interpolate(targetTime);
 
         if (interpolatedFrame) {
-            // 1. 에셋별 조인트 각도 반영 (멀티 로봇 격리 보장)
+            // 1. 에셋별 조인트 각도 반영
             if (interpolatedFrame.jointPositions) {
                 Object.entries(interpolatedFrame.jointPositions).forEach(([assetId, joints]) => {
                     this.sceneGraphManager.updateJoints(assetId, joints);
                 });
             }
 
-            // 2. 에셋별 베이스 TF 이동/회전 반영 (필요 시 확장)
+            // 2. 에셋별 베이스 TF 이동/회전 반영
+            if (interpolatedFrame.tfTransforms) {
+                Object.entries(interpolatedFrame.tfTransforms).forEach(([assetId, tf]) => {
+                    this.sceneGraphManager.updatePose(assetId, tf);
+                });
+            }
+        }
+
+        // OrbitControls 댐핑 감속 애니메이션 갱신
+        if (this.controls) {
+            this.controls.update();
         }
 
         this.renderer.render(this.scene, this.camera);

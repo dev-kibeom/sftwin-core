@@ -1,5 +1,3 @@
-import { Vector3Dto, QuaternionDto } from './geometry';
-
 export interface TfTransformDto {
     position: [number, number, number];
     rotation: [number, number, number, number];

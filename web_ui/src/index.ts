@@ -7,6 +7,7 @@ export type { RosPoseDto } from './core/scene_graph_manager';
 export { TransformRingBuffer } from './core/transform_ring_buffer';
 export { TelemetryRenderLoop } from './core/telemetry_render_loop';
 export { ThreeViewportController } from './core/three_viewport_controller';
+export { SampleModelFactory } from './shared/factories/sample_model_factory';
 
 // 공통 기하 및 텔레메트리 타입
 export type { Vector3Dto, QuaternionDto } from './shared/types/geometry';

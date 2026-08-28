@@ -37,9 +37,6 @@ export class TransformRingBuffer {
         this.size = 0;
     }
 
-    /**
-     * 고속 텔레메트리 프레임 삽입 (용량 초과 시 Drop Oldest 정책)
-     */
     public push(frame: TelemetryFrame): void {
         if (!frame || !Number.isFinite(frame.timestamp)) {
             throw BaseSystemException.fromErrorCode(
@@ -50,7 +47,6 @@ export class TransformRingBuffer {
         }
 
         if (this.size === this.capacity) {
-            // Drop Oldest: 버퍼가 가득 찬 경우 head를 전진시켜 가장 오래된 데이터를 덮어씀
             this.buffer[this.tail] = frame;
             this.tail = (this.tail + 1) % this.capacity;
             this.head = (this.head + 1) % this.capacity;
@@ -61,9 +57,6 @@ export class TransformRingBuffer {
         }
     }
 
-    /**
-     * 임의 시점(targetTime)에 대한 Joint/TF Slerp & Lerp 보간
-     */
     public interpolate(targetTime: number): TelemetryFrame | null {
         if (this.size === 0) {
             return null;
@@ -72,7 +65,6 @@ export class TransformRingBuffer {
         const firstFrame = this.getFrameAt(0);
         const lastFrame = this.getFrameAt(this.size - 1);
 
-        // 타겟 시점이 버퍼 내 범위 밖인 경우 경계 프레임 반환
         if (targetTime <= firstFrame.timestamp) {
             return this.cloneFrame(firstFrame);
         }
@@ -80,7 +72,6 @@ export class TransformRingBuffer {
             return this.cloneFrame(lastFrame);
         }
 
-        // 타겟 시점을 포함하는 인접 두 프레임 검색 (f1.timestamp <= targetTime <= f2.timestamp)
         let f1 = firstFrame;
         let f2 = lastFrame;
 
@@ -105,10 +96,27 @@ export class TransformRingBuffer {
     }
 
     private cloneFrame(frame: TelemetryFrame): TelemetryFrame {
+        const clonedJoints: Record<string, Record<string, number>> = {};
+        if (frame.jointPositions) {
+            for (const [k, v] of Object.entries(frame.jointPositions)) {
+                clonedJoints[k] = { ...v };
+            }
+        }
+
+        const clonedTf: Record<string, TfTransformDto> = {};
+        if (frame.tfTransforms) {
+            for (const [k, v] of Object.entries(frame.tfTransforms)) {
+                clonedTf[k] = {
+                    position: [...v.position],
+                    rotation: [...v.rotation],
+                };
+            }
+        }
+
         return {
             timestamp: frame.timestamp,
-            jointPositions: { ...frame.jointPositions },
-            tfTransforms: JSON.parse(JSON.stringify(frame.tfTransforms)),
+            jointPositions: clonedJoints,
+            tfTransforms: clonedTf,
         };
     }
 
@@ -118,7 +126,6 @@ export class TransformRingBuffer {
         alpha: number,
         targetTime: number,
     ): TelemetryFrame {
-        // 1. 에셋별 Joint Positions 선형 보간 (Lerp)
         const jointPositions: Record<string, Record<string, number>> = {};
         const allAssetKeys = new Set([
             ...Object.keys(f1.jointPositions || {}),
@@ -141,7 +148,6 @@ export class TransformRingBuffer {
             });
         });
 
-        // 2. TF Transforms (Translation Lerp + Rotation Slerp)
         const tfTransforms: Record<string, TfTransformDto> = {};
         const allTfKeys = new Set([
             ...Object.keys(f1.tfTransforms || {}),
@@ -153,12 +159,10 @@ export class TransformRingBuffer {
             const tf2 = f2.tfTransforms?.[key];
 
             if (tf1 && tf2) {
-                // Translation Lerp
                 const v1 = new THREE.Vector3(...tf1.position);
                 const v2 = new THREE.Vector3(...tf2.position);
                 const vInterp = new THREE.Vector3().lerpVectors(v1, v2, alpha);
 
-                // Rotation Slerp
                 const q1 = new THREE.Quaternion(...tf1.rotation);
                 const q2 = new THREE.Quaternion(...tf2.rotation);
                 const qInterp = new THREE.Quaternion().slerpQuaternions(q1, q2, alpha);
