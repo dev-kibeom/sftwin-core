@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any
 
 from shared.dtos.global_response_dto import GlobalResponseDto
@@ -13,7 +14,7 @@ class BaseSystemException(Exception):
         error_code: GlobalErrorCode = GlobalErrorCode.ERR_COMMON_INTERNAL_ERROR,
         message: str | None = None,
         status_code: int | None = None,
-        details: dict[str, Any] | None = None,
+        details: dict[str, Any] | Sequence[Any] | None = None,
     ):
         metadata = ERROR_CODE_METADATA.get(error_code, {})
 
