@@ -278,11 +278,29 @@ class ResumeRecoveryRequestSchema(BaseModel):
 
 
 # --- WebRTC Signaling Schema ---
+# REST 엔드포인트 전용 스키마 (필수값 검증 보장)
+class WebRtcSdpOfferRequestSchema(BaseModel):
+    peer_id: str = Field(..., min_length=1, description="피어 식별자")
+    sdp_offer: str = Field(..., min_length=1, description="SDP Offer 문자열")
+
+
+class WebRtcIceCandidateRequestSchema(BaseModel):
+    peer_id: str = Field(..., min_length=1, description="피어 식별자")
+    candidate_json: str = Field(
+        ..., min_length=1, description="ICE Candidate JSON 문자열"
+    )
+
+
+class WebRtcCloseSessionRequestSchema(BaseModel):
+    peer_id: str = Field(..., min_length=1, description="종료할 피어 식별자")
+
+
+# WebSocket / IPC 시그널링 메시지 전용 스키마
 class SignalingMessageSchema(BaseModel):
-    type: SignalingMessageType
-    peer_id: str = Field(..., min_length=1)
-    sdp: str | None = None
-    candidate: str | None = None
+    type: SignalingMessageType = Field(..., description="시그널링 메시지 유형")
+    peer_id: str = Field(..., min_length=1, description="피어 식별자")
+    sdp: str | None = Field(default=None, description="SDP 데이터")
+    candidate: str | None = Field(default=None, description="ICE candidate 데이터")
 
 
 # --- KPI Report Schemas ---
