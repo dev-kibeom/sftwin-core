@@ -6,6 +6,7 @@
 namespace sftwin::plugins::mujoco {
 
 TrajectoryPointDto MujocoDataMapper::to_trajectory_point(
+    const mjModel* m,
     const mjData* d,
     double time_sec,
     const std::string& asset_id,
@@ -23,11 +24,25 @@ TrajectoryPointDto MujocoDataMapper::to_trajectory_point(
     dto.asset_id = asset_id;
     dto.is_collided = is_collided;
 
-    if (d->qpos != nullptr) {
+    // Body 1(기본 모빌리티/엔드이펙터 대상)의 전역 3D 좌표 추출
+    if (m != nullptr && m->nbody > 1 && d->xpos != nullptr) {
+        dto.position_x = d->xpos[3 * 1 + 0];
+        dto.position_y = d->xpos[3 * 1 + 1];
+        dto.position_z = d->xpos[3 * 1 + 2];
+    } else if (d->qpos != nullptr && m != nullptr && m->nq >= 3) {
         dto.position_x = d->qpos[0];
+        dto.position_y = d->qpos[1];
+        dto.position_z = d->qpos[2];
     }
-    if (d->qvel != nullptr) {
-        dto.velocity = std::abs(d->qvel[0]);
+
+    // 전역 속도 크기(Norm) 계산
+    if (d->qvel != nullptr && m != nullptr && m->nv > 0) {
+        double vel_sq_sum = 0.0;
+        int count = std::min(m->nv, 3);
+        for (int i = 0; i < count; ++i) {
+            vel_sq_sum += (d->qvel[i] * d->qvel[i]);
+        }
+        dto.velocity = std::sqrt(vel_sq_sum);
     }
 
     return dto;

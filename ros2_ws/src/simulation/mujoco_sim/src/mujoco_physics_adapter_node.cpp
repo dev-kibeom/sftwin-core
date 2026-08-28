@@ -19,11 +19,15 @@ MujocoPhysicsAdapterNode::MujocoPhysicsAdapterNode(const rclcpp::NodeOptions& op
     this->declare_parameter<std::string>("broadcasting.base_frame_id", "world");
     this->declare_parameter<std::string>("broadcasting.tf_prefix", "sftwin_");
     this->declare_parameter<std::string>("broadcasting.joint_topic_name", "/joint_states");
+    this->declare_parameter<std::string>("broadcasting.telemetry_topic_name", "/telemetry/status");
+    this->declare_parameter<std::string>("broadcasting.detection_topic_name", "/vision/detections");
     this->declare_parameter<double>("broadcasting.publish_rate_hz", 50.0);
 
     this->get_parameter("broadcasting.base_frame_id", base_frame_id_);
     this->get_parameter("broadcasting.tf_prefix", tf_prefix_);
     this->get_parameter("broadcasting.joint_topic_name", joint_topic_name_);
+    this->get_parameter("broadcasting.telemetry_topic_name", telemetry_topic_name_);
+    this->get_parameter("broadcasting.detection_topic_name", detection_topic_name_);
     this->get_parameter("broadcasting.publish_rate_hz", publish_rate_hz_);
 
     sim_service_ = this->create_service<shared_interfaces::srv::SimulateScenario>(
@@ -41,6 +45,8 @@ MujocoPhysicsAdapterNode::MujocoPhysicsAdapterNode(const rclcpp::NodeOptions& op
         });
 
     joint_pub_ = this->create_publisher<sensor_msgs::msg::JointState>(joint_topic_name_, rclcpp::QoS(10));
+    telemetry_pub_ = this->create_publisher<std_msgs::msg::String>(telemetry_topic_name_, rclcpp::QoS(10));
+    detection_pub_ = this->create_publisher<std_msgs::msg::String>(detection_topic_name_, rclcpp::QoS(10));
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     auto timer_period = std::chrono::duration<double>(1.0 / publish_rate_hz_);
@@ -78,8 +84,9 @@ void MujocoPhysicsAdapterNode::handle_simulate_scenario(
                 }
             }
 
+            const mjModel* m = engine_wrapper_->get_model();
             const mjData* d = engine_wrapper_->get_data();
-            auto dto = mapper_.to_trajectory_point(d, current_time, request->scenario_id, is_collided);
+            auto dto = mapper_.to_trajectory_point(m, d, current_time, request->scenario_id, is_collided);
 
             shared_interfaces::msg::TrajectoryPoint point_msg;
             point_msg.time_sec = dto.time_sec;
@@ -142,6 +149,7 @@ void MujocoPhysicsAdapterNode::publish_simulation_state() {
 
     auto now_stamp = this->now();
 
+    // 1. Joint States 발행
     std::vector<std::string> joint_names;
     joint_names.reserve(m->njnt);
     for (int i = 0; i < m->njnt; ++i) {
@@ -156,10 +164,22 @@ void MujocoPhysicsAdapterNode::publish_simulation_state() {
     auto joint_state_msg = mapper_.to_ros2_joint_state(joint_names, positions, velocities, torques, now_stamp);
     joint_pub_->publish(joint_state_msg);
 
+    // 2. TF 변환 발행
     auto transforms = mapper_.to_ros2_tf(m, d, base_frame_id_, tf_prefix_, now_stamp);
     for (const auto& tf_msg : transforms) {
         tf_broadcaster_->sendTransform(tf_msg);
     }
+
+    // 3. Watchdog 텔레메트리 발행 (/telemetry/status)
+    std_msgs::msg::String telemetry_msg;
+    telemetry_msg.data = "{\"status\":\"RUNNING\",\"ncon\":" + std::to_string(d->ncon) +
+                         ",\"time\":" + std::to_string(d->time) + "}";
+    telemetry_pub_->publish(telemetry_msg);
+
+    // 4. 비전 감지 상태 발행 (/vision/detections)
+    std_msgs::msg::String detection_msg;
+    detection_msg.data = "{\"timestamp\":" + std::to_string(now_stamp.seconds()) + ",\"detections\":[]}";
+    detection_pub_->publish(detection_msg);
 }
 
 bool MujocoPhysicsAdapterNode::is_simulation_locked() const noexcept {

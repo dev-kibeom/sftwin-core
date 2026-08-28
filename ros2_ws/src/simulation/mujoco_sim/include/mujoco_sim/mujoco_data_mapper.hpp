@@ -1,4 +1,4 @@
-// ros2_ws/src/simulation/mujoco_sim/include/mujoco_sim/mujoco_data_mapper.hpp
+// ros2_ws/src/simulation/mujoco_sim/include/mujoco_data_mapper.hpp
 #pragma once
 
 #include <string>
@@ -27,6 +27,7 @@ public:
     ~MujocoDataMapper() = default;
 
     TrajectoryPointDto to_trajectory_point(
+        const mjModel* m,
         const mjData* d,
         double time_sec,
         const std::string& asset_id,

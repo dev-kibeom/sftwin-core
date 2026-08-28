@@ -106,7 +106,7 @@ TEST_F(MujocoPhysicsAdapterNodeTest, HandleSimulateScenario_RealTimePlaybackMode
     request->scenario_id = "SCENARIO_PLAYBACK_001";
     request->model_file_path = valid_xml_path_;
     request->dt_sec = 0.002;
-    request->max_duration_sec = 0.004; // 2 steps for fast testing
+    request->max_duration_sec = 0.004; // 2 steps
     request->real_time_playback = true;
 
     // When
@@ -161,4 +161,24 @@ TEST_F(MujocoPhysicsAdapterNodeTest, FailsafeEstopCallback_MsgReceived_LocksEngi
 
     // Then
     EXPECT_TRUE(node->is_simulation_locked());
+}
+
+TEST_F(MujocoPhysicsAdapterNodeTest, PublishSimulationState_RunningState_PublishesWithoutCrash) {
+    // Given
+    rclcpp::NodeOptions options;
+    auto node = std::make_shared<MujocoPhysicsAdapterNode>(options);
+    auto request = std::make_shared<shared_interfaces::srv::SimulateScenario::Request>();
+    auto response = std::make_shared<shared_interfaces::srv::SimulateScenario::Response>();
+
+    request->scenario_id = "SCENARIO_STATE_PUB_001";
+    request->model_file_path = valid_xml_path_;
+    request->dt_sec = 0.002;
+    request->max_duration_sec = 0.002;
+    request->real_time_playback = false;
+
+    node->handle_simulate_scenario(request, response);
+    ASSERT_TRUE(response->is_success);
+
+    // When & Then (joint_states, TF, telemetry/status, vision/detections 발행 검증)
+    EXPECT_NO_THROW(node->publish_simulation_state());
 }

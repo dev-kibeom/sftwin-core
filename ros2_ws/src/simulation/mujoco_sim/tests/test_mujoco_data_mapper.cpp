@@ -53,23 +53,28 @@ protected:
     }
 };
 
-TEST_F(MujocoDataMapperTest, ToTrajectoryPoint_ValidInputs_ReturnsMappedDto) {
+TEST_F(MujocoDataMapperTest, ToTrajectoryPoint_ValidInputs_ReturnsMappedDtoWith3DPosition) {
     // Given
     MujocoDataMapper mapper;
+    ASSERT_NE(model_, nullptr);
     ASSERT_NE(data_, nullptr);
     data_->time = 1.25;
     data_->qpos[0] = 0.5;
-    data_->qvel[0] = 1.0;
+    data_->qvel[0] = 1.5;
     std::string asset_id = "ROBOT_01";
     bool is_collided = false;
 
-    // When
-    auto dto = mapper.to_trajectory_point(data_.get(), 1.25, asset_id, is_collided);
+    // When (Updated signature: model_, data_, ...)
+    auto dto = mapper.to_trajectory_point(model_.get(), data_.get(), 1.25, asset_id, is_collided);
 
     // Then
     EXPECT_DOUBLE_EQ(dto.time_sec, 1.25);
     EXPECT_EQ(dto.asset_id, "ROBOT_01");
     EXPECT_FALSE(dto.is_collided);
+    EXPECT_DOUBLE_EQ(dto.position_x, 1.0);
+    EXPECT_DOUBLE_EQ(dto.position_y, 2.0);
+    EXPECT_DOUBLE_EQ(dto.position_z, 3.0);
+    EXPECT_NEAR(dto.velocity, 1.5, 1e-4);
 }
 
 TEST_F(MujocoDataMapperTest, ToRos2JointState_ValidInputs_ReturnsSerializedJointState) {
@@ -119,7 +124,7 @@ TEST_F(MujocoDataMapperTest, ToTrajectoryPoint_NullData_ThrowsInvalidInputExcept
 
     // When & Then
     EXPECT_THROW(
-        mapper.to_trajectory_point(nullptr, 0.0, "ROBOT_01", false),
+        mapper.to_trajectory_point(model_.get(), nullptr, 0.0, "ROBOT_01", false),
         GlobalExceptionHandler
     );
 }
