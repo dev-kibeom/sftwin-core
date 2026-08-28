@@ -63,13 +63,17 @@ describe('TelemetryBridgeService 단위 테스트', () => {
             // When
             jointCallback(rosJointMsg);
 
-            // Then
+            // Then: mockViewportController.pushTelemetryFrame으로 검증
             expect(mockViewportController.pushTelemetryFrame).toHaveBeenCalledWith(
                 expect.objectContaining({
                     jointPositions: {
-                        joint_1: 0.78,
-                        joint_2: -1.57,
+                        robot_arm: {
+                            joint_1: 0.78,
+                            joint_2: -1.57,
+                        },
                     },
+                    tfTransforms: {},
+                    timestamp: expect.any(Number),
                 }),
             );
         });

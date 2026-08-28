@@ -118,17 +118,27 @@ export class TransformRingBuffer {
         alpha: number,
         targetTime: number,
     ): TelemetryFrame {
-        // 1. Joint Positions 선형 보간
-        const jointPositions: Record<string, number> = {};
-        const allJointKeys = new Set([
+        // 1. 에셋별 Joint Positions 선형 보간 (Lerp)
+        const jointPositions: Record<string, Record<string, number>> = {};
+        const allAssetKeys = new Set([
             ...Object.keys(f1.jointPositions || {}),
             ...Object.keys(f2.jointPositions || {}),
         ]);
 
-        allJointKeys.forEach((key) => {
-            const val1 = f1.jointPositions?.[key] ?? 0;
-            const val2 = f2.jointPositions?.[key] ?? val1;
-            jointPositions[key] = val1 + alpha * (val2 - val1);
+        allAssetKeys.forEach((assetId) => {
+            const joints1 = f1.jointPositions?.[assetId] || {};
+            const joints2 = f2.jointPositions?.[assetId] || {};
+            const allJointNames = new Set([
+                ...Object.keys(joints1),
+                ...Object.keys(joints2),
+            ]);
+
+            jointPositions[assetId] = {};
+            allJointNames.forEach((jointName) => {
+                const val1 = joints1[jointName] ?? 0;
+                const val2 = joints2[jointName] ?? val1;
+                jointPositions[assetId][jointName] = val1 + alpha * (val2 - val1);
+            });
         });
 
         // 2. TF Transforms (Translation Lerp + Rotation Slerp)

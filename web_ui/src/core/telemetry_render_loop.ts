@@ -88,14 +88,14 @@ export class TelemetryRenderLoop {
         const interpolatedFrame = this.ringBuffer.interpolate(targetTime);
 
         if (interpolatedFrame) {
-            if (interpolatedFrame.tfTransforms) {
-                Object.keys(interpolatedFrame.tfTransforms).forEach((assetId) => {
-                    this.sceneGraphManager.updateJoints(
-                        assetId,
-                        interpolatedFrame.jointPositions || {},
-                    );
+            // 1. 에셋별 조인트 각도 반영 (멀티 로봇 격리 보장)
+            if (interpolatedFrame.jointPositions) {
+                Object.entries(interpolatedFrame.jointPositions).forEach(([assetId, joints]) => {
+                    this.sceneGraphManager.updateJoints(assetId, joints);
                 });
             }
+
+            // 2. 에셋별 베이스 TF 이동/회전 반영 (필요 시 확장)
         }
 
         this.renderer.render(this.scene, this.camera);

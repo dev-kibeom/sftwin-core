@@ -14,57 +14,60 @@ describe('TransformRingBuffer 단위 테스트', () => {
 
     describe('Happy Path: 삽입 및 순환 용량 관리 (Drop Oldest)', () => {
         it('Given: 프레임들이 순차적으로 push될 때, When: 버퍼 상태를 확인하면, Then: 버퍼 크기가 올바르게 증가하고 최신 프레임이 유지되어야 한다.', () => {
-            // Given
             const frame1: TelemetryFrame = {
                 timestamp: 1000,
-                jointPositions: { joint1: 0.1 },
-                tfTransforms: {
-                    base_link: {
-                        position: [1, 2, 3],
-                        rotation: [0, 0, 0, 1],
-                    },
+                jointPositions: {
+                    robot_arm: { joint1: 0.0, joint2: 1.0 },
                 },
+                tfTransforms: {},
             };
 
-            // When
-            ringBuffer.push(frame1);
+            const frame2: TelemetryFrame = {
+                timestamp: 2000,
+                jointPositions: {
+                    robot_arm: { joint1: 1.0, joint2: 2.0 },
+                },
+                tfTransforms: {},
+            };
 
-            // Then
-            expect(ringBuffer.getSize()).toBe(1);
+            ringBuffer.push(frame1);
+            ringBuffer.push(frame2);
+
+            expect(ringBuffer.getSize()).toBe(2);
             expect(ringBuffer.getCapacity()).toBe(128);
         });
 
         it('Given: 용량(capacity=4)을 초과하여 프레임이 인입될 때, When: 5개의 프레임을 push하면, Then: 가장 오래된 프레임이 버려지고(Drop Oldest) 버퍼 크기는 4로 유지되어야 한다.', () => {
-            // Given
             const smallBuffer = new TransformRingBuffer(4);
 
-            // When
             for (let i = 1; i <= 5; i++) {
                 smallBuffer.push({
                     timestamp: i * 1000,
-                    jointPositions: { joint1: i },
+                    jointPositions: {
+                        robot_arm: { joint1: i },
+                    },
                     tfTransforms: {},
                 });
             }
 
-            // Then
             expect(smallBuffer.getSize()).toBe(4);
             // 가장 오래된 t=1000은 버려지고, 최소값 질의 시 t=2000 프레임의 값이 반환되어야 함
             const interpolated = smallBuffer.interpolate(1000);
             expect(interpolated?.timestamp).toBe(2000);
-            expect(interpolated?.jointPositions.joint1).toBe(2);
+            expect(interpolated?.jointPositions.robot_arm.joint1).toBe(2);
         });
     });
 
     describe('Happy Path: 타임스탬프 기반 Slerp / Lerp 보간 검증', () => {
         it('Given: t1=1000과 t2=2000 두 프레임이 저장되어 있을 때, When: t=1500에 대해 interpolate를 호출하면, Then: 관절각, 위치(Lerp), 쿼터니언 회전(Slerp)이 정확히 50% 보간되어야 한다.', () => {
-            // Given
             const qStart = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 0);
             const qEnd = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2); // 90도 회전
 
             const frame1: TelemetryFrame = {
                 timestamp: 1000,
-                jointPositions: { joint1: 0.0, joint2: 10.0 },
+                jointPositions: {
+                    robot_arm: { joint1: 0.0, joint2: 10.0 },
+                },
                 tfTransforms: {
                     robot_arm: {
                         position: [0, 0, 0],
@@ -75,7 +78,9 @@ describe('TransformRingBuffer 단위 테스트', () => {
 
             const frame2: TelemetryFrame = {
                 timestamp: 2000,
-                jointPositions: { joint1: 1.0, joint2: 20.0 },
+                jointPositions: {
+                    robot_arm: { joint1: 1.0, joint2: 20.0 },
+                },
                 tfTransforms: {
                     robot_arm: {
                         position: [10, 20, 30],
@@ -95,8 +100,8 @@ describe('TransformRingBuffer 단위 테스트', () => {
             expect(result!.timestamp).toBe(1500);
 
             // 관절 선형 보간 확인
-            expect(result!.jointPositions.joint1).toBeCloseTo(0.5);
-            expect(result!.jointPositions.joint2).toBeCloseTo(15.0);
+            expect(result!.jointPositions.robot_arm.joint1).toBeCloseTo(0.5);
+            expect(result!.jointPositions.robot_arm.joint2).toBeCloseTo(15.0);
 
             // 위치 Lerp 확인
             expect(result!.tfTransforms.robot_arm.position[0]).toBeCloseTo(5);
@@ -113,19 +118,26 @@ describe('TransformRingBuffer 단위 테스트', () => {
         });
 
         it('Given: 버퍼 범위 밖의 타임스탬프가 주어졌을 때, When: interpolate를 호출하면, Then: 최소 경계 프레임 또는 최대 경계 프레임이 반환되어야 한다.', () => {
-            // Given
-            ringBuffer.push({ timestamp: 1000, jointPositions: { joint1: 1.0 }, tfTransforms: {} });
-            ringBuffer.push({ timestamp: 2000, jointPositions: { joint1: 2.0 }, tfTransforms: {} });
+            ringBuffer.push({
+                timestamp: 1000,
+                jointPositions: { robot_arm: { joint1: 1.0 } },
+                tfTransforms: {},
+            });
+            ringBuffer.push({
+                timestamp: 2000,
+                jointPositions: { robot_arm: { joint1: 2.0 } },
+                tfTransforms: {},
+            });
 
-            // When & Then (Underflow -> 최초 프레임)
+            // Underflow -> 최초 프레임
             const underflow = ringBuffer.interpolate(500);
             expect(underflow?.timestamp).toBe(1000);
-            expect(underflow?.jointPositions.joint1).toBe(1.0);
+            expect(underflow?.jointPositions.robot_arm.joint1).toBe(1.0);
 
-            // When & Then (Overflow -> 최신 프레임)
+            // Overflow -> 최신 프레임
             const overflow = ringBuffer.interpolate(3000);
             expect(overflow?.timestamp).toBe(2000);
-            expect(overflow?.jointPositions.joint1).toBe(2.0);
+            expect(overflow?.jointPositions.robot_arm.joint1).toBe(2.0);
         });
     });
 

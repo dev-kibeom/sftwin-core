@@ -80,6 +80,21 @@ export class SceneGraphManager {
         });
     }
 
+    public updateAllJoints(jointValues: Record<string, number>): void {
+        if (!jointValues || this.assetNodes.size === 0) {
+            return;
+        }
+
+        this.assetNodes.forEach((rootModel) => {
+            Object.entries(jointValues).forEach(([jointName, angleRad]) => {
+                const jointNode = rootModel.getObjectByName(jointName);
+                if (jointNode) {
+                    jointNode.rotation.z = angleRad;
+                }
+            });
+        });
+    }
+
     /**
      * 에셋 언마운트 및 GPU 자원 해제
      */

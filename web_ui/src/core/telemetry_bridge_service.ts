@@ -17,6 +17,7 @@ export interface RosEstopMsg {
 export class TelemetryBridgeService {
     private readonly wsClient: RosWebSocketClient;
     private readonly viewportController: ThreeViewportController;
+    private defaultAssetId: string = 'robot_arm';
 
     constructor(
         wsClient: RosWebSocketClient,
@@ -34,6 +35,10 @@ export class TelemetryBridgeService {
         this.viewportController = viewportController;
     }
 
+    public setDefaultAssetId(assetId: string): void {
+        this.defaultAssetId = assetId;
+    }
+
     /**
      * WebSocket 연결 시작 및 주요 토픽 일괄 구독 등록
      */
@@ -41,7 +46,7 @@ export class TelemetryBridgeService {
         this.wsClient.connect(wsUrl);
 
         this.wsClient.subscribe('/joint_states', (msg: RosJointStateMsg) => {
-            this.handleJointStates(msg);
+            this.handleJointStates(this.defaultAssetId, msg);
         });
 
         this.wsClient.subscribe('/tf', (msg: any) => {
@@ -54,9 +59,9 @@ export class TelemetryBridgeService {
     }
 
     /**
-     * ROS /joint_states 메시지 파싱 및 뷰포트 전달
+     * 특정 assetId 대상 ROS JointState 메시지 파싱 및 뷰포트 전달
      */
-    private handleJointStates(msg: RosJointStateMsg): void {
+    private handleJointStates(assetId: string, msg: RosJointStateMsg): void {
         if (
             !msg ||
             !Array.isArray(msg.name) ||
@@ -67,31 +72,26 @@ export class TelemetryBridgeService {
             return;
         }
 
-        const jointPositions: Record<string, number> = {};
+        const joints: Record<string, number> = {};
         for (let i = 0; i < msg.name.length; i++) {
-            jointPositions[msg.name[i]] = msg.position[i];
+            joints[msg.name[i]] = msg.position[i];
         }
 
         this.viewportController.pushTelemetryFrame({
             timestamp: Date.now(),
-            jointPositions,
+            jointPositions: {
+                [assetId]: joints,
+            },
             tfTransforms: {},
         });
     }
 
-    /**
-     * ROS /tf 트랜스폼 메시지 파싱 (필요 시 확장)
-     */
     private handleTfTransforms(msg: any): void {
         if (!msg || !msg.transforms) {
             return;
         }
-        // TF 메시지 파싱 처리 확장 지점
     }
 
-    /**
-     * ROS /safety/estop 안전 상태 파싱 및 뷰포트 전달
-     */
     private handleSafetyEstop(msg: RosEstopMsg): void {
         if (!msg || typeof msg.data !== 'boolean') {
             return;
@@ -100,9 +100,6 @@ export class TelemetryBridgeService {
         this.viewportController.setSafetyState(msg.data);
     }
 
-    /**
-     * 서비스 정지 및 WebSocket 연결 해제
-     */
     public stop(): void {
         this.wsClient.disconnect();
     }
