@@ -1,64 +1,79 @@
-"""
-===============================================================================
-[File Name] asset_router.py
-[Location ] /plugins/fast_api/routers/asset_router.py
-[Description]
- - 스마트 팩토리 설비/로봇 자산 메타데이터 신규 등록 및 조회를 위한 Inbound Router입니다.
-===============================================================================
-"""
-
+# File: plugins/fast_api/routers/asset_router.py
+import asyncio
 from typing import Annotated
 
-# 1. core application 및 DTO 참조
-from digital_twin.asset_library.application.register_asset.register_asset_usecase import (
-    ManageAssetUseCase,
+from digital_twin.contracts.dtos.asset_dto import AssetDto
+from digital_twin.contracts.ports.inbound.i_digital_twin_command_facade import (
+    IDigitalTwinCommandFacade,
+)
+from digital_twin.contracts.ports.inbound.i_digital_twin_query_facade import (
+    IDigitalTwinQueryFacade,
 )
 from fastapi import APIRouter, Depends, status
+from shared.context.user_context import UserContext
+from shared.dtos.global_response_dto import GlobalResponseDto
 
-from digital_twin.contracts.dtos.asset_dto import AssetDto
-from core.src.shared.dtos.global_response_dto import GlobalResponseDto
-from shared.context.user_context import UserContext, get_current_user
+from plugins.fast_api.dependencies.auth import get_current_user_context
+from plugins.fast_api.dependencies.facades import (
+    get_digital_twin_command_facade,
+    get_digital_twin_query_facade,
+)
+from plugins.fast_api.schemas.enums import ApiTag
+from plugins.fast_api.schemas.requests import RegisterAssetRequestSchema
 
-# 2. plugins/fast_api 전용 의존성 주입자 참조
-from plugins.fast_api.dependencies import get_manage_asset_usecase
+# Annotated Dependency Type Aliases
+CurrentUserContext = Annotated[UserContext, Depends(get_current_user_context)]
+DtCommandFacade = Annotated[
+    IDigitalTwinCommandFacade, Depends(get_digital_twin_command_facade)
+]
+DtQueryFacade = Annotated[
+    IDigitalTwinQueryFacade, Depends(get_digital_twin_query_facade)
+]
 
-router = APIRouter(prefix="/api/v1/assets", tags=["Assets"])
+router = APIRouter(prefix="/assets", tags=[ApiTag.ASSET_LIBRARY.value])
 
 
 @router.post(
     "",
-    response_model=GlobalResponseDto[dict],
-    status_code=status.HTTP_201_CREATED,
-    summary="[Step 2] 설비 자산 신규 등록",
-    description="스마트 팩토리 솔루션 도입을 위해 이종 제조사의 설비 라이브러리 메타데이터를 등록합니다.",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+    summary="신규 설비 자산(AAS/CAD/기구학) 등록",
 )
 async def register_asset(
-    asset_dto: AssetDto,
-    ctx: Annotated[UserContext, Depends(get_current_user)],
-    use_case: Annotated[ManageAssetUseCase, Depends(get_manage_asset_usecase)],
-) -> GlobalResponseDto[dict]:
-    """자산 등록 유스케이스 실행"""
-    asset_id = use_case.register_asset(asset_dto=asset_dto, ctx=ctx)
+    schema: RegisterAssetRequestSchema,
+    ctx: CurrentUserContext,
+    command_facade: DtCommandFacade,
+) -> GlobalResponseDto[str]:
+    """1차 방어선 검증 통과 후 AssetDto를 조립하여 Command Facade로 에셋 등록을 위임합니다."""
+    asset_dto = AssetDto(
+        asset_id="",
+        company_id=ctx.company_id,
+        asset_name=schema.asset_name,
+        asset_type=schema.asset_type,
+        cad_file_path=schema.cad_file_path,
+        kinematics_metadata=schema.kinematics_metadata,
+        submodels=schema.submodels,
+    )
+
+    asset_id = await asyncio.to_thread(command_facade.register_asset, asset_dto, ctx)
     return GlobalResponseDto.success_response(
-        data={"asset_id": asset_id},
-        message="Asset successfully registered.",
+        data=asset_id, message="Asset registered successfully."
     )
 
 
 @router.get(
     "/{asset_id}",
-    response_model=GlobalResponseDto[AssetDto],
-    summary="설비 자산 단건 조회",
-    description="등록된 자산의 메타데이터 및 기구학 정보를 단건 조회합니다.",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+    summary="자산 단건 상세 정보 조회",
 )
 async def get_asset(
     asset_id: str,
-    ctx: Annotated[UserContext, Depends(get_current_user)],
-    use_case: Annotated[ManageAssetUseCase, Depends(get_manage_asset_usecase)],
+    ctx: CurrentUserContext,
+    query_facade: DtQueryFacade,
 ) -> GlobalResponseDto[AssetDto]:
-    """자산 조회 유스케이스 실행"""
-    result = use_case.get_asset(asset_id=asset_id, ctx=ctx)
+    """Query Facade로 자산 단건 조회를 위임합니다."""
+    asset_dto = await asyncio.to_thread(query_facade.get_asset, asset_id, ctx)
     return GlobalResponseDto.success_response(
-        data=result,
-        message="Asset information retrieved successfully.",
+        data=asset_dto, message="Asset retrieved successfully."
     )

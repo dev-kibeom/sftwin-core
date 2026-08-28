@@ -115,7 +115,6 @@ class TestCleanArchitectureAndCodeStandards(unittest.TestCase):
             "KeyError",
             "IndexError",
             "AttributeError",
-            "NotImplementedError",
             "FileNotFoundError",
             "IOError",
             "OSError",
