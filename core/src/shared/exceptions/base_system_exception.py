@@ -39,7 +39,7 @@ class BaseSystemException(Exception):
         cls,
         error_code: GlobalErrorCode,
         custom_message: str | None = None,
-        details: dict[str, Any] | None = None,
+        details: dict[str, Any] | Sequence[Any] | None = None,
     ) -> "BaseSystemException":
         meta = ERROR_CODE_METADATA.get(
             error_code,

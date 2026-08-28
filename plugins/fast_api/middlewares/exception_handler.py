@@ -1,15 +1,24 @@
-# File: plugins/fast_api/middlewares/global_exception_handler.py
+# File: plugins/fast_api/middlewares/exception_handler.py
 from dataclasses import asdict
 
 import jwt
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from shared.context.log_context import current_log_context
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 from shared.exceptions.global_exception_handler import GlobalExceptionHandler
 
-from plugins.fast_api.schemas.enums import HttpHeaderKey
+
+def _resolve_trace_id(request: Request, fallback_prefix: str) -> str:
+    """현재 ContextVar 또는 request.state에서 Trace ID를 획득하고, 없으면 fallback 반환"""
+    ctx = current_log_context.get()
+    if ctx and ctx.trace_id:
+        return ctx.trace_id
+    if hasattr(request.state, "correlation_id"):
+        return request.state.correlation_id
+    return fallback_prefix
 
 
 def register_exception_handlers(
@@ -23,7 +32,7 @@ def register_exception_handlers(
     async def base_system_exception_handler(
         request: Request, exc: BaseSystemException
     ) -> JSONResponse:
-        trace_id = request.headers.get(HttpHeaderKey.X_TRACE_ID.value, "TRC-EXCEPTION")
+        trace_id = _resolve_trace_id(request, "TRC-EXCEPTION")
         safe_dto, status_code = handler.handle_base_system_exception(
             exc, trace_id=trace_id
         )
@@ -33,12 +42,10 @@ def register_exception_handlers(
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        trace_id = request.headers.get(HttpHeaderKey.X_TRACE_ID.value, "TRC-VALIDATION")
-        # Validation 에러는 BaseSystemException으로 래핑하여 코어 핸들러로 위임
-        wrapped_exc = BaseSystemException(
-            error_code=GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
-            message="Invalid request body or parameters.",
-            status_code=status.HTTP_400_BAD_REQUEST,
+        trace_id = _resolve_trace_id(request, "TRC-VALIDATION")
+        # ERROR_CODE_METADATA에 정의된 기본 status(400) 및 msg를 자동으로 적용
+        wrapped_exc = BaseSystemException.from_error_code(
+            GlobalErrorCode.ERR_COMMON_INVALID_INPUT,
             details=exc.errors(),
         )
         safe_dto, status_code = handler.handle_base_system_exception(
@@ -50,11 +57,10 @@ def register_exception_handlers(
     async def jwt_expired_exception_handler(
         request: Request, exc: jwt.ExpiredSignatureError
     ) -> JSONResponse:
-        trace_id = request.headers.get(HttpHeaderKey.X_TRACE_ID.value, "TRC-AUTH")
-        wrapped_exc = BaseSystemException(
-            error_code=GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
-            message="Authentication token has expired.",
-            status_code=status.HTTP_401_UNAUTHORIZED,
+        trace_id = _resolve_trace_id(request, "TRC-AUTH")
+        wrapped_exc = BaseSystemException.from_error_code(
+            GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
+            custom_message="Authentication token has expired.",
         )
         safe_dto, status_code = handler.handle_base_system_exception(
             wrapped_exc, trace_id=trace_id
@@ -65,11 +71,10 @@ def register_exception_handlers(
     async def jwt_pyjwt_exception_handler(
         request: Request, exc: jwt.PyJWTError
     ) -> JSONResponse:
-        trace_id = request.headers.get(HttpHeaderKey.X_TRACE_ID.value, "TRC-AUTH")
-        wrapped_exc = BaseSystemException(
-            error_code=GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
-            message="Invalid authentication token.",
-            status_code=status.HTTP_401_UNAUTHORIZED,
+        trace_id = _resolve_trace_id(request, "TRC-AUTH")
+        wrapped_exc = BaseSystemException.from_error_code(
+            GlobalErrorCode.ERR_COMMON_UNAUTHORIZED,
+            custom_message="Invalid authentication token.",
         )
         safe_dto, status_code = handler.handle_base_system_exception(
             wrapped_exc, trace_id=trace_id
@@ -80,7 +85,7 @@ def register_exception_handlers(
     async def unhandled_exception_handler(
         request: Request, exc: Exception
     ) -> JSONResponse:
-        trace_id = request.headers.get(HttpHeaderKey.X_TRACE_ID.value, "TRC-UNHANDLED")
+        trace_id = _resolve_trace_id(request, "TRC-UNHANDLED")
         safe_dto, status_code = handler.handle_unexpected_exception(
             exc, trace_id=trace_id
         )
