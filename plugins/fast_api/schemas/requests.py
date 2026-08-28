@@ -1,7 +1,30 @@
 # File: plugins/fast_api/schemas/requests.py
 from typing import Any
 
+from digital_twin.contracts.dtos.asset_dto import AssetDetailDto
+from digital_twin.contracts.dtos.calibrate_dynamics_dto import (
+    CalibrateDynamicsRequestDto,
+)
+from digital_twin.twin_reconstruction.application.reconstruct_twin.raw_factory_data_dto import (
+    RawFactoryDataDto,
+)
 from pydantic import BaseModel, Field
+from simulation.contracts.dtos.trajectory_point_dto import TrajectoryPointDto
+from simulation.fault_recovery.application.inject_fault.inject_fault_request_dto import (
+    InjectFaultRequestDto,
+)
+from simulation.fms_execution.application.run_fms_simulation.run_fms_simulation_request_dto import (
+    RunFmsSimulationRequestDto,
+)
+from simulation.layout_optimization.application.optimize_layout.optimize_layout_request_dto import (
+    AssetPlacementRequestDto,
+    CanvasBoundsDto,
+    OptimizeLayoutRequestDto,
+)
+from simulation.sim_to_real_deploy.application.deploy_sim2real.deploy_sim2real_request_dto import (
+    DeploySim2RealRequestDto,
+    Vda5050ConfigDto,
+)
 
 from plugins.fast_api.schemas.enums import SignalingMessageType
 
@@ -20,6 +43,17 @@ class RegisterAssetRequestSchema(BaseModel):
         default_factory=dict, description="AAS 서브모델 메타데이터"
     )
 
+    def to_dto(self, asset_id: str = "", company_id: str = "") -> AssetDetailDto:
+        return AssetDetailDto(
+            asset_id=asset_id,
+            company_id=company_id,
+            asset_name=self.asset_name,
+            asset_type=self.asset_type,
+            cad_file_path=self.cad_file_path,
+            kinematics_metadata=self.kinematics_metadata,
+            submodels=self.submodels,
+        )
+
 
 class AssetPlacementItemSchema(BaseModel):
     asset_id: str = Field(..., min_length=1)
@@ -27,12 +61,26 @@ class AssetPlacementItemSchema(BaseModel):
     target_pos_y: float | None = Field(None, description="드래그 앤 드롭 Y좌표 (m)")
     target_pos_z: float | None = Field(None, description="드래그 앤 드롭 Z좌표 (m)")
 
+    def to_dto(self) -> AssetPlacementRequestDto:
+        return AssetPlacementRequestDto(
+            asset_id=self.asset_id,
+            target_pos_x=self.target_pos_x,
+            target_pos_y=self.target_pos_y,
+            target_pos_z=self.target_pos_z,
+        )
+
 
 class ReconstructTwinRequestSchema(BaseModel):
     baseline_name: str = Field(..., min_length=1, description="베이스라인 명칭")
     source_log_path: str = Field(
         ..., min_length=1, description="원천 센서 로그 파일 경로"
     )
+
+    def to_dto(self) -> RawFactoryDataDto:
+        return RawFactoryDataDto(
+            baseline_name=self.baseline_name,
+            source_log_path=self.source_log_path,
+        )
 
 
 class CalibrateDynamicsRequestSchema(BaseModel):
@@ -50,16 +98,38 @@ class CalibrateDynamicsRequestSchema(BaseModel):
         default_factory=dict, description="초기 튜닝 파라미터 (감쇠/마찰 등)"
     )
 
+    def to_dto(self) -> CalibrateDynamicsRequestDto:
+        return CalibrateDynamicsRequestDto(
+            baseline_id=self.baseline_id,
+            source_log_path=self.source_log_path,
+            target_tolerance_percent=self.target_tolerance_percent,
+            max_iterations=self.max_iterations,
+            initial_parameters=self.initial_parameters,
+        )
+
 
 class CanvasBoundsSchema(BaseModel):
     max_x: float = Field(default=50.0, gt=0.0)
     max_y: float = Field(default=50.0, gt=0.0)
     max_z: float = Field(default=10.0, gt=0.0)
 
+    def to_dto(self) -> CanvasBoundsDto:
+        return CanvasBoundsDto(
+            max_x=self.max_x,
+            max_y=self.max_y,
+            max_z=self.max_z,
+        )
+
 
 class OptimizeLayoutRequestSchema(BaseModel):
     assets: list[AssetPlacementItemSchema] = Field(..., min_length=1)
     canvas_bounds: CanvasBoundsSchema = Field(default_factory=CanvasBoundsSchema)
+
+    def to_dto(self) -> OptimizeLayoutRequestDto:
+        return OptimizeLayoutRequestDto(
+            assets=tuple(item.to_dto() for item in self.assets),
+            canvas_bounds=self.canvas_bounds.to_dto(),
+        )
 
 
 # --- Simulation Schemas ---
@@ -70,6 +140,17 @@ class TrajectoryPointSchema(BaseModel):
     position_z: float = Field(..., description="Z 좌표 (m)")
     velocity: float = Field(default=0.0, ge=0.0, description="이동 속도 (m/s)")
     time_sec: float = Field(default=0.0, ge=0.0, description="도달 목표 시간 (초)")
+
+    def to_dto(self, is_collided: bool = False) -> TrajectoryPointDto:
+        return TrajectoryPointDto(
+            time_sec=self.time_sec,
+            asset_id=self.asset_id,
+            position_x=self.position_x,
+            position_y=self.position_y,
+            position_z=self.position_z,
+            velocity=self.velocity,
+            is_collided=is_collided,
+        )
 
 
 class RunFmsSimulationRequestSchema(BaseModel):
@@ -85,6 +166,15 @@ class RunFmsSimulationRequestSchema(BaseModel):
         default=30.0, ge=1.0, le=120.0, description="최대 시뮬레이션 제한 시간 (초)"
     )
 
+    def to_dto(self, company_id: str = "") -> RunFmsSimulationRequestDto:
+        return RunFmsSimulationRequestDto(
+            scenario_id=self.scenario_id,
+            baseline_id=self.baseline_id,
+            assets=tuple(asset.to_dto(company_id=company_id) for asset in self.assets),
+            task_waypoints=tuple(wp.to_dto() for wp in self.task_waypoints),
+            max_duration_sec=self.max_duration_sec,
+        )
+
 
 class InjectFaultRequestSchema(BaseModel):
     fault_type: str = Field(
@@ -99,6 +189,14 @@ class InjectFaultRequestSchema(BaseModel):
         default=999.0, description="장애물 감지 거리 (AMR 결함용)"
     )
 
+    def to_dto(self) -> InjectFaultRequestDto:
+        return InjectFaultRequestDto(
+            fault_type=self.fault_type,
+            target=self.target,
+            trigger_time_sec=self.trigger_time_sec,
+            obstacle_distance_m=self.obstacle_distance_m,
+        )
+
 
 # --- Deployment ---
 class Vda5050ConfigSchema(BaseModel):
@@ -108,6 +206,14 @@ class Vda5050ConfigSchema(BaseModel):
     topic_prefix: str = Field(default="uagv/v2", description="VDA 5050 토픽 접두사")
     manufacturer: str = Field(default="SFTWIN_ROBOTICS", description="AGV/AMR 제조사명")
     serial_number: str = Field(default="AGV-001", description="대상 기기 일련번호")
+
+    def to_dto(self) -> Vda5050ConfigDto:
+        return Vda5050ConfigDto(
+            mqtt_broker_url=self.mqtt_broker_url,
+            topic_prefix=self.topic_prefix,
+            manufacturer=self.manufacturer,
+            serial_number=self.serial_number,
+        )
 
 
 class DeploySim2RealRequestSchema(BaseModel):
@@ -126,6 +232,14 @@ class DeploySim2RealRequestSchema(BaseModel):
         default_factory=Vda5050ConfigSchema,
         description="VDA 5050 MQTT 연동 설정",
     )
+
+    def to_dto(self) -> DeploySim2RealRequestDto:
+        return DeploySim2RealRequestDto(
+            package_id=self.package_id,
+            format_type=self.format_type,
+            ros2_ws_path=self.ros2_ws_path,
+            config=self.config.to_dto(),
+        )
 
 
 # --- Procurement & Orders ---
