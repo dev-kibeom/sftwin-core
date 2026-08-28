@@ -1,0 +1,11 @@
+{
+  "asset_id": "AST-DOOSAN-M1013",
+  "asset_name": "Doosan_M1013_Robot",
+  "asset_type": "ROBOT",
+  "cad_file_path": "/app/assets/cad/doosan_m1013.stl",
+  "kinematics_metadata": {
+    "dof": 6,
+    "payload_kg": 13.0,
+    "reach_mm": 1300
+  }
+}

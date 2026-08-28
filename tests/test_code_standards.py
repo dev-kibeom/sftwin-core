@@ -106,6 +106,18 @@ class TestCleanArchitectureAndCodeStandards(unittest.TestCase):
 
     def test_no_raw_exception_raises_in_src(self):
         """[Rule 2] 원시 예외 raise를 금지하고 BaseSystemException 사용을 강제합니다. (Domain 계층 제외)"""
+        # 검사 대상에서 제외할 디렉터리 목록
+        excluded_dirs = {
+            "node_modules",
+            ".venv",
+            "venv",
+            "build",
+            "install",
+            "log",
+            "__pycache__",
+            ".git",
+        }
+
         forbidden_raises = {
             "Exception",
             "BaseException",
@@ -122,6 +134,10 @@ class TestCleanArchitectureAndCodeStandards(unittest.TestCase):
         violations = []
 
         for file_path, tree in self.parsed_files:
+            # 외부 라이브러리 및 빌드 디렉터리 제외
+            if any(part in excluded_dirs for part in file_path.parts):
+                continue
+
             # 도메인 계층 내부 엔티티의 기본 유효성 검사 예외는 허용
             if "domain" in file_path.parts:
                 continue
@@ -172,8 +188,23 @@ class TestCleanArchitectureAndCodeStandards(unittest.TestCase):
 
     def test_no_bare_except_clauses_in_src(self):
         """[Rule 4] bare except: 구문 사용을 금지합니다."""
+        excluded_dirs = {
+            "node_modules",
+            ".venv",
+            "venv",
+            "build",
+            "install",
+            "log",
+            "__pycache__",
+            ".git",
+        }
+
         violations = []
         for file_path, tree in self.parsed_files:
+            # 외부 라이브러리 및 빌드 디렉터리 제외
+            if any(part in excluded_dirs for part in file_path.parts):
+                continue
+
             rel_path = file_path.relative_to(self.project_root).as_posix()
             for node in ast.walk(tree):
                 if isinstance(node, ast.ExceptHandler):

@@ -1,4 +1,6 @@
+# ==========================================
 # Security & Local Environment Variables
+# ==========================================
 .env
 .env.local
 .env.*.local
@@ -6,11 +8,16 @@
 *.key
 *.pfx
 
-# Documents (모든 하위 디렉토리 내 PDF 포함)
+# ==========================================
+# Documents
+# ==========================================
 **/documents/*.pdf
 
+# ==========================================
 # Host Persistent Data Directory
+# ==========================================
 **/data/assets/*
+!**/data/assets/aas/
 !**/data/assets/aas/sample_aas.json
 **/data/raw/*
 **/data/sim_packages/*
@@ -20,7 +27,9 @@
 **/data/runtime/logs/*
 !**/data/**/.gitkeep
 
+# ==========================================
 # ROS 2 Build Artifacts & Workspace
+# ==========================================
 ros2_ws/build/
 ros2_ws/install/
 ros2_ws/log/
@@ -29,7 +38,18 @@ ros2_ws/.colcon_install_layout
 ros2_ws/COLCON_IGNORE
 COLCON_IGNORE
 
-# C++ Build Artifacts (Edge & Physics Engine)
+# ==========================================
+# web_ui 폴더 전용 설정
+# ==========================================
+web_ui/node_modules/
+node_modules/
+web_ui/dist/
+web_ui/dist-ssr/
+web_ui/*.local
+
+# ==========================================
+# C++ Build Artifacts
+# ==========================================
 build/
 bin/
 lib/
@@ -39,7 +59,9 @@ lib/
 *.dylib
 *.a
 
+# ==========================================
 # Python Artifacts
+# ==========================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -50,16 +72,35 @@ venv/
 .coverage
 htmlcov/
 
-# Simulation & Cache Artifacts
+# ==========================================
+# Simulation & ROS Bag Cache
+# ==========================================
 *.bag
 *.mcap
+*.db3
 *.log
+# Gazebo / Ignition 로그 및 런타임 캐시
+.ignition/
+.gazebo/
+.gz/
 
-# IDE & OS Specific
-.vscode/
+# ==========================================
+# IDE & OS Specific (Global)
+# ==========================================
 .idea/
 .DS_Store
 Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.tsbuildinfo
+
+# VSCode: 기본 설정은 무시하되 extensions.json 공유 허용
+.vscode/*
+!.vscode/extensions.json
+!web_ui/.vscode/extensions.json
 
 # Temporary Backup Folder
 _backup/
