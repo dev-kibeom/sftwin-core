@@ -1,6 +1,9 @@
+# File: plugins/fast_api/adapters/ros2_webrtc_client.py
+import threading
 from typing import Any
 
 from rclpy.node import Node
+from rclpy.task import Future
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
@@ -43,23 +46,38 @@ class Ros2WebRtcSignalingClient:
             self._session_srv_type, "/sftwin/webrtc/get_session"
         )
 
+    def _wait_for_future(self, future: Future, service_name: str) -> Any:
+        """ROS 2 Future 응답을 스레드 안전하게 타임아웃 대기"""
+        event = threading.Event()
+        future.add_done_callback(lambda _: event.set())
+
+        if not event.wait(timeout=self._timeout_sec):
+            raise BaseSystemException(
+                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
+                message=f"ROS 2 WebRTC service call to [{service_name}] timed out after {self._timeout_sec}s",
+                status_code=504,
+            )
+
+        exc = future.exception()
+        if exc is not None:
+            raise BaseSystemException(
+                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
+                message=f"ROS 2 WebRTC service call to [{service_name}] failed: {str(exc)}",
+                status_code=504,
+            ) from exc
+
+        return future.result()
+
     def call_handle_sdp_offer(self, peer_id: str, sdp_offer: str) -> tuple[bool, str]:
         """SDP Offer 전달 및 SDP Answer 획득"""
         req = getattr(self._sdp_srv_type, "Request", lambda: type("Req", (), {})())()
         req.peer_id = peer_id
         req.sdp_offer = sdp_offer
 
-        try:
-            future = self._sdp_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"WebRTC SDP signaling timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._sdp_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/webrtc/handle_sdp_offer")
 
-        if not response or not response.is_success:
+        if not response or not getattr(response, "is_success", False):
             return False, ""
 
         return True, getattr(response, "sdp_answer", "")
@@ -70,31 +88,17 @@ class Ros2WebRtcSignalingClient:
         req.peer_id = peer_id
         req.candidate_json = candidate_json
 
-        try:
-            future = self._ice_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"WebRTC ICE Candidate signaling timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._ice_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/webrtc/handle_ice_candidate")
 
-        return bool(response and response.is_success)
+        return bool(response and getattr(response, "is_success", False))
 
     def call_close_session(self, peer_id: str) -> bool:
         """WebRTC 피어 세션 정상 종료"""
         req = getattr(self._close_srv_type, "Request", lambda: type("Req", (), {})())()
         req.peer_id = peer_id
 
-        try:
-            future = self._close_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"WebRTC close session timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._close_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/webrtc/close_peer_session")
 
-        return bool(response and response.is_success)
+        return bool(response and getattr(response, "is_success", False))

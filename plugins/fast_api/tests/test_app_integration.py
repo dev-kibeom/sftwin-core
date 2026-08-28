@@ -1,9 +1,9 @@
 # File: plugins/fast_api/tests/test_app_integration.py
-
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from digital_twin.contracts.dtos.asset_dto import AssetDto
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from polyfactory.factories.dataclass_factory import DataclassFactory
 from shared.context.user_context import UserContext
@@ -84,8 +84,11 @@ def app(
     mock_sim_query_facade,
     mock_edge_client,
     mock_webrtc_client,
+    monkeypatch,
 ):
-    # Composition Root 팩토리로 전체 FastAPI 앱 생성
+    # 테스트 환경 플래그 설정
+    monkeypatch.setenv("TESTING", "1")
+
     application = create_app()
 
     # Core/Adapter DI Overrides
@@ -123,10 +126,7 @@ def client(app):
 # 1. Composition Root & Health Check Tests
 # ==============================================================================
 def test_health_check_endpoint(client: TestClient):
-    # When
     response = client.get("/health")
-
-    # Then
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "healthy"
@@ -134,10 +134,7 @@ def test_health_check_endpoint(client: TestClient):
 
 
 def test_openapi_json_accessible_with_correct_tags(client: TestClient):
-    # When
     response = client.get("/openapi.json")
-
-    # Then
     assert response.status_code == 200
     schema = response.json()
     assert "paths" in schema
@@ -156,7 +153,6 @@ def test_correlation_id_propagates_through_router_response(
     mock_dt_query_facade: MagicMock,
     mock_user_context: UserContext,
 ):
-    # Given
     mock_asset = AssetDtoFactory.build(
         asset_id="ASSET-777",
         company_id="COMP-A",
@@ -164,13 +160,11 @@ def test_correlation_id_propagates_through_router_response(
     mock_dt_query_facade.get_asset.return_value = mock_asset
     custom_correlation_id = "CID-TEST-TRACE-9999"
 
-    # When
     response = client.get(
         "/api/v1/assets/ASSET-777",
         headers={"X-Correlation-ID": custom_correlation_id},
     )
 
-    # Then
     assert response.status_code == 200
     assert response.headers.get("x-correlation-id") == custom_correlation_id
     body = response.json()
@@ -182,7 +176,6 @@ def test_exception_in_sub_router_handled_by_global_middleware_with_envelope(
     client: TestClient,
     mock_dt_command_facade: MagicMock,
 ):
-    # Given
     mock_dt_command_facade.register_asset.side_effect = BaseSystemException(
         error_code=GlobalErrorCode.ERR_COMMON_FORBIDDEN,
         message="Insufficient permissions to register assets in factory.",
@@ -194,12 +187,52 @@ def test_exception_in_sub_router_handled_by_global_middleware_with_envelope(
         "cad_file_path": "/path/robot.urdf",
     }
 
-    # When
     response = client.post("/api/v1/assets", json=payload)
 
-    # Then
     assert response.status_code == 403
     body = response.json()
     assert body["success"] is False
     assert body["code"] == GlobalErrorCode.ERR_COMMON_FORBIDDEN
     assert "Insufficient permissions" in body["message"]
+
+
+# ==============================================================================
+# 3. Lifespan Startup & Shutdown Test
+# ==============================================================================
+@pytest.mark.asyncio
+async def test_app_lifespan_lifecycle_startup_and_shutdown(monkeypatch):
+    # Given: 테스트 환경 플래그 해제
+    monkeypatch.delenv("TESTING", raising=False)
+
+    from plugins.fast_api.app import lifespan
+
+    mock_app = MagicMock(spec=FastAPI)
+    mock_app.dependency_overrides = {}
+
+    with (
+        patch("plugins.fast_api.app.rclpy") as mock_rclpy,
+        patch("plugins.fast_api.app.MultiThreadedExecutor") as mock_executor_cls,
+        patch("plugins.fast_api.app.threading.Thread") as mock_thread_cls,
+    ):
+        mock_rclpy.ok.return_value = False
+        mock_node = MagicMock()
+        mock_rclpy.create_node.return_value = mock_node
+
+        mock_executor = MagicMock()
+        mock_executor_cls.return_value = mock_executor
+
+        mock_thread = MagicMock()
+        mock_thread_cls.return_value = mock_thread
+
+        # When: lifespan context 직접 진입 및 탈출
+        async with lifespan(mock_app):
+            # Then: Startup 단계 검증
+            mock_rclpy.init.assert_called_once()
+            mock_rclpy.create_node.assert_called_once_with("fastapi_inbound_gateway")
+            mock_executor.add_node.assert_called_once_with(mock_node)
+            mock_thread.start.assert_called_once()
+            assert len(mock_app.dependency_overrides) >= 2
+
+        # Then: Shutdown 단계 검증
+        mock_executor.shutdown.assert_called_once()
+        mock_node.destroy_node.assert_called_once()

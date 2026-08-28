@@ -1,6 +1,9 @@
+# File: plugins/fast_api/adapters/ros2_edge_client.py
+import threading
 from typing import Any
 
 from rclpy.node import Node
+from rclpy.task import Future
 from shared.exceptions.base_system_exception import BaseSystemException
 from shared.exceptions.global_error_code_enum import GlobalErrorCode
 
@@ -12,7 +15,6 @@ class Ros2EdgeServiceClient:
         self._node = node
         self._timeout_sec = timeout_sec
 
-        # Service Types: ROS 2 환경에 인터페이스 패키지가 설치되어 있으면 import, 없으면 Any/Dynamic 모의
         try:
             from ros2_ws.src.interfaces.shared_interfaces.srv import (
                 GetTelemetryStatus,
@@ -44,21 +46,36 @@ class Ros2EdgeServiceClient:
             self._telemetry_srv_type, "/sftwin/edge/get_telemetry"
         )
 
+    def _wait_for_future(self, future: Future, service_name: str) -> Any:
+        """ROS 2 Future 응답을 스레드 안전하게 타임아웃 대기"""
+        event = threading.Event()
+        future.add_done_callback(lambda _: event.set())
+
+        if not event.wait(timeout=self._timeout_sec):
+            raise BaseSystemException(
+                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
+                message=f"ROS 2 service call to [{service_name}] timed out after {self._timeout_sec}s",
+                status_code=504,
+            )
+
+        exc = future.exception()
+        if exc is not None:
+            raise BaseSystemException(
+                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
+                message=f"ROS 2 service call to [{service_name}] failed: {str(exc)}",
+                status_code=504,
+            ) from exc
+
+        return future.result()
+
     def call_trigger_estop(self, reason: str, device_id: str) -> bool:
         """긴급 수동 E-Stop 트리거 서비스 호출"""
         req = getattr(self._estop_srv_type, "Request", lambda: type("Req", (), {})())()
         req.reason = reason
         req.device_id = device_id
 
-        try:
-            future = self._estop_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"E-Stop service call timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._estop_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/edge/trigger_manual_estop")
 
         if not response or not response.is_success:
             err_msg = getattr(response, "error_message", "Failsafe trigger failed")
@@ -82,15 +99,8 @@ class Ros2EdgeServiceClient:
         req.is_manager_approved = is_manager_approved
         req.device_id = device_id
 
-        try:
-            future = self._reset_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"Reset interlock service call timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._reset_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/edge/reset_interlock")
 
         if not response or not response.is_success:
             err_msg = getattr(response, "error_message", "Interlock reset denied")
@@ -112,15 +122,8 @@ class Ros2EdgeServiceClient:
         req.sequence_script = sequence_script
         req.device_id = device_id
 
-        try:
-            future = self._resume_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"Resume recovery service call timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._resume_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/edge/resume_recovery")
 
         if not response or not response.is_success:
             err_msg = getattr(response, "error_message", "Recovery execution failed")
@@ -143,15 +146,8 @@ class Ros2EdgeServiceClient:
         )()
         req.device_id = device_id
 
-        try:
-            future = self._telemetry_client.call_async(req)
-            response = future.result()
-        except Exception as exc:
-            raise BaseSystemException(
-                error_code=GlobalErrorCode.ERR_EDGE_COMM_TIMEOUT,
-                message=f"Get telemetry service call timed out or failed: {str(exc)}",
-                status_code=504,
-            ) from exc
+        future = self._telemetry_client.call_async(req)
+        response = self._wait_for_future(future, "/sftwin/edge/get_telemetry")
 
         if not response or not response.is_success:
             err_msg = getattr(response, "error_message", "Telemetry stream unavailable")

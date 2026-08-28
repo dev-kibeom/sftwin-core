@@ -237,6 +237,50 @@ def test_inject_fault_success(
     assert passed_dto.fault_type == "OBSTACLE_APPEARANCE"
 
 
+def test_simulate_fault_recovery_success(
+    client: TestClient,
+    mock_sim_command_facade: MagicMock,
+    mock_user_context: UserContext,
+):
+    # Given
+    mock_sim_result = SimResultDtoFactory.build(
+        scenario_id="RECOVERY-SCENARIO-01",
+        is_success=True,
+        collision_count=0,
+    )
+    mock_sim_command_facade.simulate_fault_recovery_scenario.return_value = (
+        mock_sim_result
+    )
+
+    payload = {
+        "fault_schema": {
+            "fault_type": "CONVEYOR_JAM",
+            "target": "CONVEYOR_01",
+            "trigger_time_sec": 3.0,
+            "obstacle_distance_m": 0.0,
+        },
+        "recovery_schema": {
+            "sequence_script": "CONVEYOR_01.CLEAR_JAM(); CONVEYOR_01.RESUME();",
+            "device_id": "EDGE_NODE_001",
+        },
+    }
+
+    # When: FastAPI body injection 처리 방식에 맞춰 단일 json 페이로드로 전송
+    response = client.post(
+        "/api/v1/simulations/faults/simulate-recovery",
+        json=payload,
+    )
+
+    # Then
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"]["scenario_id"] == "RECOVERY-SCENARIO-01"
+    assert body["data"]["is_success"] is True
+
+    mock_sim_command_facade.simulate_fault_recovery_scenario.assert_called_once()
+
+
 # ==============================================================================
 # 3. Optimize Layout Tests
 # ==============================================================================

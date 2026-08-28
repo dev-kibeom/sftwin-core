@@ -327,6 +327,73 @@ def test_webrtc_handle_ice_candidate_success(
     )
 
 
+def test_webrtc_websocket_signaling_offer_and_answer_success(
+    client: TestClient,
+    mock_webrtc_client: MagicMock,
+):
+    # Given
+    mock_webrtc_client.call_handle_sdp_offer.return_value = (
+        True,
+        "v=0\r\no=mock_answer_sdp...",
+    )
+
+    # When & Then
+    with client.websocket_connect("/api/v1/webrtc/signaling") as websocket:
+        websocket.send_json(
+            {
+                "type": "OFFER",
+                "peer_id": "CLIENT-WS-001",
+                "sdp": "v=0\r\no=mock_offer_sdp...",
+            }
+        )
+        response = websocket.receive_json()
+
+        assert response["type"] == "ANSWER"
+        assert response["peer_id"] == "CLIENT-WS-001"
+        assert response["sdp"] == "v=0\r\no=mock_answer_sdp..."
+
+    mock_webrtc_client.call_handle_sdp_offer.assert_called_once_with(
+        peer_id="CLIENT-WS-001",
+        sdp_offer="v=0\r\no=mock_offer_sdp...",
+    )
+    # 소켓 종료 시 피어 세션 정리 확인
+    mock_webrtc_client.call_close_session.assert_called_once_with("CLIENT-WS-001")
+
+
+def test_webrtc_websocket_signaling_candidate_and_ping(
+    client: TestClient,
+    mock_webrtc_client: MagicMock,
+):
+    # Given
+    mock_webrtc_client.call_handle_ice_candidate.return_value = True
+
+    # When & Then
+    with client.websocket_connect("/api/v1/webrtc/signaling") as websocket:
+        # ICE Candidate 전송
+        websocket.send_json(
+            {
+                "type": "CANDIDATE",
+                "peer_id": "CLIENT-WS-002",
+                "candidate": '{"candidate":"candidate:1 1 UDP ..."}',
+            }
+        )
+
+        # Ping 전송 및 Pong 수신 검증
+        websocket.send_json(
+            {
+                "type": "PING",
+                "peer_id": "CLIENT-WS-002",
+            }
+        )
+        pong_response = websocket.receive_json()
+        assert pong_response["type"] == "PONG"
+
+    mock_webrtc_client.call_handle_ice_candidate.assert_called_once_with(
+        peer_id="CLIENT-WS-002",
+        candidate_json='{"candidate":"candidate:1 1 UDP ..."}',
+    )
+
+
 def test_webrtc_close_session_success(
     client: TestClient,
     mock_webrtc_client: MagicMock,
