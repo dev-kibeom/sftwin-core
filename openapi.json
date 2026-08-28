@@ -1,0 +1,1345 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Smart Factory Twin REST & Signaling API Plugin",
+    "description": "FastAPI Inbound Adapter for ROS 2 Digital Twin & Simulation System",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/assets": {
+      "post": {
+        "tags": [
+          "Asset Library"
+        ],
+        "summary": "\uc2e0\uaddc \uc124\ube44 \uc790\uc0b0(AAS/CAD/\uae30\uad6c\ud559) \ub4f1\ub85d",
+        "description": "1\ucc28 \ubc29\uc5b4\uc120 \uac80\uc99d \ud1b5\uacfc \ud6c4 AssetDto\ub97c \uc870\ub9bd\ud558\uc5ec Command Facade\ub85c \uc5d0\uc14b \ub4f1\ub85d\uc744 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "register_asset_api_v1_assets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAssetRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assets/{asset_id}": {
+      "get": {
+        "tags": [
+          "Asset Library"
+        ],
+        "summary": "\uc790\uc0b0 \ub2e8\uac74 \uc0c1\uc138 \uc815\ubcf4 \uc870\ud68c",
+        "description": "Query Facade\ub85c \uc790\uc0b0 \ub2e8\uac74 \uc870\ud68c\ub97c \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "get_asset_api_v1_assets__asset_id__get",
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/twins/baselines/{baseline_id}/layout": {
+      "get": {
+        "tags": [
+          "Digital Twin & Layout"
+        ],
+        "summary": "Three.js \ub80c\ub354\ub9c1\uc6a9 3D \uc88c\ud45c \ubc0f \ud56b\uc2a4\ud31f \ub370\uc774\ud130 \uc870\ud68c",
+        "description": "Three.js \ubdf0\uc5b4\uc6a9 3D \uc88c\ud45c \ubc0f \ud788\ud2b8\ub9f5 \ub80c\ub354\ub9c1 \ub370\uc774\ud130\ub97c Facade\ub85c\ubd80\ud130 \uc870\ud68c\ud569\ub2c8\ub2e4.",
+        "operationId": "get_layout_api_v1_twins_baselines__baseline_id__layout_get",
+        "parameters": [
+          {
+            "name": "baseline_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Baseline Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/twins/baselines/reconstruct": {
+      "post": {
+        "tags": [
+          "Digital Twin & Layout"
+        ],
+        "summary": "\uc6d0\ucc9c \uc13c\uc11c \ub85c\uadf8 \ud30c\uc2f1 \ubc0f \ud2b8\uc708 \ubca0\uc774\uc2a4\ub77c\uc778 \uac00\uc0c1 \uc7ac\uad6c\uc131",
+        "description": "\uc6d0\ucc9c \ub85c\uadf8 \uae30\ubc18 \ub514\uc9c0\ud138 \ud2b8\uc708 \uac00\uc0c1 \uc7ac\uad6c\uc131\uc744 Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "reconstruct_twin_api_v1_twins_baselines_reconstruct_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconstructTwinRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/twins/baselines/calibrate": {
+      "post": {
+        "tags": [
+          "Digital Twin & Layout"
+        ],
+        "summary": "\ub3d9\uc5ed\ud559 \ud30c\ub77c\ubbf8\ud130(\uac10\uc1e0/\ub9c8\ucc30) \ud53c\ud305 \uce98\ub9ac\ube0c\ub808\uc774\uc158",
+        "description": "\ubb3c\ub9ac \ud30c\ub77c\ubbf8\ud130 \ud29c\ub2dd \uc5f0\uc0b0\uc744 Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "calibrate_dynamics_api_v1_twins_baselines_calibrate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalibrateDynamicsRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/run": {
+      "post": {
+        "tags": [
+          "Simulation & Deployment"
+        ],
+        "summary": "FMS \uac00\uc0c1 \ubb3c\ub9ac \uc2dc\ubbac\ub808\uc774\uc158 \uc2e4\ud589",
+        "description": "FMS \uc2dc\ubbac\ub808\uc774\uc158 \uc2e4\ud589 \uc694\uccad\uc744 Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "run_fms_simulation_api_v1_simulations_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunFmsSimulationRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/faults/inject": {
+      "post": {
+        "tags": [
+          "Simulation & Deployment"
+        ],
+        "summary": "\uac00\uc0c1 \uace0\uc7a5 \uc8fc\uc785 \ubc0f Failsafe \ubc18\uc751 \ud3c9\uac00",
+        "description": "\uac00\uc0c1 \uacb0\ud568 \uc8fc\uc785\uc744 Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "inject_fault_api_v1_simulations_faults_inject_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InjectFaultRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/faults/simulate-recovery": {
+      "post": {
+        "tags": [
+          "Simulation & Deployment"
+        ],
+        "summary": "\uace0\uc7a5 \ubcf5\uad6c \uc2dc\ub098\ub9ac\uc624 \ubc0f \uc2dc\ud000\uc2a4 \uac80\uc99d \uc2dc\ubbac\ub808\uc774\uc158",
+        "description": "\uace0\uc7a5 \ubcf5\uad6c \uc2a4\ud06c\ub9bd\ud2b8 \uc2dc\ubbac\ub808\uc774\uc158\uc744 Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "simulate_fault_recovery_api_v1_simulations_faults_simulate_recovery_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_simulate_fault_recovery_api_v1_simulations_faults_simulate_recovery_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/optimize-layout": {
+      "post": {
+        "tags": [
+          "Simulation & Deployment"
+        ],
+        "summary": "\uacf5\uc815 \ub808\uc774\uc544\uc6c3 \ucd5c\uc801 \ubc30\uce58 \uacc4\uc0b0",
+        "description": "\uacf5\uc815 \ub808\uc774\uc544\uc6c3 \ucd5c\uc801\ud654\ub97c Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "optimize_layout_api_v1_simulations_optimize_layout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptimizeLayoutRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/deploy-sim2real": {
+      "post": {
+        "tags": [
+          "Simulation & Deployment"
+        ],
+        "summary": "Sim-to-Real \ubc30\ud3ec \ud328\ud0a4\uc9c0 \ube4c\ub4dc \ubc0f \uac80\uc99d",
+        "description": "Sim-to-Real \ubc30\ud3ec\ub97c Facade\uc5d0 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "deploy_sim2real_api_v1_simulations_deploy_sim2real_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeploySim2RealRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/{scenario_id}/status": {
+      "get": {
+        "tags": [
+          "Simulation & Deployment"
+        ],
+        "summary": "\uc2dc\ubbac\ub808\uc774\uc158 \uc2dc\ub098\ub9ac\uc624 \uc2e4\ud589 \uc0c1\ud0dc \uc870\ud68c",
+        "description": "Query Facade\ub85c \uc2dc\ub098\ub9ac\uc624 \uc0c1\ud0dc \uc870\ud68c\ub97c \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "get_simulation_status_api_v1_simulations__scenario_id__status_get",
+        "parameters": [
+          {
+            "name": "scenario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scenario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/edge/estop": {
+      "post": {
+        "tags": [
+          "Edge Control & Monitoring"
+        ],
+        "summary": "\uae34\uae09 \ud558\ub4dc\uc6e8\uc5b4 E-Stop \ud2b8\ub9ac\uac70",
+        "description": "\uae34\uae09 E-Stop \ud638\ucd9c\uc744 ROS 2 \uc5d0\uc9c0 \uc11c\ube44\uc2a4 \ud074\ub77c\uc774\uc5b8\ud2b8\ub85c \ube44\ub3d9\uae30 \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "trigger_manual_estop_api_v1_edge_estop_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriggerManualEstopRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/edge/reset-interlock": {
+      "post": {
+        "tags": [
+          "Edge Control & Monitoring"
+        ],
+        "summary": "2\ub2e8\uacc4 \uc548\uc804 \uc2b9\uc778 \uae30\ubc18 \uc778\ud130\ub85d \ub9ac\uc14b",
+        "description": "\ud604\uc7a5 \uc810\uac80 \ubc0f \uad00\ub9ac\uc790 2\ub2e8\uacc4 \uc2b9\uc778 \ud50c\ub798\uadf8\ub97c ROS 2 \uc5d0\uc9c0 \uc11c\ube44\uc2a4\ub85c \uc804\ub2ec\ud569\ub2c8\ub2e4.",
+        "operationId": "reset_interlock_api_v1_edge_reset_interlock_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetInterlockRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/edge/resume-recovery": {
+      "post": {
+        "tags": [
+          "Edge Control & Monitoring"
+        ],
+        "summary": "E-Stop \ud574\uc81c \ud6c4 \ubcf5\uad6c \uc2dc\ud000\uc2a4 \uc7ac\uac1c",
+        "description": "\ubcf5\uad6c \uc2dc\ud000\uc2a4 \uc2a4\ud06c\ub9bd\ud2b8 \uc2e4\ud589\uc744 \uc5d0\uc9c0 \uc11c\ube44\uc2a4\ub85c \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "resume_recovery_api_v1_edge_resume_recovery_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumeRecoveryRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/edge/telemetry/{device_id}": {
+      "get": {
+        "tags": [
+          "Edge Control & Monitoring"
+        ],
+        "summary": "\uc2e4\uc2dc\uac04 \uc5d0\uc9c0 \ub514\ubc14\uc774\uc2a4 \uad00\uce21 \ud154\ub808\uba54\ud2b8\ub9ac \uc870\ud68c",
+        "description": "\uc5d0\uc9c0 \ub514\ubc14\uc774\uc2a4 \ud154\ub808\uba54\ud2b8\ub9ac \uc870\ud68c\ub97c \uc11c\ube44\uc2a4 \ud074\ub77c\uc774\uc5b8\ud2b8\ub85c \uc704\uc784\ud569\ub2c8\ub2e4.",
+        "operationId": "get_telemetry_api_v1_edge_telemetry__device_id__get",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webrtc/offer": {
+      "post": {
+        "tags": [
+          "WebRTC Video Signaling"
+        ],
+        "summary": "WebRTC SDP Offer \uc804\ub2ec \ubc0f Answer \ud68d\ub4dd",
+        "operationId": "handle_sdp_offer_api_v1_webrtc_offer_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebRtcSdpOfferRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webrtc/ice-candidate": {
+      "post": {
+        "tags": [
+          "WebRTC Video Signaling"
+        ],
+        "summary": "WebRTC ICE Candidate \uc815\ubcf4 \ub4f1\ub85d",
+        "operationId": "handle_ice_candidate_api_v1_webrtc_ice_candidate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebRtcIceCandidateRequestSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webrtc/sessions/{peer_id}/close": {
+      "post": {
+        "tags": [
+          "WebRTC Video Signaling"
+        ],
+        "summary": "WebRTC \ud53c\uc5b4 \uc2a4\ud2b8\ub9ac\ubc0d \uc138\uc158 \uc885\ub8cc",
+        "operationId": "close_session_api_v1_webrtc_sessions__peer_id__close_post",
+        "parameters": [
+          {
+            "name": "peer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "\uc885\ub8cc\ud560 \ud53c\uc5b4 \uc2dd\ubcc4\uc790",
+              "title": "Peer Id"
+            },
+            "description": "\uc885\ub8cc\ud560 \ud53c\uc5b4 \uc2dd\ubcc4\uc790"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "\uc2dc\uc2a4\ud15c \ud5ec\uc2a4\uccb4\ud06c",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssetPlacementItemSchema": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "target_pos_x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Pos X",
+            "description": "\ub4dc\ub798\uadf8 \uc564 \ub4dc\ub86d X\uc88c\ud45c (m)"
+          },
+          "target_pos_y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Pos Y",
+            "description": "\ub4dc\ub798\uadf8 \uc564 \ub4dc\ub86d Y\uc88c\ud45c (m)"
+          },
+          "target_pos_z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Pos Z",
+            "description": "\ub4dc\ub798\uadf8 \uc564 \ub4dc\ub86d Z\uc88c\ud45c (m)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id"
+        ],
+        "title": "AssetPlacementItemSchema"
+      },
+      "Body_simulate_fault_recovery_api_v1_simulations_faults_simulate_recovery_post": {
+        "properties": {
+          "fault_schema": {
+            "$ref": "#/components/schemas/InjectFaultRequestSchema"
+          },
+          "recovery_schema": {
+            "$ref": "#/components/schemas/ResumeRecoveryRequestSchema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fault_schema",
+          "recovery_schema"
+        ],
+        "title": "Body_simulate_fault_recovery_api_v1_simulations_faults_simulate_recovery_post"
+      },
+      "CalibrateDynamicsRequestSchema": {
+        "properties": {
+          "baseline_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Baseline Id",
+            "description": "\ub300\uc0c1 \ubca0\uc774\uc2a4\ub77c\uc778 ID"
+          },
+          "source_log_path": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Log Path",
+            "description": "\uce98\ub9ac\ube0c\ub808\uc774\uc158\uc6a9 \uc13c\uc11c \ub85c\uadf8 \uacbd\ub85c"
+          },
+          "target_tolerance_percent": {
+            "type": "number",
+            "maximum": 5.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Target Tolerance Percent",
+            "description": "\ubaa9\ud45c \uc624\ucc28 \ud5c8\uc6a9 \ubc94\uc704(%)",
+            "default": 5.0
+          },
+          "max_iterations": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Iterations",
+            "description": "\ucd5c\ub300 \ubc18\ubcf5 \ud53c\ud305 \ud69f\uc218",
+            "default": 10
+          },
+          "initial_parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Initial Parameters",
+            "description": "\ucd08\uae30 \ud29c\ub2dd \ud30c\ub77c\ubbf8\ud130 (\uac10\uc1e0/\ub9c8\ucc30 \ub4f1)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "baseline_id",
+          "source_log_path"
+        ],
+        "title": "CalibrateDynamicsRequestSchema"
+      },
+      "CanvasBoundsSchema": {
+        "properties": {
+          "max_x": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Max X",
+            "default": 50.0
+          },
+          "max_y": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Y",
+            "default": 50.0
+          },
+          "max_z": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Z",
+            "default": 10.0
+          }
+        },
+        "type": "object",
+        "title": "CanvasBoundsSchema"
+      },
+      "DeploySim2RealRequestSchema": {
+        "properties": {
+          "package_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Package Id",
+            "description": "\ubc30\ud3ec \ud328\ud0a4\uc9c0 \uace0\uc720 ID (\ub610\ub294 deployment_id)"
+          },
+          "format_type": {
+            "type": "string",
+            "title": "Format Type",
+            "description": "\ubc30\ud3ec \ud3ec\ub9f7 (VDA5050 | ROS2_WS | CONTAINER)",
+            "default": "VDA5050"
+          },
+          "ros2_ws_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ros2 Ws Path",
+            "description": "ROS 2 \uc6cc\ud06c\uc2a4\ud398\uc774\uc2a4 \ub300\uc0c1 \uacbd\ub85c (format_type\uc774 ROS2_WS\uc778 \uacbd\uc6b0)"
+          },
+          "config": {
+            "$ref": "#/components/schemas/Vda5050ConfigSchema",
+            "description": "VDA 5050 MQTT \uc5f0\ub3d9 \uc124\uc815"
+          }
+        },
+        "type": "object",
+        "required": [
+          "package_id"
+        ],
+        "title": "DeploySim2RealRequestSchema"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InjectFaultRequestSchema": {
+        "properties": {
+          "fault_type": {
+            "type": "string",
+            "title": "Fault Type",
+            "description": "\uacb0\ud568 \uc720\ud615 (CONVEYOR_JAM, ROBOT_MOTOR_OVERHEAT, AMR_PATH_BLOCKED)"
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Target",
+            "description": "\uacb0\ud568 \uc8fc\uc785 \ub300\uc0c1 \uc124\ube44 \uc2dd\ubcc4\uc790"
+          },
+          "trigger_time_sec": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Trigger Time Sec",
+            "description": "\uacb0\ud568 \ubc1c\ub3d9 \uc2dc\uc810 (\ucd08)",
+            "default": 5.0
+          },
+          "obstacle_distance_m": {
+            "type": "number",
+            "title": "Obstacle Distance M",
+            "description": "\uc7a5\uc560\ubb3c \uac10\uc9c0 \uac70\ub9ac (AMR \uacb0\ud568\uc6a9)",
+            "default": 999.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "fault_type",
+          "target"
+        ],
+        "title": "InjectFaultRequestSchema"
+      },
+      "OptimizeLayoutRequestSchema": {
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetPlacementItemSchema"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Assets"
+          },
+          "canvas_bounds": {
+            "$ref": "#/components/schemas/CanvasBoundsSchema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assets"
+        ],
+        "title": "OptimizeLayoutRequestSchema"
+      },
+      "ReconstructTwinRequestSchema": {
+        "properties": {
+          "baseline_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Baseline Name",
+            "description": "\ubca0\uc774\uc2a4\ub77c\uc778 \uba85\uce6d"
+          },
+          "source_log_path": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Log Path",
+            "description": "\uc6d0\ucc9c \uc13c\uc11c \ub85c\uadf8 \ud30c\uc77c \uacbd\ub85c"
+          }
+        },
+        "type": "object",
+        "required": [
+          "baseline_name",
+          "source_log_path"
+        ],
+        "title": "ReconstructTwinRequestSchema"
+      },
+      "RegisterAssetRequestSchema": {
+        "properties": {
+          "asset_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Name",
+            "description": "\uc790\uc0b0 \uba85\uce6d"
+          },
+          "asset_type": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Type",
+            "description": "AAS \uc790\uc0b0 \ubd84\ub958 (ROBOT, AMR, CNC \ub4f1)"
+          },
+          "cad_file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cad File Path",
+            "description": "CAD/3D \ubaa8\ub378 \ud30c\uc77c \uacbd\ub85c"
+          },
+          "kinematics_metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Kinematics Metadata",
+            "description": "\uae30\uad6c\ud559 \uc81c\uc6d0 (DoF, DH \ud30c\ub77c\ubbf8\ud130)"
+          },
+          "submodels": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Submodels",
+            "description": "AAS \uc11c\ube0c\ubaa8\ub378 \uba54\ud0c0\ub370\uc774\ud130"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_name",
+          "asset_type"
+        ],
+        "title": "RegisterAssetRequestSchema"
+      },
+      "ResetInterlockRequestSchema": {
+        "properties": {
+          "is_field_inspected": {
+            "type": "boolean",
+            "title": "Is Field Inspected",
+            "description": "\ud604\uc7a5 1\ucc28 \uc548\uc804 \uc810\uac80 \uc644\ub8cc \uc5ec\ubd80"
+          },
+          "is_manager_approved": {
+            "type": "boolean",
+            "title": "Is Manager Approved",
+            "description": "\uad00\ub9ac\uc790 2\ucc28 \ub9ac\uc14b \uc2b9\uc778 \uc5ec\ubd80"
+          },
+          "device_id": {
+            "type": "string",
+            "title": "Device Id",
+            "description": "\ub300\uc0c1 \ub514\ubc14\uc774\uc2a4 ID",
+            "default": "EDGE_NODE_001"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_field_inspected",
+          "is_manager_approved"
+        ],
+        "title": "ResetInterlockRequestSchema"
+      },
+      "ResumeRecoveryRequestSchema": {
+        "properties": {
+          "sequence_script": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sequence Script",
+            "description": "\ubcf5\uad6c \uc2e4\ud589 \uc2dc\ud000\uc2a4 \uc2a4\ud06c\ub9bd\ud2b8 \ub610\ub294 \uc2dc\ub098\ub9ac\uc624 \uc2dd\ubcc4\uc790"
+          },
+          "device_id": {
+            "type": "string",
+            "title": "Device Id",
+            "description": "\ub300\uc0c1 \ub514\ubc14\uc774\uc2a4 ID",
+            "default": "EDGE_NODE_001"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sequence_script"
+        ],
+        "title": "ResumeRecoveryRequestSchema"
+      },
+      "RunFmsSimulationRequestSchema": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Scenario Id",
+            "description": "\uc2dc\ubbac\ub808\uc774\uc158 \uc2dc\ub098\ub9ac\uc624 ID"
+          },
+          "baseline_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Baseline Id",
+            "description": "\uae30\ubc18 \ud2b8\uc708 \ubca0\uc774\uc2a4\ub77c\uc778 ID"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/RegisterAssetRequestSchema"
+            },
+            "type": "array",
+            "title": "Assets",
+            "description": "\uc2dc\ubbac\ub808\uc774\uc158 \ub300\uc0c1 \uc790\uc0b0 \ubaa9\ub85d"
+          },
+          "task_waypoints": {
+            "items": {
+              "$ref": "#/components/schemas/TrajectoryPointSchema"
+            },
+            "type": "array",
+            "title": "Task Waypoints",
+            "description": "\uac80\uc99d\ud560 \uacf5\uc815/\ub85c\ubd07 \uc774\ub3d9 \uc6e8\uc774\ud3ec\uc778\ud2b8 \ubaa9\ub85d"
+          },
+          "max_duration_sec": {
+            "type": "number",
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Max Duration Sec",
+            "description": "\ucd5c\ub300 \uc2dc\ubbac\ub808\uc774\uc158 \uc81c\ud55c \uc2dc\uac04 (\ucd08)",
+            "default": 30.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "baseline_id"
+        ],
+        "title": "RunFmsSimulationRequestSchema"
+      },
+      "TrajectoryPointSchema": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Asset Id",
+            "description": "\uc124\ube44/\ub85c\ubd07 \uc2dd\ubcc4\uc790"
+          },
+          "position_x": {
+            "type": "number",
+            "title": "Position X",
+            "description": "X \uc88c\ud45c (m)"
+          },
+          "position_y": {
+            "type": "number",
+            "title": "Position Y",
+            "description": "Y \uc88c\ud45c (m)"
+          },
+          "position_z": {
+            "type": "number",
+            "title": "Position Z",
+            "description": "Z \uc88c\ud45c (m)"
+          },
+          "velocity": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Velocity",
+            "description": "\uc774\ub3d9 \uc18d\ub3c4 (m/s)",
+            "default": 0.0
+          },
+          "time_sec": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Time Sec",
+            "description": "\ub3c4\ub2ec \ubaa9\ud45c \uc2dc\uac04 (\ucd08)",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_id",
+          "position_x",
+          "position_y",
+          "position_z"
+        ],
+        "title": "TrajectoryPointSchema"
+      },
+      "TriggerManualEstopRequestSchema": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Reason",
+            "description": "\ube44\uc0c1 \uc815\uc9c0 \uc0ac\uc720"
+          },
+          "device_id": {
+            "type": "string",
+            "title": "Device Id",
+            "description": "\ub300\uc0c1 \ub514\ubc14\uc774\uc2a4 ID",
+            "default": "EDGE_NODE_001"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "TriggerManualEstopRequestSchema"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Vda5050ConfigSchema": {
+        "properties": {
+          "mqtt_broker_url": {
+            "type": "string",
+            "title": "Mqtt Broker Url",
+            "description": "MQTT \ube0c\ub85c\ucee4 \uc8fc\uc18c",
+            "default": "mqtt://localhost:1883"
+          },
+          "topic_prefix": {
+            "type": "string",
+            "title": "Topic Prefix",
+            "description": "VDA 5050 \ud1a0\ud53d \uc811\ub450\uc0ac",
+            "default": "uagv/v2"
+          },
+          "manufacturer": {
+            "type": "string",
+            "title": "Manufacturer",
+            "description": "AGV/AMR \uc81c\uc870\uc0ac\uba85",
+            "default": "SFTWIN_ROBOTICS"
+          },
+          "serial_number": {
+            "type": "string",
+            "title": "Serial Number",
+            "description": "\ub300\uc0c1 \uae30\uae30 \uc77c\ub828\ubc88\ud638",
+            "default": "AGV-001"
+          }
+        },
+        "type": "object",
+        "title": "Vda5050ConfigSchema"
+      },
+      "WebRtcIceCandidateRequestSchema": {
+        "properties": {
+          "peer_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Peer Id",
+            "description": "\ud53c\uc5b4 \uc2dd\ubcc4\uc790"
+          },
+          "candidate_json": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Candidate Json",
+            "description": "ICE Candidate JSON \ubb38\uc790\uc5f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "peer_id",
+          "candidate_json"
+        ],
+        "title": "WebRtcIceCandidateRequestSchema"
+      },
+      "WebRtcSdpOfferRequestSchema": {
+        "properties": {
+          "peer_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Peer Id",
+            "description": "\ud53c\uc5b4 \uc2dd\ubcc4\uc790"
+          },
+          "sdp_offer": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sdp Offer",
+            "description": "SDP Offer \ubb38\uc790\uc5f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "peer_id",
+          "sdp_offer"
+        ],
+        "title": "WebRtcSdpOfferRequestSchema"
+      }
+    }
+  }
+}
