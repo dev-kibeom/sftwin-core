@@ -1,26 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
 project(foxglove_bridge)
 
-# C++20 표준 준수
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 20)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ROS 2 & 빌드 패키지
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(websocketpp REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
 # 선택적 의존성: shared_interfaces
 find_package(shared_interfaces QUIET)
 
-# 헤더 경로 포함
-include_directories(
-  include
-)
-
-# Core 라이브러리
+# 1. Core 라이브러리 소스 정의
 set(BRIDGE_SRCS
   src/mappers/foxglove_payload_mapper.cpp
   src/managers/client_session_manager.cpp
@@ -29,17 +24,35 @@ set(BRIDGE_SRCS
   src/node/foxglove_bridge_node.cpp
 )
 
+# 2. Core 라이브러리 타깃 생성
 add_library(${PROJECT_NAME}_lib STATIC ${BRIDGE_SRCS})
+
+# 3. 헤더 인클루드 경로 지정
+target_include_directories(${PROJECT_NAME}_lib PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${WEBSOCKETPP_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+)
+
+# 4. ament 의존성 먼저 주입
 ament_target_dependencies(${PROJECT_NAME}_lib
   rclcpp
   std_msgs
   nlohmann_json
 )
+
 if(shared_interfaces_FOUND)
   ament_target_dependencies(${PROJECT_NAME}_lib shared_interfaces)
 endif()
 
-# 실행 바이너리 타깃
+# 5. 서드파티 라이브러리 링크 (PUBLIC 키워드 제거 -> Plain Signature 유지)
+target_link_libraries(${PROJECT_NAME}_lib
+  ${Boost_LIBRARIES}
+  pthread
+)
+
+# 6. 실행 바이너리 타깃 생성 및 링크
 add_executable(${PROJECT_NAME}_node_exec src/main.cpp)
 target_link_libraries(${PROJECT_NAME}_node_exec ${PROJECT_NAME}_lib)
 ament_target_dependencies(${PROJECT_NAME}_node_exec rclcpp)

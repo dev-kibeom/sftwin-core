@@ -17,9 +17,5 @@
         - "/tf"
         - "/tf_static"
         - "/vision/detections"
-        - "/failsafe/status"
-        - "/manipulator/trajectory"
-        - "/rmf/fleet_states"
-    command_routing:
-      enable_remote_estop: true
-      require_client_auth_token: false
+        - "/failsafe/estop"
+        - "/telemetry/status"

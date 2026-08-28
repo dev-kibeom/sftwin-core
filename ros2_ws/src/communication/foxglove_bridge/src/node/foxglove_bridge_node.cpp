@@ -1,12 +1,13 @@
 #include "foxglove_bridge/node/foxglove_bridge_node.hpp"
 #include <chrono>
+#include <cstring>
+#include <nlohmann/json.hpp>
 
 namespace sftwin::plugins::foxglove_bridge {
 
 FoxgloveBridgeNode::FoxgloveBridgeNode(const rclcpp::NodeOptions& options)
     : Node("foxglove_bridge_node", options) {
     initialize_parameters();
-    setup_publishers();
     setup_bridge();
 }
 
@@ -15,14 +16,14 @@ FoxgloveBridgeNode::~FoxgloveBridgeNode() {
 }
 
 void FoxgloveBridgeNode::initialize_parameters() {
+    // Mermaid 다이어그램 명세에 맞춘 기본 화이트리스트 토픽 목록
     std::vector<std::string> default_whitelist = {
         "/joint_states",
         "/tf",
         "/tf_static",
         "/vision/detections",
-        "/failsafe/status",
-        "/manipulator/trajectory",
-        "/rmf/fleet_states"
+        "/failsafe/estop",
+        "/telemetry/status"
     };
 
     this->declare_parameter<int>("port", 8765);
@@ -32,17 +33,14 @@ void FoxgloveBridgeNode::initialize_parameters() {
     this->declare_parameter<std::vector<std::string>>("whitelist_topics", default_whitelist);
     this->declare_parameter<std::vector<std::string>>("streaming.topic_whitelist", default_whitelist);
 
-    // 포트 결정
     int s_port = this->get_parameter("server.port").as_int();
     int p_port = this->get_parameter("port").as_int();
     _port = static_cast<uint16_t>(s_port != 8765 ? s_port : p_port);
 
-    // 바인드 주소 결정
     std::string s_addr = this->get_parameter("server.address").as_string();
     std::string p_addr = this->get_parameter("address").as_string();
     _address = (s_addr != "0.0.0.0") ? s_addr : p_addr;
 
-    // 화이트리스트 토픽 결정 (오버라이드된 항목 우선 채택)
     auto p_whitelist = this->get_parameter("whitelist_topics").as_string_array();
     auto s_whitelist = this->get_parameter("streaming.topic_whitelist").as_string_array();
 
@@ -55,22 +53,26 @@ void FoxgloveBridgeNode::initialize_parameters() {
     }
 }
 
-void FoxgloveBridgeNode::setup_publishers() {
-#if __has_include("shared_interfaces/msg/failsafe_command.hpp")
-    _failsafe_pub = this->create_publisher<shared_interfaces::msg::FailsafeCommand>(
-        "/safety/failsafe_command",
-        rclcpp::QoS(10).reliable()
-    );
-#endif
-}
-
 void FoxgloveBridgeNode::setup_bridge() {
+    _server.set_endpoint_handler(this);
     _channel_manager = std::make_unique<DynamicTopicChannelManager>(this);
 
-    // 수신된 CDR 페이로드를 WebSocket 서버로 브로드캐스트 전달하도록 콜백 등록
-    _channel_manager->set_message_callback([this](ChannelId id, const uint8_t* data, size_t size) {
-        _server.broadcast_message(id, data, size);
-    });
+    // [바이너리 프레이밍]: 13바이트 헤더(Opcode 0x01 + Channel ID + Timestamp) + CDR Buffer
+    _channel_manager->set_message_callback(
+        [this](ChannelId id, uint64_t timestamp_ns, const uint8_t* payload, size_t size) {
+            if (!_server.is_running() || size == 0) return;
+
+            constexpr size_t HEADER_SIZE = 1 + 4 + 8;
+            std::vector<uint8_t> frame(HEADER_SIZE + size);
+
+            frame[0] = 0x01;
+            std::memcpy(&frame[1], &id, sizeof(uint32_t));
+            std::memcpy(&frame[5], &timestamp_ns, sizeof(uint64_t));
+            std::memcpy(&frame[HEADER_SIZE], payload, size);
+
+            _server.broadcast_binary(frame.data(), frame.size());
+        }
+    );
 
     _channel_manager->discover_and_advertise_topics(_whitelist_topics);
     _server.start(_port, _address);
@@ -78,6 +80,21 @@ void FoxgloveBridgeNode::setup_bridge() {
 
 void FoxgloveBridgeNode::on_client_connected(ClientHandle client_hdl) {
     _session_manager.add_client(client_hdl);
+
+    // 1. Server Info 전송
+    nlohmann::json server_info = {
+        {"op", "serverInfo"},
+        {"name", "sftwin_foxglove_bridge"},
+        {"capabilities", {"clientPublish", "connectionGraph"}},
+        {"supportedEncodings", {"cdr"}}
+    };
+    _server.send_text(client_hdl, server_info.dump());
+
+    // 2. Advertise 채널 목록 전송
+    if (_channel_manager) {
+        std::string advertise_json = _channel_manager->generate_advertise_json();
+        _server.send_text(client_hdl, advertise_json);
+    }
 }
 
 void FoxgloveBridgeNode::on_client_disconnected(ClientHandle client_hdl) {
@@ -90,42 +107,22 @@ void FoxgloveBridgeNode::on_client_subscribed(ChannelId channel_id, ClientHandle
 }
 
 void FoxgloveBridgeNode::handle_client_message(ClientHandle client_hdl, const std::string& payload_json) {
-    (void)client_hdl;
     try {
-        auto command = _payload_mapper.to_failsafe_command(payload_json);
-#if __has_include("shared_interfaces/msg/failsafe_command.hpp")
-        if (_failsafe_pub) {
-            _failsafe_pub->publish(command);
+        nlohmann::json parsed = nlohmann::json::parse(payload_json);
+
+        // 클라이언트 subscribe 제어 메시지 처리
+        if (parsed.contains("op") && parsed["op"] == "subscribe") {
+            if (parsed.contains("subscriptions") && parsed["subscriptions"].is_array()) {
+                for (const auto& sub : parsed["subscriptions"]) {
+                    if (sub.contains("channelId")) {
+                        on_client_subscribed(sub["channelId"].get<ChannelId>(), client_hdl);
+                    }
+                }
+            }
         }
-#endif
-        RCLCPP_INFO(
-            this->get_logger(),
-            "Successfully processed and published failsafe command: action=%s, target=%s",
-            command.action_type.c_str(),
-            command.target_device_id.c_str()
-        );
     } catch (const std::exception& e) {
-        RCLCPP_WARN(this->get_logger(), "Failed to handle client message: %s", e.what());
+        RCLCPP_WARN(this->get_logger(), "Failed to parse client control message: %s", e.what());
     }
-}
-
-void FoxgloveBridgeNode::broadcast_emergency_stop(const std::string& trigger_reason) {
-#if __has_include("shared_interfaces/msg/failsafe_command.hpp")
-    shared_interfaces::msg::FailsafeCommand cmd;
-    cmd.target_device_id = "ALL";
-    cmd.action_type = "ESTOP";
-    cmd.trigger_reason = trigger_reason;
-    auto now = std::chrono::system_clock::now().time_since_epoch();
-    cmd.issued_timestamp_ns = static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::nanoseconds>(now).count()
-    );
-
-    if (_failsafe_pub) {
-        _failsafe_pub->publish(cmd);
-    }
-#else
-    (void)trigger_reason;
-#endif
 }
 
 bool FoxgloveBridgeNode::is_server_active() const noexcept {

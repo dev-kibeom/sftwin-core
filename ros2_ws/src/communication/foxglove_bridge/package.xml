@@ -10,12 +10,17 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
   <depend>shared_interfaces</depend>
   <depend>nlohmann_json</depend>
+  <depend>websocketpp</depend>
+  <depend>boost</depend>
+  <depend>asio</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -1,4 +1,5 @@
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -8,7 +9,6 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     pkg_dir = get_package_share_directory("foxglove_bridge")
-    # foxglove_bridge.yaml -> foxglove_bridge_params.yaml 로 일치
     default_config = os.path.join(pkg_dir, "config", "foxglove_bridge_params.yaml")
 
     return LaunchDescription(
@@ -21,7 +21,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "port",
                 default_value="8765",
-                description="WebSocket listening port for Foxglove Studio",
+                description="WebSocket listening port for Foxglove Studio / Three.js",
             ),
             DeclareLaunchArgument(
                 "address",
@@ -40,7 +40,6 @@ def generate_launch_description():
                         "address": LaunchConfiguration("address"),
                     },
                 ],
-                remappings=[("/safety/failsafe_command", "/safety/failsafe_command")],
             ),
         ]
     )

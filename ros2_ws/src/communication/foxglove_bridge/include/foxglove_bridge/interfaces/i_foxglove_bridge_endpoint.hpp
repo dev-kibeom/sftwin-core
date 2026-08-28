@@ -16,7 +16,6 @@ public:
     virtual void on_client_disconnected(ClientHandle client_hdl) = 0;
     virtual void on_client_subscribed(ChannelId channel_id, ClientHandle client_hdl) = 0;
     virtual void handle_client_message(ClientHandle client_hdl, const std::string& payload_json) = 0;
-    virtual void broadcast_emergency_stop(const std::string& trigger_reason) = 0;
 };
 
 }  // namespace sftwin::plugins::foxglove_bridge

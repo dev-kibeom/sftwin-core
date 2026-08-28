@@ -1,4 +1,5 @@
 #include "foxglove_bridge/managers/dynamic_topic_channel_manager.hpp"
+#include <chrono>
 
 namespace sftwin::plugins::foxglove_bridge {
 
@@ -40,8 +41,13 @@ ChannelId DynamicTopicChannelManager::register_topic(const std::string& topic_na
                 rclcpp::QoS(10),
                 [this, new_id](std::shared_ptr<const rclcpp::SerializedMessage> serialized_msg) {
                     if (_dispatch_cb && serialized_msg) {
+                        auto now_ns = static_cast<uint64_t>(
+                            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                std::chrono::system_clock::now().time_since_epoch()
+                            ).count()
+                        );
                         const auto& rcl_msg = serialized_msg->get_rcl_serialized_message();
-                        _dispatch_cb(new_id, rcl_msg.buffer, rcl_msg.buffer_length);
+                        _dispatch_cb(new_id, now_ns, rcl_msg.buffer, rcl_msg.buffer_length);
                     }
                 }
             );
@@ -59,7 +65,6 @@ ChannelId DynamicTopicChannelManager::register_topic(const std::string& topic_na
 void DynamicTopicChannelManager::discover_and_advertise_topics(const std::vector<std::string>& whitelist) {
     if (!_node) return;
 
-    // 1. ROS 2 그래프로부터 런타임 활성 토픽 타입 조회
     const auto topic_names_and_types = _node->get_topic_names_and_types();
 
     for (const auto& topic : whitelist) {
@@ -67,16 +72,36 @@ void DynamicTopicChannelManager::discover_and_advertise_topics(const std::vector
         if (it != topic_names_and_types.end() && !it->second.empty()) {
             register_topic(topic, it->second[0]);
         } else {
-            // 2. 그래프에 노드가 아직 뜨지 않았거나 테스트 환경일 때 기본 규약 타입으로 사전 바인딩
             std::string fallback_type = "sensor_msgs/msg/JointState";
             if (topic.find("tf") != std::string::npos) {
                 fallback_type = "tf2_msgs/msg/TFMessage";
             } else if (topic.find("vision") != std::string::npos) {
                 fallback_type = "vision_msgs/msg/Detection3DArray";
+            } else if (topic.find("failsafe") != std::string::npos || topic.find("estop") != std::string::npos) {
+                fallback_type = "shared_interfaces/msg/FailsafeCommand";
             }
             register_topic(topic, fallback_type);
         }
     }
+}
+
+std::string DynamicTopicChannelManager::generate_advertise_json() const {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    nlohmann::json root;
+    root["op"] = "advertise";
+    root["channels"] = nlohmann::json::array();
+
+    for (const auto& [id, ch] : _channels) {
+        nlohmann::json ch_obj;
+        ch_obj["id"] = ch.id;
+        ch_obj["topic"] = ch.topic;
+        ch_obj["encoding"] = ch.encoding;
+        ch_obj["schemaName"] = ch.schema_name;
+        root["channels"].push_back(ch_obj);
+    }
+
+    return root.dump();
 }
 
 ChannelId DynamicTopicChannelManager::get_channel_id(const std::string& topic_name) const {
