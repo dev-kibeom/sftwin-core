@@ -45,7 +45,7 @@ describe('TelemetryRenderLoop 단위 테스트', () => {
     describe('Happy Path: 렌더 루프 수명 주기 및 프레임 보간/렌더링 동기화', () => {
         it('Given: 초기화된 TelemetryRenderLoop에서, When: start()를 호출하면, Then: 루프가 활성화되고 requestAnimationFrame을 통해 렌더 루프가 구동되어야 한다.', () => {
             // Given & When
-            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb) => {
                 return 1 as unknown as number;
             });
 

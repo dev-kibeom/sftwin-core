@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { AssetLoaderManager } from './asset_loader_manager';
 import { SceneGraphManager, RosPoseDto } from './scene_graph_manager';
-import { TransformRingBuffer, TelemetryFrame } from './transform_ring_buffer';
+import { TransformRingBuffer } from './transform_ring_buffer';
+import type { TelemetryFrame } from '../shared/types/telemetry';
 import { TelemetryRenderLoop } from './telemetry_render_loop';
 import { BaseSystemException } from '../shared/exceptions/base_system_exception';
 import { GlobalErrorCode } from '../shared/exceptions/global_error_code';

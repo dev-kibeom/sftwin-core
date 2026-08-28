@@ -75,6 +75,7 @@ export class TelemetryBridgeService {
         this.viewportController.pushTelemetryFrame({
             timestamp: Date.now(),
             jointPositions,
+            tfTransforms: {},
         });
     }
 

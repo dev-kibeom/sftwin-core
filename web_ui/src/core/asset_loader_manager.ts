@@ -43,7 +43,7 @@ export class AssetLoaderManager {
 
             this.putCache(assetId, model);
             return model.clone();
-        } catch (err: unknown) {
+        } catch (_err: unknown) {
             // 3. 5.2절 에러 규격: CAD 로드 실패 시 Fallback Mesh 생성
             return this.createFallbackMesh(assetId);
         }

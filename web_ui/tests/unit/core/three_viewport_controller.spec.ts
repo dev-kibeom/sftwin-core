@@ -103,6 +103,7 @@ describe('ThreeViewportController 단위 테스트', () => {
             const mockFrame = {
                 timestamp: 1000,
                 jointPositions: { joint_1: 0.5 },
+                tfTransforms: {},
             };
 
             controller.pushTelemetryFrame(mockFrame);

@@ -95,7 +95,7 @@ export class RosWebSocketClient {
                         const callbacks = this.subscriptions.get(data.topic)!;
                         callbacks.forEach((cb) => cb(data.msg !== undefined ? data.msg : data));
                     }
-                } catch (e) {
+                } catch (_e) {
                     // JSON 파싱 실패 무시
                 }
             };
@@ -110,7 +110,7 @@ export class RosWebSocketClient {
                     this.handleReconnect();
                 }
             };
-        } catch (e) {
+        } catch (_e) {
             this.handleReconnect();
         }
     }

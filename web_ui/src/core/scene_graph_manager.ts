@@ -19,6 +19,10 @@ export class SceneGraphManager {
         this.rootScene = rootScene;
     }
 
+    public get isEstop(): boolean {
+        return this.isEstopActive;
+    }
+
     public hasAsset(assetId: string): boolean {
         return this.assetNodes.has(assetId);
     }
